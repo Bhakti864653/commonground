@@ -8,6 +8,7 @@ import {
   type NewCaseInput,
 } from "@/lib/store/case-store";
 import { toPublicCase, type PublicCase } from "@/lib/schema/report";
+import { detectTrends, type Trend } from "@/lib/insights/trends";
 
 /**
  * Only `publicCaseNumber` + `managementToken` — the wizard needs the token to build the
@@ -23,6 +24,11 @@ export async function submitCase(
 
 export async function listCasesForActivity(communityId: string): Promise<PublicCase[]> {
   return listCasesForCommunity(communityId).map(toPublicCase);
+}
+
+/** Aggregate counts only (never a specific case's private data) — safe to show publicly. */
+export async function getTrendsForActivity(communityId: string): Promise<Trend[]> {
+  return detectTrends(listCasesForCommunity(communityId).map(toPublicCase));
 }
 
 export async function deleteSubmission(

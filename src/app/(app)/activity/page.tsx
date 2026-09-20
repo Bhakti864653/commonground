@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { useCommunity } from "@/lib/community/context";
 import { useLanguage } from "@/lib/i18n/context";
 import { UI_STRINGS } from "@/lib/i18n/dictionary";
-import { listCasesForActivity } from "@/lib/store/actions";
+import { getTrendsForActivity, listCasesForActivity } from "@/lib/store/actions";
 import { CaseList } from "@/components/dashboard/CaseList";
 import { CommunityPulse } from "@/components/pulse/CommunityPulse";
 import type { PublicCase } from "@/lib/schema/report";
+import type { Trend } from "@/lib/insights/trends";
 
 type TypeFilter = "all" | "report" | "proposal";
 type ViewMode = "list" | "pulse";
@@ -18,13 +19,20 @@ export default function ActivityPage() {
   const t = UI_STRINGS.activity;
   const pulseT = UI_STRINGS.pulse;
   const [cases, setCases] = useState<PublicCase[] | null>(null);
+  const [trends, setTrends] = useState<Trend[]>([]);
   const [filter, setFilter] = useState<TypeFilter>("all");
   const [view, setView] = useState<ViewMode>("list");
 
   useEffect(() => {
     let cancelled = false;
-    listCasesForActivity(community.id).then((result) => {
-      if (!cancelled) setCases(result);
+    Promise.all([
+      listCasesForActivity(community.id),
+      getTrendsForActivity(community.id),
+    ]).then(([caseResult, trendResult]) => {
+      if (!cancelled) {
+        setCases(caseResult);
+        setTrends(trendResult);
+      }
     });
     return () => {
       cancelled = true;
@@ -50,6 +58,29 @@ export default function ActivityPage() {
         <h1 className="text-2xl font-semibold text-ink md:text-3xl">{t.heading[language]}</h1>
         <p className="mt-1 text-sm text-slate">{t.subheading[language]}</p>
       </div>
+
+      {trends.length > 0 && (
+        <section className="flex flex-col gap-2 rounded-lg border border-ink/10 bg-mint/20 p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-teal">
+            {t.trendsHeading[language]}
+          </h2>
+          <ul className="flex flex-col gap-1 text-sm text-ink">
+            {trends.map((trend) => {
+              const category = community.categories.find((c) => c.id === trend.categoryId);
+              const area = community.areas.find((a) => a.id === trend.areaId);
+              const categoryLabel =
+                (language === "es" ? category?.labelEs : category?.label) ?? trend.categoryId;
+              const areaLabel = (language === "es" ? area?.labelEs : area?.label) ?? "—";
+              const sentence = t.trendSentence[language]
+                .replace("{count}", String(trend.count))
+                .replace("{category}", categoryLabel)
+                .replace("{area}", areaLabel)
+                .replace("{days}", String(trend.windowDays));
+              return <li key={`${trend.categoryId}-${trend.areaId}`}>{sentence}</li>;
+            })}
+          </ul>
+        </section>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2" role="group" aria-label={t.heading[language]}>

@@ -10,6 +10,7 @@ import {
   adminSetVerification,
 } from "@/lib/store/admin-actions";
 import { runCaseAnalysis, reviewAgentSuggestion } from "@/lib/guide/admin-actions";
+import { draftStatusChangeExplanation } from "@/lib/insights/status-explanation";
 import {
   ReportStatusSchema,
   STATUS_LABELS,
@@ -39,7 +40,11 @@ export function ModerationPanel({
   categoryLabel: string;
 }) {
   const router = useRouter();
-  const [statusNote, setStatusNote] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<ReportStatus>(caseData.status);
+  const [statusNote, setStatusNote] = useState(() =>
+    draftStatusChangeExplanation(caseData.status, "en"),
+  );
+  const [statusNoteIsDraft, setStatusNoteIsDraft] = useState(true);
   const [duplicateOf, setDuplicateOf] = useState("");
   const [note, setNote] = useState("");
   const [pending, setPending] = useState<string | null>(null);
@@ -144,11 +149,20 @@ export function ModerationPanel({
         <h2 className="text-sm font-semibold text-ink">
           Status <span className="text-slate">({STATUS_LABELS[caseData.status].en})</span>
         </h2>
+        <p className="mt-1 text-xs text-slate">
+          The note is auto-drafted from the status you pick — edit it freely, nothing changes
+          until you click Apply.
+        </p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <select
             id="status-select"
             aria-label="New status"
-            defaultValue={caseData.status}
+            value={selectedStatus}
+            onChange={(e) => {
+              const next = e.target.value as ReportStatus;
+              setSelectedStatus(next);
+              if (statusNoteIsDraft) setStatusNote(draftStatusChangeExplanation(next, "en"));
+            }}
             className="rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
           >
             {STATUS_OPTIONS.map((s) => (
@@ -159,7 +173,10 @@ export function ModerationPanel({
           </select>
           <input
             value={statusNote}
-            onChange={(e) => setStatusNote(e.target.value)}
+            onChange={(e) => {
+              setStatusNote(e.target.value);
+              setStatusNoteIsDraft(false);
+            }}
             aria-label="Note shown in the resident's status history"
             placeholder="Note shown in the resident's status history (optional)"
             className="min-w-[16rem] flex-1 rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
@@ -167,16 +184,11 @@ export function ModerationPanel({
           <button
             type="button"
             disabled={pending === "status"}
-            onClick={() => {
-              const select = document.getElementById("status-select") as HTMLSelectElement;
+            onClick={() =>
               run("status", () =>
-                adminChangeStatus(
-                  caseData.publicCaseNumber,
-                  select.value as Case["status"],
-                  statusNote || undefined,
-                ),
-              );
-            }}
+                adminChangeStatus(caseData.publicCaseNumber, selectedStatus, statusNote || undefined),
+              )
+            }
             className="rounded-md bg-teal px-3 py-1.5 text-sm font-medium text-cream disabled:opacity-50"
           >
             Apply

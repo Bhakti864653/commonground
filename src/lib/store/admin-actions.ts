@@ -10,7 +10,8 @@ import {
   setVerificationState,
 } from "@/lib/store/case-store";
 import { getCaseByCaseNumber } from "@/lib/store/case-store";
-import type { Case, ReportStatus, VerificationState } from "@/lib/schema/report";
+import { toPublicCase, type Case, type ReportStatus, type VerificationState } from "@/lib/schema/report";
+import { findDuplicateClusters, type DuplicateCluster } from "@/lib/insights/duplicate-clusters";
 
 const ACTOR_ID = "admin";
 
@@ -22,6 +23,17 @@ export async function listCasesForAdmin(): Promise<Case[]> {
 export async function getCaseForAdmin(caseNumber: string): Promise<Case | null> {
   await requireAdmin();
   return getCaseByCaseNumber(caseNumber) ?? null;
+}
+
+/**
+ * Recomputed fresh on every call — "autonomous" here means the moderator never has to ask for
+ * it (it's just always current when they load the admin page), not that a real background
+ * scheduler runs it; this app's serverless deploy target and in-memory store don't reliably
+ * support one yet.
+ */
+export async function getAdminDuplicateClusters(): Promise<DuplicateCluster[]> {
+  await requireAdmin();
+  return findDuplicateClusters(listAllCasesForAdmin().map(toPublicCase));
 }
 
 export async function adminChangeStatus(

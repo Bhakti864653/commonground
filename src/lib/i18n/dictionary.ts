@@ -110,6 +110,14 @@ export const UI_STRINGS = {
     descriptionStep: {
       heading: { es: "Cuéntanos más", en: "Tell us more" },
       descriptionLabel: { es: "Descripción", en: "Description" },
+      emergencyWarningTitle: {
+        es: "No es un servicio de emergencia",
+        en: "Not an emergency service",
+      },
+      emergencyWarningBody: {
+        es: "Esto suena a una emergencia. CommonGround no es un servicio de emergencia — si hay peligro inmediato, contacta directamente a los servicios de emergencia oficiales de tu área. Puedes seguir documentando esto aquí si quieres, pero no reemplaza esa llamada.",
+        en: "This sounds like it could be an emergency. CommonGround is not an emergency service — if there's immediate danger, please contact your local official emergency services directly. You can still document this here if you'd like, but it doesn't replace that call.",
+      },
       descriptionPlaceholder: {
         es: "Describe qué pasó, cuándo lo notaste y cualquier otro detalle que ayude a entenderlo. Puedes incluir información adicional que consideres útil.",
         en: "Describe what happened, when you noticed it, and any other detail that helps explain it. Feel free to include any other supporting information.",
@@ -253,6 +261,11 @@ export const UI_STRINGS = {
       en: "No cases yet for this community.",
     },
     loading: { es: "Cargando...", en: "Loading..." },
+    trendsHeading: { es: "Tendencias", en: "Trends" },
+    trendSentence: {
+      es: "{count} reportes de {category} en {area} en los últimos {days} días.",
+      en: "{count} reports of {category} in {area} in the last {days} days.",
+    },
   },
   pulse: {
     toggleList: { es: "Lista", en: "List" },

@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Mic, Upload, X } from "lucide-react";
+import { AlertTriangle, Mic, Upload, X } from "lucide-react";
 import { UI_STRINGS, type Language } from "@/lib/i18n/dictionary";
 import { validateImageMetadata } from "@/lib/privacy/image-validation";
+import { detectEmergencyPhrase } from "@/lib/guide/emergency";
 import type { ImagePick } from "./types";
 
 /**
@@ -27,6 +28,10 @@ export function DescriptionStep({
   const t = UI_STRINGS.reportFlow.descriptionStep;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoError, setPhotoError] = useState<"type" | "size" | null>(null);
+  // Derived directly from render-available data — no effect needed, this is exactly what
+  // React's own guidance calls "you might not need an effect" (see DEVLOG.md for why this
+  // repo's lint rule keeps catching the effect-shaped version of this pattern).
+  const isEmergency = detectEmergencyPhrase(description);
 
   return (
     <fieldset className="flex flex-col gap-5">
@@ -44,6 +49,18 @@ export function DescriptionStep({
           rows={5}
           className="mt-1.5 w-full rounded-md border border-ink/15 bg-cream p-3 text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
         />
+        {isEmergency && (
+          <div
+            role="alert"
+            className="mt-2 flex items-start gap-2 rounded-lg border border-coral/40 bg-coral/10 p-3 text-sm text-ink"
+          >
+            <AlertTriangle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-coral" />
+            <div>
+              <p className="font-semibold text-coral">{t.emergencyWarningTitle[language]}</p>
+              <p className="mt-0.5">{t.emergencyWarningBody[language]}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div>
