@@ -1,26 +1,39 @@
 @import "tailwindcss";
 
+/*
+ * CommonGround design tokens (docs/DESIGN_SYSTEM.md). Color is never the only signal for
+ * meaning — every status/verification/urgency indicator pairs a color with text or an icon.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #17212b;
+  --cream: #faf8f3;
+  --teal: #167d78;
+  --mint: #dff1ec;
+  --yellow: #f4c95d;
+  --coral: #d96555;
+  --blue: #dceaf3;
+  --slate: #65727d;
+
+  --background: var(--cream);
+  --foreground: var(--ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-cream: var(--cream);
+  --color-teal: var(--teal);
+  --color-mint: var(--mint);
+  --color-yellow: var(--yellow);
+  --color-coral: var(--coral);
+  --color-blue: var(--blue);
+  --color-slate: var(--slate);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
