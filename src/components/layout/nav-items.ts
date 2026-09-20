@@ -12,12 +12,12 @@ import {
 import { UI_STRINGS } from "@/lib/i18n/dictionary";
 
 /**
- * `href: null` means the destination is real per the design system's target nav, but its
- * page is a later phase (Guide is Phase 6, Settings has no dedicated phase yet) — rendered as
- * a disabled "coming soon" item rather than a dead link, matching CommonGround's own rule
- * against implying functionality that isn't real yet. Reports/Proposals/Create link into the
- * Phase 3 wizard (pre-selecting step 1's choice via `?type=`); Activity/Explore link into the
- * Phase 4 dashboard.
+ * `href: null` means the destination is real per the design system's target nav, but its page
+ * doesn't exist yet (Settings has no dedicated phase) — rendered as a disabled "coming soon"
+ * item rather than a dead link, matching CommonGround's own rule against implying
+ * functionality that isn't real yet. Reports/Proposals/Create link into the Phase 3 wizard
+ * (pre-selecting step 1's choice via `?type=`); Activity/Explore link into the Phase 4
+ * dashboard; Guide links into the Phase 6 assistant.
  */
 export type NavItem = {
   key: string;
@@ -36,7 +36,7 @@ export const DESKTOP_NAV_ITEMS: NavItem[] = [
     icon: Lightbulb,
     href: "/report/new?type=proposal",
   },
-  { key: "guide", label: UI_STRINGS.nav.guide, icon: MessageCircleQuestion, href: null },
+  { key: "guide", label: UI_STRINGS.nav.guide, icon: MessageCircleQuestion, href: "/guide" },
   { key: "how-it-works", label: UI_STRINGS.nav.howItWorks, icon: Compass, href: "/how-it-works" },
   { key: "settings", label: UI_STRINGS.nav.settings, icon: Settings, href: null },
 ];
@@ -45,6 +45,6 @@ export const MOBILE_NAV_ITEMS: NavItem[] = [
   { key: "home", label: UI_STRINGS.nav.home, icon: Home, href: "/" },
   { key: "explore", label: UI_STRINGS.nav.explore, icon: Compass, href: "/activity" },
   { key: "create", label: UI_STRINGS.nav.create, icon: Plus, href: "/report/new" },
-  { key: "guide", label: UI_STRINGS.nav.guide, icon: MessageCircleQuestion, href: null },
+  { key: "guide", label: UI_STRINGS.nav.guide, icon: MessageCircleQuestion, href: "/guide" },
   { key: "more", label: UI_STRINGS.nav.more, icon: Settings, href: null },
 ];

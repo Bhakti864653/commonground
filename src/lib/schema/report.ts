@@ -119,6 +119,25 @@ export const InaccuracyFlagSchema = z.object({
 });
 export type InaccuracyFlag = z.infer<typeof InaccuracyFlagSchema>;
 
+/**
+ * Phase 6 — the CommonGround Guide never mutates a case itself; it can only append one of
+ * these, and a moderator has to explicitly approve one before it does anything real (approving
+ * just calls the exact same `adminChangeStatus`/`adminMarkDuplicate`/`adminSetVerification`
+ * functions a human using the panel directly would call). This is the whole mechanism behind
+ * "agentic reasoning, human-approved actions."
+ */
+export const AgentSuggestionSchema = z.object({
+  id: z.string(),
+  kind: z.enum(["duplicate", "status", "verification"]),
+  /** A case number (duplicate), a ReportStatus value (status), or a VerificationState value. */
+  suggestedValue: z.string(),
+  reasoning: z.string(),
+  createdAt: z.string(),
+  status: z.enum(["pending", "approved", "rejected"]).default("pending"),
+  reviewedAt: z.string().optional(),
+});
+export type AgentSuggestion = z.infer<typeof AgentSuggestionSchema>;
+
 export const ModerationActionSchema = z.object({
   id: z.string(),
   actorId: z.string(),
@@ -163,6 +182,7 @@ const CaseBaseSchema = z.object({
   adminNotes: z.array(AdminNoteSchema).default([]),
   inaccuracyFlags: z.array(InaccuracyFlagSchema).default([]),
   moderationActions: z.array(ModerationActionSchema).default([]),
+  agentSuggestions: z.array(AgentSuggestionSchema).default([]),
   isDuplicateOf: z.string().optional(),
   deletedAt: z.string().optional(),
   /**

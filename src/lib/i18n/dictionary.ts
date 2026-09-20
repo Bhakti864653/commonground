@@ -219,6 +219,20 @@ export const UI_STRINGS = {
       error: { es: "No se pudo eliminar. Intenta de nuevo.", en: "Couldn't delete that. Please try again." },
     },
   },
+  guide: {
+    heading: { es: "Guía de CommonGround", en: "CommonGround Guide" },
+    intro: {
+      es: "Pregunta sobre el proceso, tu categoría, o el estado de un caso. No reemplaza los servicios de emergencia.",
+      en: "Ask about the process, your category, or a case's status. It doesn't replace emergency services.",
+    },
+    placeholder: { es: "Escribe tu pregunta...", en: "Type your question..." },
+    send: { es: "Enviar", en: "Send" },
+    thinking: { es: "Pensando...", en: "Thinking..." },
+    emptyState: {
+      es: "Pregunta lo que quieras sobre cómo funciona CommonGround.",
+      en: "Ask anything about how CommonGround works.",
+    },
+  },
   activity: {
     heading: { es: "Actividad", en: "Activity" },
     subheading: {

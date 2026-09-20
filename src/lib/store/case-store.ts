@@ -1,6 +1,7 @@
 import { formatCaseNumber } from "@/lib/case-number/format-case-number";
 import {
   CaseSchema,
+  type AgentSuggestion,
   type Case,
   type ApproximateArea,
   type ReportStatus,
@@ -83,6 +84,7 @@ export function createCase(input: NewCaseInput, now: () => Date = () => new Date
     adminNotes: [],
     inaccuracyFlags: [],
     moderationActions: [],
+    agentSuggestions: [],
     managementToken: crypto.randomUUID(),
   };
 
@@ -252,6 +254,58 @@ export function markInaccuracyFlagReviewed(
   const flag = found?.inaccuracyFlags.find((f) => f.id === flagId);
   if (!flag) return false;
   flag.reviewedAt = now().toISOString();
+  return true;
+}
+
+/** Read-only, used by the Guide's `search_similar_cases` tool — never a mutation. */
+export function listOpenCasesForCommunity(communityId: string, excludeCaseNumber?: string): Case[] {
+  return listCasesForCommunity(communityId).filter(
+    (c) => c.publicCaseNumber !== excludeCaseNumber && !c.isDuplicateOf,
+  );
+}
+
+/**
+ * The Guide only ever appends suggestions here — never a case field a resident/moderator
+ * relies on. Old pending suggestions of the same kind are cleared first so re-running analysis
+ * doesn't pile up stale duplicates of its own.
+ */
+export function addAgentSuggestions(
+  publicCaseNumber: string,
+  suggestions: Array<Pick<AgentSuggestion, "kind" | "suggestedValue" | "reasoning">>,
+  now: () => Date = () => new Date(),
+): boolean {
+  const found = getCaseByCaseNumber(publicCaseNumber);
+  if (!found) return false;
+  const kinds = new Set(suggestions.map((s) => s.kind));
+  found.agentSuggestions = found.agentSuggestions.filter(
+    (s) => s.status !== "pending" || !kinds.has(s.kind),
+  );
+  const nowIso = now().toISOString();
+  for (const s of suggestions) {
+    found.agentSuggestions.push({
+      id: crypto.randomUUID(),
+      kind: s.kind,
+      suggestedValue: s.suggestedValue,
+      reasoning: s.reasoning,
+      createdAt: nowIso,
+      status: "pending",
+    });
+  }
+  return true;
+}
+
+/** Only touches the suggestion's own status — applying it (if approved) is the caller's job. */
+export function setAgentSuggestionStatus(
+  publicCaseNumber: string,
+  suggestionId: string,
+  status: "approved" | "rejected",
+  now: () => Date = () => new Date(),
+): boolean {
+  const found = getCaseByCaseNumber(publicCaseNumber);
+  const suggestion = found?.agentSuggestions.find((s) => s.id === suggestionId);
+  if (!suggestion || suggestion.status !== "pending") return false;
+  suggestion.status = status;
+  suggestion.reviewedAt = now().toISOString();
   return true;
 }
 

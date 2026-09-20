@@ -9,13 +9,22 @@ import {
   adminReviewInaccuracyFlag,
   adminSetVerification,
 } from "@/lib/store/admin-actions";
+import { runCaseAnalysis, reviewAgentSuggestion } from "@/lib/guide/admin-actions";
 import {
   ReportStatusSchema,
   STATUS_LABELS,
   VERIFICATION_LABELS,
   VerificationStateSchema,
   type Case,
+  type ReportStatus,
+  type VerificationState,
 } from "@/lib/schema/report";
+
+function describeSuggestedValue(kind: Case["agentSuggestions"][number]["kind"], value: string): string {
+  if (kind === "status") return STATUS_LABELS[value as ReportStatus]?.en ?? value;
+  if (kind === "verification") return VERIFICATION_LABELS[value as VerificationState]?.en ?? value;
+  return value;
+}
 
 const STATUS_OPTIONS = ReportStatusSchema.options;
 const VERIFICATION_OPTIONS = VerificationStateSchema.options;
@@ -57,6 +66,78 @@ export function ModerationPanel({
           </p>
         )}
       </div>
+
+      {/* Guide suggestions */}
+      <section className="rounded-lg border border-teal/30 bg-mint/20 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-ink">CommonGround Guide</h2>
+          <button
+            type="button"
+            disabled={pending === "analyze"}
+            onClick={() => run("analyze", () => runCaseAnalysis(caseData.publicCaseNumber))}
+            className="shrink-0 rounded-md border border-teal/40 px-3 py-1.5 text-sm font-medium text-teal disabled:opacity-50"
+          >
+            {pending === "analyze" ? "Analyzing..." : "Run analysis"}
+          </button>
+        </div>
+        <p className="mt-1 text-xs text-slate">
+          The Guide only drafts suggestions here — nothing changes until you approve one.
+        </p>
+        {caseData.agentSuggestions.length > 0 && (
+          <ul className="mt-3 flex flex-col gap-2">
+            {caseData.agentSuggestions
+              .slice()
+              .reverse()
+              .map((s) => (
+                <li
+                  key={s.id}
+                  className={`rounded-md border p-2 text-sm ${
+                    s.status === "pending"
+                      ? "border-teal/40 bg-cream"
+                      : "border-ink/10 bg-cream text-slate"
+                  }`}
+                >
+                  <p>
+                    <span className="font-medium text-ink">{s.kind}</span>:{" "}
+                    {describeSuggestedValue(s.kind, s.suggestedValue)}
+                    {s.status !== "pending" && (
+                      <span className="ml-2 text-xs">({s.status})</span>
+                    )}
+                  </p>
+                  <p className="mt-0.5 text-xs text-ink/70">{s.reasoning}</p>
+                  {s.status === "pending" && (
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        disabled={pending === `suggestion-${s.id}`}
+                        onClick={() =>
+                          run(`suggestion-${s.id}`, () =>
+                            reviewAgentSuggestion(caseData.publicCaseNumber, s.id, "approve"),
+                          )
+                        }
+                        className="rounded-md bg-teal px-2 py-1 text-xs font-medium text-cream disabled:opacity-50"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        disabled={pending === `suggestion-${s.id}`}
+                        onClick={() =>
+                          run(`suggestion-${s.id}`, () =>
+                            reviewAgentSuggestion(caseData.publicCaseNumber, s.id, "reject"),
+                          )
+                        }
+                        className="rounded-md border border-ink/15 px-2 py-1 text-xs font-medium text-ink disabled:opacity-50"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
+                </li>
+              ))}
+          </ul>
+        )}
+      </section>
 
       {/* Status */}
       <section className="rounded-lg border border-ink/10 p-4">
