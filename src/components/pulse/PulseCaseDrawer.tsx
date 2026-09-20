@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { renderCategoryIcon } from "@/components/icons/category-icon-map";
 import { UI_STRINGS, type Language } from "@/lib/i18n/dictionary";
 import { formatApproximateAreaLabel } from "@/lib/privacy/approximate-area";
-import { STATUS_LABELS, type Case } from "@/lib/schema/report";
+import { STATUS_LABELS, type PublicCase } from "@/lib/schema/report";
 import type { CategoryConfig } from "@/lib/schema/community";
 
 /**
@@ -19,7 +19,7 @@ export function PulseCaseDrawer({
   language,
   onClose,
 }: {
-  caseItem: Case;
+  caseItem: PublicCase;
   category: CategoryConfig;
   language: Language;
   onClose: () => void;

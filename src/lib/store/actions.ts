@@ -4,22 +4,25 @@ import {
   createCase,
   deleteCase,
   flagInaccuracy,
-  getCaseByCaseNumber,
   listCasesForCommunity,
   type NewCaseInput,
 } from "@/lib/store/case-store";
-import type { Case } from "@/lib/schema/report";
+import { toPublicCase, type PublicCase } from "@/lib/schema/report";
 
-export async function submitCase(input: NewCaseInput): Promise<Case> {
-  return createCase(input);
+/**
+ * Only `publicCaseNumber` + `managementToken` — the wizard needs the token to build the
+ * one-time manage link, but nothing else about the freshly created case (which has no private
+ * data yet anyway) needs to reach the client as a blanket object.
+ */
+export async function submitCase(
+  input: NewCaseInput,
+): Promise<{ publicCaseNumber: string; managementToken: string }> {
+  const created = createCase(input);
+  return { publicCaseNumber: created.publicCaseNumber, managementToken: created.managementToken };
 }
 
-export async function lookupCase(caseNumber: string): Promise<Case | null> {
-  return getCaseByCaseNumber(caseNumber.trim().toUpperCase()) ?? null;
-}
-
-export async function listCasesForActivity(communityId: string): Promise<Case[]> {
-  return listCasesForCommunity(communityId);
+export async function listCasesForActivity(communityId: string): Promise<PublicCase[]> {
+  return listCasesForCommunity(communityId).map(toPublicCase);
 }
 
 export async function deleteSubmission(

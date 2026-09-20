@@ -7,7 +7,7 @@ import { UI_STRINGS } from "@/lib/i18n/dictionary";
 import { listCasesForActivity } from "@/lib/store/actions";
 import { CaseList } from "@/components/dashboard/CaseList";
 import { CommunityPulse } from "@/components/pulse/CommunityPulse";
-import type { Case } from "@/lib/schema/report";
+import type { PublicCase } from "@/lib/schema/report";
 
 type TypeFilter = "all" | "report" | "proposal";
 type ViewMode = "list" | "pulse";
@@ -17,7 +17,7 @@ export default function ActivityPage() {
   const { language } = useLanguage();
   const t = UI_STRINGS.activity;
   const pulseT = UI_STRINGS.pulse;
-  const [cases, setCases] = useState<Case[] | null>(null);
+  const [cases, setCases] = useState<PublicCase[] | null>(null);
   const [filter, setFilter] = useState<TypeFilter>("all");
   const [view, setView] = useState<ViewMode>("list");
 

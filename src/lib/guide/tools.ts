@@ -1,6 +1,7 @@
 import type Groq from "groq-sdk";
 import { getCaseByCaseNumber, listOpenCasesForCommunity } from "@/lib/store/case-store";
 import { getCommunityById } from "@/data/communities";
+import { toPublicCase, type PublicCase } from "@/lib/schema/report";
 
 /**
  * Shared by both Guide surfaces (admin case-analysis and the resident chat). Every tool is
@@ -41,17 +42,30 @@ type ToolContext = {
   excludeCaseNumber?: string;
 };
 
-function summarizeCase(c: ReturnType<typeof getCaseByCaseNumber>) {
+/**
+ * Explicit allow-list (each field named individually), not `toPublicCase` + spread — a tool
+ * result feeds an LLM prompt, a stricter boundary than a normal page render, so it names only
+ * exactly what the model needs rather than "everything except the private fields."
+ * `Pick<PublicCase, ...>` still makes it a compile error to ever reference a field that
+ * shouldn't reach the model in the first place, same as `PublicCase` does for page rendering.
+ */
+function summarizeCase(
+  c: ReturnType<typeof getCaseByCaseNumber>,
+): Pick<
+  PublicCase,
+  "publicCaseNumber" | "type" | "categoryId" | "description" | "status" | "verificationState" | "createdAt"
+> & { approximateArea: string } | null {
   if (!c) return null;
+  const publicCase = toPublicCase(c);
   return {
-    caseNumber: c.publicCaseNumber,
-    type: c.type,
-    categoryId: c.categoryId,
-    description: c.description,
-    approximateArea: c.approximateArea.label,
-    status: c.status,
-    verificationState: c.verificationState,
-    createdAt: c.createdAt,
+    publicCaseNumber: publicCase.publicCaseNumber,
+    type: publicCase.type,
+    categoryId: publicCase.categoryId,
+    description: publicCase.description,
+    approximateArea: publicCase.approximateArea.label,
+    status: publicCase.status,
+    verificationState: publicCase.verificationState,
+    createdAt: publicCase.createdAt,
   };
 }
 

@@ -120,6 +120,14 @@ export const UI_STRINGS = {
         en: "Photos may contain personal information (e.g. license plates or faces). We only keep the file name and type — the image itself is never uploaded or stored in this prototype.",
       },
       photoRemove: { es: "Quitar foto", en: "Remove photo" },
+      photoErrorType: {
+        es: "Ese tipo de archivo no es válido. Usa JPEG, PNG, WEBP o GIF.",
+        en: "That file type isn't supported. Use JPEG, PNG, WEBP, or GIF.",
+      },
+      photoErrorSize: {
+        es: "La foto es demasiado grande (máximo 10 MB).",
+        en: "That photo is too large (10MB max).",
+      },
       voiceNoteLabel: { es: "Nota de voz", en: "Voice note" },
     },
     areaStep: {

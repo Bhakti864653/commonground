@@ -207,3 +207,24 @@ export type Proposal = z.infer<typeof ProposalSchema>;
 
 export const CaseSchema = z.discriminatedUnion("type", [ReportSchema, ProposalSchema]);
 export type Case = z.infer<typeof CaseSchema>;
+
+/**
+ * What a resident/anonymous visitor is ever allowed to see — structurally excludes
+ * `adminNotes`/`moderationActions`/`agentSuggestions`/`inaccuracyFlags`/`managementToken` at
+ * the type level, not just "we didn't render them this time" (EVALUATION.md, Phase 5: "a
+ * public serializer must never include AdminNote fields — enforced by a type-level test, not
+ * just a runtime check"). Every resident-facing server action and component prop should use
+ * this type, never `Case`, so passing a private field through is a compile error, not a leak
+ * waiting to be noticed. Only admin-side code (already gated by `requireAdmin()`) uses `Case`
+ * directly.
+ */
+export type PublicCase = Omit<
+  Case,
+  "managementToken" | "adminNotes" | "moderationActions" | "agentSuggestions" | "inaccuracyFlags"
+>;
+
+export function toPublicCase(c: Case): PublicCase {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deliberately omitting these fields
+  const { managementToken, adminNotes, moderationActions, agentSuggestions, inaccuracyFlags, ...rest } = c;
+  return rest;
+}

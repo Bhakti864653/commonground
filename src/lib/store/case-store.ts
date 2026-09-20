@@ -9,6 +9,7 @@ import {
   type VerificationState,
 } from "@/lib/schema/report";
 import { getCommunityById } from "@/data/communities";
+import { validateImageMetadata } from "@/lib/privacy/image-validation";
 
 export type NewCaseInput = {
   type: "report" | "proposal";
@@ -51,6 +52,15 @@ export function createCase(input: NewCaseInput, now: () => Date = () => new Date
   const community = getCommunityById(input.communityId);
   if (!community) {
     throw new Error(`Unknown community: ${input.communityId}`);
+  }
+
+  // Defense in depth — the wizard already checks this client-side, but a server action can be
+  // called directly with fabricated metadata, so this can't be the only check (PRIVACY.md).
+  if (input.image) {
+    const result = validateImageMetadata(input.image);
+    if (!result.valid) {
+      throw new Error(`Invalid image metadata: ${result.reason}`);
+    }
   }
 
   const store = getStore();

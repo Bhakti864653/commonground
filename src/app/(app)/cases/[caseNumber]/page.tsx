@@ -1,5 +1,6 @@
 import { getCaseByCaseNumber } from "@/lib/store/case-store";
 import { getCommunityById } from "@/data/communities";
+import { toPublicCase } from "@/lib/schema/report";
 import { CaseView } from "@/components/case/CaseView";
 import { CaseNotFound } from "@/components/case/CaseNotFound";
 
@@ -27,12 +28,9 @@ export default async function CasePage({
   const validManagementToken =
     providedToken && providedToken === foundCase.managementToken ? providedToken : null;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deliberately omitting the field
-  const { managementToken: _managementToken, ...publicCase } = foundCase;
-
   return (
     <CaseView
-      caseData={publicCase}
+      caseData={toPublicCase(foundCase)}
       category={category}
       communityDisplayName={community.displayName}
       isNew={isNewParam === "1"}

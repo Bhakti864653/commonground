@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Mic, Upload, X } from "lucide-react";
 import { UI_STRINGS, type Language } from "@/lib/i18n/dictionary";
+import { validateImageMetadata } from "@/lib/privacy/image-validation";
 import type { ImagePick } from "./types";
 
 /**
@@ -25,6 +26,7 @@ export function DescriptionStep({
 }) {
   const t = UI_STRINGS.reportFlow.descriptionStep;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoError, setPhotoError] = useState<"type" | "size" | null>(null);
 
   return (
     <fieldset className="flex flex-col gap-5">
@@ -55,10 +57,22 @@ export function DescriptionStep({
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (!file) return;
+            const result = validateImageMetadata({ mimeType: file.type, sizeBytes: file.size });
+            if (!result.valid) {
+              setPhotoError(result.reason);
+              e.target.value = "";
+              return;
+            }
+            setPhotoError(null);
             onImageChange({ fileName: file.name, mimeType: file.type, sizeBytes: file.size });
             e.target.value = "";
           }}
         />
+        {photoError && (
+          <p className="mt-1 text-xs text-coral">
+            {photoError === "type" ? t.photoErrorType[language] : t.photoErrorSize[language]}
+          </p>
+        )}
         {image ? (
           <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-ink/15 bg-mint/30 px-3 py-2 text-sm">
             <span className="truncate text-ink">{image.fileName}</span>

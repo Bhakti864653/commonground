@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, MapPin } from "lucide-react";
 import { renderCategoryIcon } from "@/components/icons/category-icon-map";
 import { useLanguage } from "@/lib/i18n/context";
 import { UI_STRINGS } from "@/lib/i18n/dictionary";
 import { formatApproximateAreaLabel } from "@/lib/privacy/approximate-area";
-import { VERIFICATION_LABELS, type Case } from "@/lib/schema/report";
+import { VERIFICATION_LABELS, type PublicCase } from "@/lib/schema/report";
 import type { CategoryConfig } from "@/lib/schema/community";
 import { ActionTrail } from "./ActionTrail";
 import { StatusHistoryTimeline } from "./StatusHistoryTimeline";
@@ -20,7 +20,7 @@ export function CaseView({
   isNew,
   managementToken,
 }: {
-  caseData: Omit<Case, "managementToken">;
+  caseData: PublicCase;
   category: CategoryConfig;
   communityDisplayName: string;
   isNew: boolean;
@@ -29,7 +29,15 @@ export function CaseView({
   const { language } = useLanguage();
   const t = UI_STRINGS.caseDetail;
   const [deleted, setDeleted] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const verificationLabel = VERIFICATION_LABELS[caseData.verificationState][language];
+
+  // Focus management after the multi-step submission flow (EVALUATION.md's accessibility
+  // checklist) — a screen-reader user landing here right after submitting needs to be told
+  // where they are, not left wherever focus happened to be on the previous page.
+  useEffect(() => {
+    if (isNew) headingRef.current?.focus();
+  }, [isNew]);
   const typeLabel =
     caseData.type === "report"
       ? UI_STRINGS.reportFlow.typeStep.report.title[language]
@@ -58,7 +66,11 @@ export function CaseView({
 
       <div>
         <p className="text-sm font-medium text-slate">{t.heading[language]}</p>
-        <h1 className="text-2xl font-semibold text-ink md:text-3xl">
+        <h1
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-2xl font-semibold text-ink outline-none md:text-3xl"
+        >
           {caseData.publicCaseNumber}
         </h1>
       </div>

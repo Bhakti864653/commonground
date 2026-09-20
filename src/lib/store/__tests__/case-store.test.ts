@@ -88,6 +88,21 @@ describe("createCase", () => {
     expect(created.statusHistory[0].actorType).toBe("system");
   });
 
+  it("rejects invalid image metadata server-side, even bypassing the wizard's own client-side check", () => {
+    expect(() =>
+      createCase(
+        baseInput({
+          image: {
+            fileName: "x.exe",
+            mimeType: "application/x-msdownload",
+            sizeBytes: 100,
+            uploadedAt: "2026-09-20T00:00:00.000Z",
+          },
+        }),
+      ),
+    ).toThrow();
+  });
+
   it("rejects an unknown community rather than silently creating an orphaned case", () => {
     expect(() => createCase(baseInput({ communityId: "not-a-real-community" }))).toThrow();
   });
@@ -207,6 +222,22 @@ describe("changeCaseStatus", () => {
     });
     expect(found.moderationActions).toHaveLength(1);
     expect(found.moderationActions[0].action).toBe("status_change");
+  });
+
+  it("history is append-only across multiple changes — earlier entries are never rewritten", () => {
+    const created = createCase(baseInput());
+    changeCaseStatus(created.publicCaseNumber, "under_review", "admin");
+    changeCaseStatus(created.publicCaseNumber, "in_discussion", "admin");
+    changeCaseStatus(created.publicCaseNumber, "closed", "admin");
+    const found = getCaseByCaseNumber(created.publicCaseNumber)!;
+    expect(found.statusHistory.map((e) => e.status)).toEqual([
+      "received",
+      "under_review",
+      "in_discussion",
+      "closed",
+    ]);
+    expect(found.statusHistory[0].actorType).toBe("system");
+    expect(found.moderationActions).toHaveLength(3);
   });
 
   it("returns false for a case number that doesn't exist", () => {

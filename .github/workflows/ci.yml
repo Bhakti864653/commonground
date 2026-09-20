@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # A fresh checkout has no `.next/types` yet -- `next-env.d.ts` imports those, so a
+      # standalone `tsc` fails on a truly clean install even though it passes on a machine
+      # that's already run `next dev`/`build` once (see DEVLOG.md, and Concord's own DEVLOG
+      # for the identical lesson).
+      - run: npx next typegen
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build

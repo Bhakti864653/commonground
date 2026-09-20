@@ -1,6 +1,6 @@
 import { CaseCard } from "./CaseCard";
 import type { Language } from "@/lib/i18n/dictionary";
-import type { Case } from "@/lib/schema/report";
+import type { PublicCase } from "@/lib/schema/report";
 import type { CommunityConfig } from "@/lib/schema/community";
 
 export function CaseList({
@@ -9,7 +9,7 @@ export function CaseList({
   language,
   emptyMessage,
 }: {
-  cases: Case[];
+  cases: PublicCase[];
   community: CommunityConfig;
   language: Language;
   emptyMessage: string;

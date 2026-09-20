@@ -6,11 +6,11 @@ import { OrbitControls } from "@react-three/drei";
 import { areaPosition, caseOffset } from "@/lib/pulse/layout";
 import { markerColorForCase } from "@/lib/pulse/marker-color";
 import type { AreaConfig } from "@/lib/schema/community";
-import type { Case } from "@/lib/schema/report";
+import type { PublicCase } from "@/lib/schema/report";
 
-type Marker = { caseItem: Case; position: [number, number, number]; color: string };
+type Marker = { caseItem: PublicCase; position: [number, number, number]; color: string };
 
-function buildMarkers(cases: Case[], areas: AreaConfig[]): Marker[] {
+function buildMarkers(cases: PublicCase[], areas: AreaConfig[]): Marker[] {
   const areaIndexById = new Map(areas.map((a, i) => [a.id, i]));
   return cases.map((caseItem) => {
     const areaIndex = areaIndexById.get(caseItem.approximateArea.areaId ?? "") ?? areas.length;
@@ -33,7 +33,7 @@ function AreaZone({ position }: { position: [number, number, number] }) {
   );
 }
 
-function CaseMarker({ marker, onSelect }: { marker: Marker; onSelect: (c: Case) => void }) {
+function CaseMarker({ marker, onSelect }: { marker: Marker; onSelect: (c: PublicCase) => void }) {
   return (
     <mesh
       position={marker.position}
@@ -67,9 +67,9 @@ export function CommunityPulseScene({
   areas,
   onSelect,
 }: {
-  cases: Case[];
+  cases: PublicCase[];
   areas: AreaConfig[];
-  onSelect: (c: Case) => void;
+  onSelect: (c: PublicCase) => void;
 }) {
   const markers = useMemo(() => buildMarkers(cases, areas), [cases, areas]);
   const zonePositions = useMemo(

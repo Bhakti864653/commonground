@@ -6,7 +6,7 @@ import { useReducedMotion, useWebGLSupport } from "./hooks";
 import { PulseCaseDrawer } from "./PulseCaseDrawer";
 import { CaseList } from "@/components/dashboard/CaseList";
 import { UI_STRINGS, type Language } from "@/lib/i18n/dictionary";
-import type { Case } from "@/lib/schema/report";
+import type { PublicCase } from "@/lib/schema/report";
 import type { CommunityConfig } from "@/lib/schema/community";
 
 // Lazy-loaded so the three.js chunk never ships to a page that doesn't render this view
@@ -23,7 +23,7 @@ export function CommunityPulse({
   emptyMessage,
   onViewAsList,
 }: {
-  cases: Case[];
+  cases: PublicCase[];
   community: CommunityConfig;
   language: Language;
   emptyMessage: string;
@@ -31,7 +31,7 @@ export function CommunityPulse({
 }) {
   const webglSupported = useWebGLSupport();
   const reducedMotion = useReducedMotion();
-  const [selected, setSelected] = useState<Case | null>(null);
+  const [selected, setSelected] = useState<PublicCase | null>(null);
   const t = UI_STRINGS.pulse;
 
   const canRender3D = webglSupported && !reducedMotion;

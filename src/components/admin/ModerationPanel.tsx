@@ -147,6 +147,7 @@ export function ModerationPanel({
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <select
             id="status-select"
+            aria-label="New status"
             defaultValue={caseData.status}
             className="rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
           >
@@ -159,6 +160,7 @@ export function ModerationPanel({
           <input
             value={statusNote}
             onChange={(e) => setStatusNote(e.target.value)}
+            aria-label="Note shown in the resident's status history"
             placeholder="Note shown in the resident's status history (optional)"
             className="min-w-[16rem] flex-1 rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
           />
@@ -214,6 +216,7 @@ export function ModerationPanel({
           <input
             value={duplicateOf}
             onChange={(e) => setDuplicateOf(e.target.value)}
+            aria-label="Original case number this is a duplicate of"
             placeholder="Original case number, e.g. SV-2026-0001"
             className="flex-1 rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
           />
@@ -296,6 +299,7 @@ export function ModerationPanel({
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
+            aria-label="Add a private note"
             placeholder="Add a private note (never shown publicly)"
             className="flex-1 rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
           />
