@@ -83,6 +83,103 @@ export const UI_STRINGS = {
       en: "CommonGround is not an emergency service and does not replace local emergency services. It never guarantees a problem will be solved — it makes the process clearer, safer, more organized, and more accountable.",
     },
   },
+  reportFlow: {
+    typeStep: {
+      heading: { es: "¿Qué quieres hacer?", en: "What would you like to do?" },
+      report: {
+        title: { es: "Reportar un problema", en: "Report a problem" },
+        body: {
+          es: "Cuéntanos sobre algo que no funciona bien en tu comunidad.",
+          en: "Tell us about something that isn't working well in your community.",
+        },
+      },
+      proposal: {
+        title: { es: "Proponer una solución", en: "Propose a solution" },
+        body: {
+          es: "Comparte una idea constructiva para tu comunidad.",
+          en: "Share a constructive idea for your community.",
+        },
+      },
+    },
+    categoryStep: {
+      heading: {
+        es: "¿Qué categoría describe mejor esto?",
+        en: "Which category best describes this?",
+      },
+    },
+    descriptionStep: {
+      heading: { es: "Cuéntanos más", en: "Tell us more" },
+      descriptionLabel: { es: "Descripción", en: "Description" },
+      descriptionPlaceholder: {
+        es: "Describe qué pasó, cuándo lo notaste y cualquier otro detalle que ayude a entenderlo. Puedes incluir información adicional que consideres útil.",
+        en: "Describe what happened, when you noticed it, and any other detail that helps explain it. Feel free to include any other supporting information.",
+      },
+      photoLabel: { es: "Foto (opcional)", en: "Photo (optional)" },
+      photoWarning: {
+        es: "Las fotos pueden contener información personal (por ejemplo, matrículas o rostros). Solo guardamos el nombre y tipo de archivo — la imagen en sí no se sube ni se almacena en este prototipo.",
+        en: "Photos may contain personal information (e.g. license plates or faces). We only keep the file name and type — the image itself is never uploaded or stored in this prototype.",
+      },
+      photoRemove: { es: "Quitar foto", en: "Remove photo" },
+      voiceNoteLabel: { es: "Nota de voz", en: "Voice note" },
+    },
+    areaStep: {
+      heading: {
+        es: "¿En qué área aproximada ocurrió esto?",
+        en: "What approximate area did this happen in?",
+      },
+      subheading: {
+        es: "Nunca pedimos tu dirección exacta ni tu ubicación precisa.",
+        en: "We never ask for your exact address or precise location.",
+      },
+      preferNotToSay: { es: "Prefiero no decirlo", en: "Prefer not to say" },
+    },
+    reviewStep: {
+      heading: { es: "Revisa antes de enviar", en: "Review before you submit" },
+      publicHeading: { es: "Esto será público", en: "This will be public" },
+      privateHeading: { es: "Esto se mantiene privado", en: "This stays private" },
+      privateBody: {
+        es: "No se muestra tu nombre, teléfono ni ubicación exacta. Solo se guarda tu consentimiento y, si adjuntaste una foto, su nombre y tipo de archivo (nunca la imagen misma).",
+        en: "Your name, phone number, and exact location are never shown. Only your consent and, if you attached a photo, its file name and type (never the image itself) are kept.",
+      },
+      consentLabel: {
+        es: "He leído y acepto lo siguiente:",
+        en: "I have read and agree to the following:",
+      },
+      submit: { es: "Enviar", en: "Submit" },
+      submitting: { es: "Enviando...", en: "Submitting..." },
+      genericError: {
+        es: "No se pudo enviar. Por favor intenta de nuevo.",
+        en: "Something went wrong submitting this. Please try again.",
+      },
+    },
+    nav: {
+      back: { es: "Atrás", en: "Back" },
+      continue: { es: "Continuar", en: "Continue" },
+    },
+  },
+  caseDetail: {
+    heading: { es: "Caso", en: "Case" },
+    statusHeading: { es: "Estado actual", en: "Current status" },
+    submittedOn: { es: "Enviado el", en: "Submitted on" },
+    notFoundHeading: { es: "No encontramos ese caso", en: "We couldn't find that case" },
+    notFoundBody: {
+      es: "Verifica el número de caso e intenta de nuevo.",
+      en: "Double-check the case number and try again.",
+    },
+    confirmationBanner: {
+      es: "Guarda este número de caso — es la única forma de encontrar este reporte más adelante.",
+      en: "Save this case number — it's the only way to find this report again later.",
+    },
+    noGuaranteeNote: {
+      es: "CommonGround no garantiza que este caso será resuelto. Este número te permite seguir su estado con transparencia.",
+      en: "CommonGround does not guarantee this case will be resolved. This number lets you follow its status transparently.",
+    },
+  },
+  caseLookup: {
+    heading: { es: "Seguir el estado de un caso", en: "Track a case's status" },
+    placeholder: { es: "Número de caso, ej. SV-2026-0001", en: "Case number, e.g. SV-2026-0001" },
+    submit: { es: "Buscar", en: "Look up" },
+  },
   howItWorks: {
     heading: { es: "Cómo funciona CommonGround", en: "How CommonGround works" },
     intro: {

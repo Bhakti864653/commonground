@@ -6,6 +6,7 @@ import { useCommunity } from "@/lib/community/context";
 import { useLanguage } from "@/lib/i18n/context";
 import { UI_STRINGS } from "@/lib/i18n/dictionary";
 import { getCategoryIcon } from "@/components/icons/category-icon-map";
+import { CaseLookupForm } from "@/components/case/CaseLookupForm";
 
 export default function Home() {
   const { community } = useCommunity();
@@ -14,9 +15,8 @@ export default function Home() {
   const isFictional = community.status === "demo";
 
   const actionCards = [
-    { ...t.actions.report, href: null },
-    { ...t.actions.propose, href: null },
-    { ...t.actions.track, href: null },
+    { ...t.actions.report, href: "/report/new?type=report" },
+    { ...t.actions.propose, href: "/report/new?type=proposal" },
     { ...t.actions.learn, href: "/how-it-works" },
   ];
 
@@ -95,6 +95,11 @@ export default function Home() {
               </div>
             );
           })}
+          <div className="flex h-full flex-col gap-1 rounded-lg border border-ink/10 p-4">
+            <p className="font-semibold text-ink">{t.actions.track.title[language]}</p>
+            <p className="text-sm text-slate">{t.actions.track.body[language]}</p>
+            <CaseLookupForm />
+          </div>
         </div>
       </section>
 

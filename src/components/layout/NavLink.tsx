@@ -20,7 +20,8 @@ export function NavLink({
   const pathname = usePathname();
   const { language } = useLanguage();
   const Icon = item.icon;
-  const isActive = item.href !== null && pathname === item.href;
+  // Compare only the path, since some items carry a `?type=` query the pathname never includes.
+  const isActive = item.href !== null && pathname === item.href.split("?")[0];
 
   const content = (
     <>
