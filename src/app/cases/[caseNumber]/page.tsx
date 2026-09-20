@@ -11,7 +11,7 @@ export default async function CasePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { caseNumber } = await params;
-  const { new: isNewParam } = await searchParams;
+  const { new: isNewParam, manage: manageParam } = await searchParams;
 
   const foundCase = getCaseByCaseNumber(caseNumber);
   const community = foundCase ? getCommunityById(foundCase.communityId) : undefined;
@@ -21,12 +21,22 @@ export default async function CasePage({
     return <CaseNotFound caseNumber={caseNumber} />;
   }
 
+  // Only ever hand the real management token to the client if the visitor's URL already
+  // proved it — never serialize the stored secret to the client otherwise.
+  const providedToken = typeof manageParam === "string" ? manageParam : undefined;
+  const validManagementToken =
+    providedToken && providedToken === foundCase.managementToken ? providedToken : null;
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deliberately omitting the field
+  const { managementToken: _managementToken, ...publicCase } = foundCase;
+
   return (
     <CaseView
-      caseData={foundCase}
+      caseData={publicCase}
       category={category}
       communityDisplayName={community.displayName}
       isNew={isNewParam === "1"}
+      managementToken={validManagementToken}
     />
   );
 }

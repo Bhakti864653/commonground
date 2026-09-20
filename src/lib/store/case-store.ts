@@ -74,6 +74,8 @@ export function createCase(input: NewCaseInput, now: () => Date = () => new Date
     image: input.image,
     consent: input.consent,
     adminNotes: [],
+    inaccuracyFlags: [],
+    managementToken: crypto.randomUUID(),
   };
 
   // Nothing bypasses schema validation on write (ARCHITECTURE.md) — this both double-checks
@@ -83,12 +85,53 @@ export function createCase(input: NewCaseInput, now: () => Date = () => new Date
   return validated;
 }
 
+/** A soft-deleted case behaves as not-found on the public side — "deleted" means gone. */
 export function getCaseByCaseNumber(publicCaseNumber: string): Case | undefined {
-  return getStore().cases.find((c) => c.publicCaseNumber === publicCaseNumber);
+  return getStore().cases.find((c) => c.publicCaseNumber === publicCaseNumber && !c.deletedAt);
 }
 
 export function listCasesForCommunity(communityId: string): Case[] {
-  return getStore().cases.filter((c) => c.communityId === communityId);
+  return getStore()
+    .cases.filter((c) => c.communityId === communityId && !c.deletedAt)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+/**
+ * Soft-delete (never a hard removal, matching the schema's pre-existing `deletedAt` field) —
+ * requires the exact management token handed to the submitter at creation, since this
+ * prototype has no accounts to check real ownership against. Returns false, rather than
+ * throwing, for a wrong token or an already-deleted/nonexistent case, so the caller can show a
+ * generic failure without distinguishing "wrong token" from "already gone" (avoids confirming
+ * to a guesser which case numbers exist).
+ */
+export function deleteCase(
+  publicCaseNumber: string,
+  managementToken: string,
+  now: () => Date = () => new Date(),
+): boolean {
+  const store = getStore();
+  const found = store.cases.find(
+    (c) => c.publicCaseNumber === publicCaseNumber && !c.deletedAt,
+  );
+  if (!found || found.managementToken !== managementToken) return false;
+  found.deletedAt = now().toISOString();
+  return true;
+}
+
+/** Anyone can flag a case as inaccurate (spec MVP goal #11) — no token required. */
+export function flagInaccuracy(
+  publicCaseNumber: string,
+  note: string | undefined,
+  now: () => Date = () => new Date(),
+): boolean {
+  const found = getCaseByCaseNumber(publicCaseNumber);
+  if (!found) return false;
+  found.inaccuracyFlags.push({
+    id: crypto.randomUUID(),
+    note: note?.trim() || undefined,
+    occurredAt: now().toISOString(),
+  });
+  return true;
 }
 
 /** Test-only: the store is a `globalThis` singleton, so tests need a way back to empty. */

@@ -1,39 +1,58 @@
 "use client";
 
+import { useState } from "react";
 import { CheckCircle2, MapPin } from "lucide-react";
 import { renderCategoryIcon } from "@/components/icons/category-icon-map";
 import { useLanguage } from "@/lib/i18n/context";
 import { UI_STRINGS } from "@/lib/i18n/dictionary";
 import { formatApproximateAreaLabel } from "@/lib/privacy/approximate-area";
-import { STATUS_LABELS, VERIFICATION_LABELS, type Case } from "@/lib/schema/report";
+import { VERIFICATION_LABELS, type Case } from "@/lib/schema/report";
 import type { CategoryConfig } from "@/lib/schema/community";
+import { ActionTrail } from "./ActionTrail";
+import { StatusHistoryTimeline } from "./StatusHistoryTimeline";
+import { InaccuracyFlagForm } from "./InaccuracyFlagForm";
+import { DeleteSubmission } from "./DeleteSubmission";
 
 export function CaseView({
   caseData,
   category,
   communityDisplayName,
   isNew,
+  managementToken,
 }: {
-  caseData: Case;
+  caseData: Omit<Case, "managementToken">;
   category: CategoryConfig;
   communityDisplayName: string;
   isNew: boolean;
+  managementToken: string | null;
 }) {
   const { language } = useLanguage();
   const t = UI_STRINGS.caseDetail;
-  const statusLabel = STATUS_LABELS[caseData.status][language];
+  const [deleted, setDeleted] = useState(false);
   const verificationLabel = VERIFICATION_LABELS[caseData.verificationState][language];
   const typeLabel =
     caseData.type === "report"
       ? UI_STRINGS.reportFlow.typeStep.report.title[language]
       : UI_STRINGS.reportFlow.typeStep.proposal.title[language];
 
+  if (deleted) {
+    return (
+      <div className="mx-auto flex max-w-2xl flex-col gap-2 px-4 py-10 text-center md:px-8">
+        <CheckCircle2 aria-hidden="true" className="mx-auto h-6 w-6 text-teal" />
+        <p className="text-ink">{t.manage.deletedNotice[language]}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10 md:px-8">
       {isNew && (
-        <div className="flex items-start gap-2 rounded-lg border border-teal/30 bg-mint/50 p-4 text-sm text-ink">
-          <CheckCircle2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-teal" />
-          <p>{t.confirmationBanner[language]}</p>
+        <div className="flex flex-col gap-1 rounded-lg border border-teal/30 bg-mint/50 p-4 text-sm text-ink">
+          <div className="flex items-start gap-2">
+            <CheckCircle2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-teal" />
+            <p>{t.confirmationBanner[language]}</p>
+          </div>
+          {managementToken && <p className="pl-6 text-ink/80">{t.manageBanner[language]}</p>}
         </div>
       )}
 
@@ -63,26 +82,33 @@ export function CaseView({
       </section>
 
       <section className="rounded-lg border border-ink/10 bg-mint/30 p-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-teal">
-          {t.statusHeading[language]}
-        </h2>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {/* Every case is "received" until Phase 4 adds real status transitions — a
-              status->color mapping belongs there, once other statuses can actually occur. */}
-          <span className="rounded-full bg-yellow/50 px-3 py-1 text-sm font-medium text-ink">
-            {statusLabel}
-          </span>
+        <ActionTrail status={caseData.status} language={language} />
+        <div className="mt-2">
           <span className="rounded-full border border-ink/15 px-3 py-1 text-xs font-medium text-slate">
             {verificationLabel}
           </span>
         </div>
-        <p className="mt-2 text-xs text-slate">
+      </section>
+
+      <section className="rounded-lg border border-ink/10 p-4">
+        <StatusHistoryTimeline events={caseData.statusHistory} language={language} />
+        <p className="mt-3 text-xs text-slate">
           {t.submittedOn[language]}{" "}
           {new Date(caseData.createdAt).toLocaleDateString(language === "es" ? "es-PA" : "en-US")}
         </p>
       </section>
 
       <p className="text-xs text-slate">{t.noGuaranteeNote[language]}</p>
+
+      <InaccuracyFlagForm caseNumber={caseData.publicCaseNumber} />
+
+      {managementToken && (
+        <DeleteSubmission
+          caseNumber={caseData.publicCaseNumber}
+          managementToken={managementToken}
+          onDeleted={() => setDeleted(true)}
+        />
+      )}
     </div>
   );
 }

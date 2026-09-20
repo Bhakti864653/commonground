@@ -104,6 +104,19 @@ export const AdminNoteSchema = z.object({
 });
 export type AdminNote = z.infer<typeof AdminNoteSchema>;
 
+/**
+ * A public, anyone-can-submit flag ("report inaccurate information," spec MVP goal #11) — a
+ * distinct type from `AdminNote`/`ModerationAction` since it's submitted by an unauthenticated
+ * viewer, not a moderator. Never shown on the public case view; a moderator's review queue
+ * (Phase 5) is the only consumer.
+ */
+export const InaccuracyFlagSchema = z.object({
+  id: z.string(),
+  note: z.string().optional(),
+  occurredAt: z.string(),
+});
+export type InaccuracyFlag = z.infer<typeof InaccuracyFlagSchema>;
+
 export const ModerationActionSchema = z.object({
   id: z.string(),
   actorId: z.string(),
@@ -146,8 +159,17 @@ const CaseBaseSchema = z.object({
   image: ImageMetadataSchema.optional(),
   consent: UserConsentSchema,
   adminNotes: z.array(AdminNoteSchema).default([]),
+  inaccuracyFlags: z.array(InaccuracyFlagSchema).default([]),
   isDuplicateOf: z.string().optional(),
   deletedAt: z.string().optional(),
+  /**
+   * A random capability token, shown to the submitter exactly once (spec MVP goal #12,
+   * "delete their submission") — never displayed on the public case view. Since this
+   * prototype has no accounts, holding this token is the only proof of ownership; losing it
+   * means the submission can no longer be deleted, the same tradeoff as the public case
+   * number itself being the only way to look a case up again.
+   */
+  managementToken: z.string(),
 });
 
 export const ReportSchema = CaseBaseSchema.extend({

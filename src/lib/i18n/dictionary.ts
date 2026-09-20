@@ -174,6 +174,63 @@ export const UI_STRINGS = {
       es: "CommonGround no garantiza que este caso será resuelto. Este número te permite seguir su estado con transparencia.",
       en: "CommonGround does not guarantee this case will be resolved. This number lets you follow its status transparently.",
     },
+    manageBanner: {
+      es: "También guarda este enlace si quieres poder eliminar tu envío más adelante — es la única forma de hacerlo.",
+      en: "Also save this link if you want to be able to delete your submission later — it's the only way to do so.",
+    },
+    historyHeading: { es: "Historial de estado", en: "Status history" },
+    actionTrailHeading: { es: "Progreso", en: "Progress" },
+    actionTrail: {
+      observed: { es: "Observado", en: "Observed" },
+      organized: { es: "Organizado", en: "Organized" },
+      reviewed: { es: "Revisado", en: "Reviewed" },
+      connected: { es: "Conectado", en: "Connected" },
+      updated: { es: "Actualizado", en: "Updated" },
+    },
+    actorType: {
+      system: { es: "Sistema", en: "System" },
+      moderator: { es: "Moderador", en: "Moderator" },
+      verified_source: { es: "Fuente verificada", en: "Verified source" },
+    },
+    inaccuracy: {
+      heading: { es: "¿Algo aquí es incorrecto?", en: "Something here incorrect?" },
+      body: {
+        es: "Marca este caso para que un moderador lo revise. No se muestra públicamente.",
+        en: "Flag this case for a moderator to review. This is never shown publicly.",
+      },
+      notePlaceholder: { es: "¿Qué parece incorrecto? (opcional)", en: "What looks wrong? (optional)" },
+      submit: { es: "Marcar para revisión", en: "Flag for review" },
+      success: { es: "Gracias, un moderador lo revisará.", en: "Thanks — a moderator will review this." },
+      error: { es: "No se pudo enviar. Intenta de nuevo.", en: "Couldn't submit that. Please try again." },
+    },
+    manage: {
+      heading: { es: "Gestionar este envío", en: "Manage this submission" },
+      deleteButton: { es: "Eliminar mi envío", en: "Delete my submission" },
+      confirmPrompt: {
+        es: "¿Eliminar este envío? Esta acción no se puede deshacer.",
+        en: "Delete this submission? This cannot be undone.",
+      },
+      confirmButton: { es: "Sí, eliminar", en: "Yes, delete" },
+      cancelButton: { es: "Cancelar", en: "Cancel" },
+      deletedNotice: {
+        es: "Este envío fue eliminado.",
+        en: "This submission has been deleted.",
+      },
+      error: { es: "No se pudo eliminar. Intenta de nuevo.", en: "Couldn't delete that. Please try again." },
+    },
+  },
+  activity: {
+    heading: { es: "Actividad", en: "Activity" },
+    subheading: {
+      es: "Reportes y propuestas enviados por la comunidad.",
+      en: "Reports and proposals submitted by the community.",
+    },
+    filterAll: { es: "Todo", en: "All" },
+    empty: {
+      es: "Aún no hay casos para esta comunidad.",
+      en: "No cases yet for this community.",
+    },
+    loading: { es: "Cargando...", en: "Loading..." },
   },
   caseLookup: {
     heading: { es: "Seguir el estado de un caso", en: "Track a case's status" },

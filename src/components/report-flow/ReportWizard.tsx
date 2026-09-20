@@ -70,7 +70,9 @@ export function ReportWizard({ initialType }: { initialType: "report" | "proposa
           ? { ...image, uploadedAt: new Date().toISOString() }
           : undefined,
       });
-      router.push(`/cases/${created.publicCaseNumber}?new=1`);
+      router.push(
+        `/cases/${created.publicCaseNumber}?new=1&manage=${encodeURIComponent(created.managementToken)}`,
+      );
     } catch {
       setError(UI_STRINGS.reportFlow.reviewStep.genericError[language]);
       setSubmitting(false);
