@@ -246,6 +246,20 @@ export const UI_STRINGS = {
     },
     loading: { es: "Cargando...", en: "Loading..." },
   },
+  pulse: {
+    toggleList: { es: "Lista", en: "List" },
+    toggleView: { es: "Pulso comunitario", en: "Community Pulse" },
+    disclaimer: {
+      es: "Pulso comunitario muestra dónde se ha reportado o propuesto actividad. No mide la calidad, el peligro ni la urgencia de un vecindario.",
+      en: "Community Pulse shows where activity has been reported or proposed. It does not measure neighborhood quality, danger, or urgency.",
+    },
+    viewAsList: { es: "Ver como lista", en: "View as list" },
+    unavailable: {
+      es: "La vista 3D no está disponible en este dispositivo o con tu configuración de movimiento reducido — mostrando la lista.",
+      en: "The 3D view isn't available on this device or with your reduced-motion setting — showing the list instead.",
+    },
+    closeDetail: { es: "Cerrar", en: "Close" },
+  },
   caseLookup: {
     heading: { es: "Seguir el estado de un caso", en: "Track a case's status" },
     placeholder: { es: "Número de caso, ej. SV-2026-0001", en: "Case number, e.g. SV-2026-0001" },
