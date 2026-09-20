@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  addAdminNote,
+  changeCaseStatus,
   createCase,
   deleteCase,
   flagInaccuracy,
   getCaseByCaseNumber,
+  listAllCasesForAdmin,
   listCasesForCommunity,
+  markDuplicate,
+  markInaccuracyFlagReviewed,
+  setVerificationState,
   __resetCaseStoreForTests,
   type NewCaseInput,
 } from "@/lib/store/case-store";
@@ -178,5 +184,134 @@ describe("flagInaccuracy", () => {
 
   it("returns false for a case number that doesn't exist", () => {
     expect(flagInaccuracy("SV-2026-9999", undefined)).toBe(false);
+  });
+});
+
+describe("changeCaseStatus", () => {
+  beforeEach(() => {
+    __resetCaseStoreForTests();
+  });
+
+  it("updates status, appends a moderator status event, and a moderation action", () => {
+    const created = createCase(baseInput());
+    expect(changeCaseStatus(created.publicCaseNumber, "under_review", "admin", "Looking into it")).toBe(
+      true,
+    );
+    const found = getCaseByCaseNumber(created.publicCaseNumber)!;
+    expect(found.status).toBe("under_review");
+    expect(found.statusHistory).toHaveLength(2);
+    expect(found.statusHistory[1]).toMatchObject({
+      status: "under_review",
+      actorType: "moderator",
+      note: "Looking into it",
+    });
+    expect(found.moderationActions).toHaveLength(1);
+    expect(found.moderationActions[0].action).toBe("status_change");
+  });
+
+  it("returns false for a case number that doesn't exist", () => {
+    expect(changeCaseStatus("SV-2026-9999", "closed", "admin")).toBe(false);
+  });
+});
+
+describe("setVerificationState", () => {
+  beforeEach(() => {
+    __resetCaseStoreForTests();
+  });
+
+  it("updates verification and records mark_verified", () => {
+    const created = createCase(baseInput());
+    expect(setVerificationState(created.publicCaseNumber, "officially_verified", "admin")).toBe(true);
+    const found = getCaseByCaseNumber(created.publicCaseNumber)!;
+    expect(found.verificationState).toBe("officially_verified");
+    expect(found.moderationActions[0].action).toBe("mark_verified");
+  });
+
+  it("records mark_unverified for a non-verified state", () => {
+    const created = createCase(baseInput());
+    setVerificationState(created.publicCaseNumber, "needs_verification", "admin");
+    const found = getCaseByCaseNumber(created.publicCaseNumber)!;
+    expect(found.moderationActions[0].action).toBe("mark_unverified");
+  });
+});
+
+describe("markDuplicate", () => {
+  beforeEach(() => {
+    __resetCaseStoreForTests();
+  });
+
+  it("sets isDuplicateOf when both cases exist and differ", () => {
+    const original = createCase(baseInput());
+    const duplicate = createCase(baseInput());
+    expect(markDuplicate(duplicate.publicCaseNumber, original.publicCaseNumber, "admin")).toBe(true);
+    expect(getCaseByCaseNumber(duplicate.publicCaseNumber)?.isDuplicateOf).toBe(
+      original.publicCaseNumber,
+    );
+  });
+
+  it("refuses to mark a case as a duplicate of itself", () => {
+    const created = createCase(baseInput());
+    expect(markDuplicate(created.publicCaseNumber, created.publicCaseNumber, "admin")).toBe(false);
+  });
+
+  it("refuses when the original case doesn't exist", () => {
+    const created = createCase(baseInput());
+    expect(markDuplicate(created.publicCaseNumber, "SV-2026-9999", "admin")).toBe(false);
+  });
+});
+
+describe("addAdminNote", () => {
+  beforeEach(() => {
+    __resetCaseStoreForTests();
+  });
+
+  it("adds a private note distinct from public fields", () => {
+    const created = createCase(baseInput());
+    expect(addAdminNote(created.publicCaseNumber, "Checked on site, confirmed", "admin")).toBe(true);
+    const found = getCaseByCaseNumber(created.publicCaseNumber)!;
+    expect(found.adminNotes).toHaveLength(1);
+    expect(found.adminNotes[0].note).toBe("Checked on site, confirmed");
+  });
+
+  it("refuses an empty note", () => {
+    const created = createCase(baseInput());
+    expect(addAdminNote(created.publicCaseNumber, "   ", "admin")).toBe(false);
+  });
+});
+
+describe("markInaccuracyFlagReviewed", () => {
+  beforeEach(() => {
+    __resetCaseStoreForTests();
+  });
+
+  it("marks a flag reviewed without affecting others", () => {
+    const created = createCase(baseInput());
+    flagInaccuracy(created.publicCaseNumber, "first");
+    flagInaccuracy(created.publicCaseNumber, "second");
+    const [first, second] = getCaseByCaseNumber(created.publicCaseNumber)!.inaccuracyFlags;
+    expect(markInaccuracyFlagReviewed(created.publicCaseNumber, first.id)).toBe(true);
+    const found = getCaseByCaseNumber(created.publicCaseNumber)!;
+    expect(found.inaccuracyFlags.find((f) => f.id === first.id)?.reviewedAt).toBeTruthy();
+    expect(found.inaccuracyFlags.find((f) => f.id === second.id)?.reviewedAt).toBeUndefined();
+  });
+});
+
+describe("listAllCasesForAdmin", () => {
+  beforeEach(() => {
+    __resetCaseStoreForTests();
+  });
+
+  it("lists cases across every community, excluding deleted ones", () => {
+    const santiago = createCase(baseInput());
+    const riverbend = createCase(
+      baseInput({
+        communityId: RIVERBEND_DEMO.id,
+        categoryId: RIVERBEND_DEMO.categories[0].id,
+        approximateArea: buildApproximateArea(RIVERBEND_DEMO.areas[0], "en"),
+      }),
+    );
+    deleteCase(santiago.publicCaseNumber, santiago.managementToken);
+    const all = listAllCasesForAdmin();
+    expect(all.map((c) => c.id)).toEqual([riverbend.id]);
   });
 });

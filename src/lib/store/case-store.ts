@@ -1,5 +1,12 @@
 import { formatCaseNumber } from "@/lib/case-number/format-case-number";
-import { CaseSchema, type Case, type ApproximateArea, type UserConsent } from "@/lib/schema/report";
+import {
+  CaseSchema,
+  type Case,
+  type ApproximateArea,
+  type ReportStatus,
+  type UserConsent,
+  type VerificationState,
+} from "@/lib/schema/report";
 import { getCommunityById } from "@/data/communities";
 
 export type NewCaseInput = {
@@ -75,6 +82,7 @@ export function createCase(input: NewCaseInput, now: () => Date = () => new Date
     consent: input.consent,
     adminNotes: [],
     inaccuracyFlags: [],
+    moderationActions: [],
     managementToken: crypto.randomUUID(),
   };
 
@@ -131,6 +139,119 @@ export function flagInaccuracy(
     note: note?.trim() || undefined,
     occurredAt: now().toISOString(),
   });
+  return true;
+}
+
+/** Every community, not just the active one — this is the moderator's own view (Phase 5). */
+export function listAllCasesForAdmin(): Case[] {
+  return getStore()
+    .cases.filter((c) => !c.deletedAt)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+function recordModerationAction(
+  found: Case,
+  action: Case["moderationActions"][number]["action"],
+  actorId: string,
+  detail: string | undefined,
+  now: () => Date,
+): void {
+  found.moderationActions.push({
+    id: crypto.randomUUID(),
+    actorId,
+    action,
+    occurredAt: now().toISOString(),
+    detail,
+  });
+}
+
+/**
+ * Moderator-only (MODERATION.md) — appends a real `ReportStatusEvent` so the resident-facing
+ * ActionTrail/StatusHistoryTimeline (Phase 4) reflect it immediately, plus a `ModerationAction`
+ * for the audit trail (MODERATION.md: "who changed this and when is always answerable").
+ */
+export function changeCaseStatus(
+  publicCaseNumber: string,
+  status: ReportStatus,
+  actorId: string,
+  note?: string,
+  now: () => Date = () => new Date(),
+): boolean {
+  const found = getCaseByCaseNumber(publicCaseNumber);
+  if (!found) return false;
+  const nowIso = now().toISOString();
+  found.status = status;
+  found.statusHistory.push({
+    id: crypto.randomUUID(),
+    status,
+    occurredAt: nowIso,
+    actorType: "moderator",
+    note,
+  });
+  recordModerationAction(found, "status_change", actorId, note ?? status, now);
+  return true;
+}
+
+export function setVerificationState(
+  publicCaseNumber: string,
+  verificationState: VerificationState,
+  actorId: string,
+  now: () => Date = () => new Date(),
+): boolean {
+  const found = getCaseByCaseNumber(publicCaseNumber);
+  if (!found) return false;
+  found.verificationState = verificationState;
+  recordModerationAction(
+    found,
+    verificationState === "officially_verified" ? "mark_verified" : "mark_unverified",
+    actorId,
+    verificationState,
+    now,
+  );
+  return true;
+}
+
+export function markDuplicate(
+  publicCaseNumber: string,
+  duplicateOfCaseNumber: string,
+  actorId: string,
+  now: () => Date = () => new Date(),
+): boolean {
+  const found = getCaseByCaseNumber(publicCaseNumber);
+  const original = getCaseByCaseNumber(duplicateOfCaseNumber);
+  if (!found || !original || found.publicCaseNumber === original.publicCaseNumber) return false;
+  found.isDuplicateOf = duplicateOfCaseNumber;
+  recordModerationAction(found, "mark_duplicate", actorId, duplicateOfCaseNumber, now);
+  return true;
+}
+
+export function addAdminNote(
+  publicCaseNumber: string,
+  note: string,
+  actorId: string,
+  now: () => Date = () => new Date(),
+): boolean {
+  const found = getCaseByCaseNumber(publicCaseNumber);
+  if (!found || !note.trim()) return false;
+  found.adminNotes.push({
+    id: crypto.randomUUID(),
+    authorId: actorId,
+    createdAt: now().toISOString(),
+    note: note.trim(),
+  });
+  recordModerationAction(found, "add_note", actorId, undefined, now);
+  return true;
+}
+
+export function markInaccuracyFlagReviewed(
+  publicCaseNumber: string,
+  flagId: string,
+  now: () => Date = () => new Date(),
+): boolean {
+  const found = getCaseByCaseNumber(publicCaseNumber);
+  const flag = found?.inaccuracyFlags.find((f) => f.id === flagId);
+  if (!flag) return false;
+  flag.reviewedAt = now().toISOString();
   return true;
 }
 

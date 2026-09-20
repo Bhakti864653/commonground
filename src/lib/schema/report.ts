@@ -114,6 +114,8 @@ export const InaccuracyFlagSchema = z.object({
   id: z.string(),
   note: z.string().optional(),
   occurredAt: z.string(),
+  /** Set once a moderator has looked at it (Phase 5) — never cleared by the flag's submitter. */
+  reviewedAt: z.string().optional(),
 });
 export type InaccuracyFlag = z.infer<typeof InaccuracyFlagSchema>;
 
@@ -160,6 +162,7 @@ const CaseBaseSchema = z.object({
   consent: UserConsentSchema,
   adminNotes: z.array(AdminNoteSchema).default([]),
   inaccuracyFlags: z.array(InaccuracyFlagSchema).default([]),
+  moderationActions: z.array(ModerationActionSchema).default([]),
   isDuplicateOf: z.string().optional(),
   deletedAt: z.string().optional(),
   /**
