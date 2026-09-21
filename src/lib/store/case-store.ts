@@ -32,13 +32,215 @@ type CaseStoreState = {
  * reasoning as the well-known "attach the Prisma client to globalThis in dev" pattern. This is
  * the prototype's whole persistence layer (ARCHITECTURE.md: local mock persistence, no real DB
  * yet); a real database is a documented later swap.
+ *
+ * On Vercel this `globalThis` is per serverless invocation, not shared across them — a real
+ * submission made in one request is not guaranteed to still be there for a later one. Rather
+ * than let every cold start present an empty app with the agentic features silently waiting for
+ * data that will never reliably arrive, a fresh store seeds a fixed set of cases (clearly
+ * `sourceType: "demonstration"` / `verificationState: "demonstration_data"`, never presented as
+ * real resident submissions) so duplicate clustering, trend detection, and status auto-draft are
+ * always visibly exercised. Real submissions land on top of these in the same store.
  */
 function getStore(): CaseStoreState {
   const g = globalThis as typeof globalThis & { __commonGroundCaseStore__?: CaseStoreState };
   if (!g.__commonGroundCaseStore__) {
     g.__commonGroundCaseStore__ = { cases: [], sequencesByCommunityYear: {} };
+    seedDemoCases(g.__commonGroundCaseStore__);
   }
   return g.__commonGroundCaseStore__;
+}
+
+function daysAgoIso(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+type DemoCaseSeed = {
+  type: "report" | "proposal";
+  categoryId: string;
+  description: string;
+  areaId: string;
+  areaLabel: string;
+  areaLabelEs: string;
+  daysAgo: number;
+  status: ReportStatus;
+  secondStatus?: ReportStatus;
+};
+
+const DEMO_COMMUNITY_ID = "santiago-veraguas";
+
+const DEMO_CASE_SEEDS: DemoCaseSeed[] = [
+  // Near-duplicate pair (road-infrastructure/centro) — exercises duplicate cluster detection.
+  {
+    type: "report",
+    categoryId: "road-infrastructure",
+    areaId: "centro",
+    areaLabel: "Central area",
+    areaLabelEs: "Área central",
+    description:
+      "Hay un poste de luz dañado frente a la escuela primaria del centro, no enciende desde hace una semana.",
+    daysAgo: 9,
+    status: "received",
+  },
+  {
+    type: "report",
+    categoryId: "road-infrastructure",
+    areaId: "centro",
+    areaLabel: "Central area",
+    areaLabelEs: "Área central",
+    description:
+      "Hay un poste de luz dañado cerca de la escuela primaria del centro, no enciende desde hace varios días.",
+    daysAgo: 6,
+    status: "received",
+  },
+  // Three reports in the same category+area within 30 days — exercises trend detection.
+  {
+    type: "report",
+    categoryId: "flooding-drainage",
+    areaId: "norte",
+    areaLabel: "Northern area",
+    areaLabelEs: "Área norte",
+    description:
+      "La alcantarilla en la calle principal del área norte está bloqueada y el agua se acumula cada vez que llueve.",
+    daysAgo: 14,
+    status: "under_review",
+  },
+  {
+    type: "report",
+    categoryId: "flooding-drainage",
+    areaId: "norte",
+    areaLabel: "Northern area",
+    areaLabelEs: "Área norte",
+    description:
+      "El drenaje de la avenida norte sigue tapado, se forma un charco grande después de cada lluvia.",
+    daysAgo: 8,
+    status: "received",
+  },
+  {
+    type: "report",
+    categoryId: "flooding-drainage",
+    areaId: "norte",
+    areaLabel: "Northern area",
+    areaLabelEs: "Área norte",
+    description:
+      "Inundación recurrente en el área norte por el mismo drenaje bloqueado, ya pasó tres veces este mes.",
+    daysAgo: 2,
+    status: "received",
+  },
+  // A case with a status change already applied — exercises the auto-drafted status explanation.
+  {
+    type: "report",
+    categoryId: "garbage-sanitation",
+    areaId: "sur",
+    areaLabel: "Southern area",
+    areaLabelEs: "Área sur",
+    description: "Acumulación de basura sin recoger en el área sur desde hace dos semanas.",
+    daysAgo: 11,
+    status: "received",
+    secondStatus: "in_progress",
+  },
+  // A proposal, and a closed case — variety for the general admin/case list.
+  {
+    type: "proposal",
+    categoryId: "other",
+    areaId: "este",
+    areaLabel: "Eastern area",
+    areaLabelEs: "Área este",
+    description: "Propongo instalar más luminarias solares en el parque del área este.",
+    daysAgo: 4,
+    status: "under_review",
+  },
+  {
+    type: "report",
+    categoryId: "road-infrastructure",
+    areaId: "oeste",
+    areaLabel: "Western area",
+    areaLabelEs: "Área oeste",
+    description: "Bache grande en la vía principal del área oeste, ya provocó un accidente menor.",
+    daysAgo: 25,
+    status: "closed",
+  },
+];
+
+function seedDemoCases(store: CaseStoreState): void {
+  const year = new Date().getUTCFullYear();
+  for (const seed of DEMO_CASE_SEEDS) {
+    const createdAt = daysAgoIso(seed.daysAgo);
+    const sequence = nextSequence(store, DEMO_COMMUNITY_ID, year);
+    const statusHistory: Case["statusHistory"] = [
+      {
+        id: crypto.randomUUID(),
+        status: "received",
+        occurredAt: createdAt,
+        actorType: "system",
+      },
+    ];
+    let finalStatus: ReportStatus = seed.status;
+    const moderationActions: Case["moderationActions"] = [];
+    if (seed.secondStatus) {
+      const changedAt = daysAgoIso(Math.max(seed.daysAgo - 4, 0));
+      statusHistory.push({
+        id: crypto.randomUUID(),
+        status: seed.secondStatus,
+        occurredAt: changedAt,
+        actorType: "moderator",
+        note: "Cuadrilla de saneamiento notificada; recolección programada.",
+      });
+      moderationActions.push({
+        id: crypto.randomUUID(),
+        actorId: "demo-seed",
+        action: "status_change",
+        occurredAt: changedAt,
+        detail: seed.secondStatus,
+      });
+      finalStatus = seed.secondStatus;
+    } else if (seed.status !== "received") {
+      statusHistory.push({
+        id: crypto.randomUUID(),
+        status: seed.status,
+        occurredAt: daysAgoIso(Math.max(seed.daysAgo - 2, 0)),
+        actorType: "moderator",
+      });
+      moderationActions.push({
+        id: crypto.randomUUID(),
+        actorId: "demo-seed",
+        action: "status_change",
+        occurredAt: daysAgoIso(Math.max(seed.daysAgo - 2, 0)),
+        detail: seed.status,
+      });
+    }
+
+    const candidate: Case = {
+      id: crypto.randomUUID(),
+      type: seed.type,
+      publicCaseNumber: formatCaseNumber(DEMO_COMMUNITY_ID, year, sequence),
+      communityId: DEMO_COMMUNITY_ID,
+      categoryId: seed.categoryId,
+      description: seed.description,
+      approximateArea: {
+        kind: "neighborhood",
+        areaId: seed.areaId,
+        label: seed.areaLabel,
+        labelEs: seed.areaLabelEs,
+      },
+      createdAt,
+      status: finalStatus,
+      statusHistory,
+      sourceType: "demonstration",
+      verificationState: "demonstration_data",
+      consent: {
+        consentVersion: "2026-09-19.v1",
+        consentedAt: createdAt,
+        language: "es",
+      },
+      adminNotes: [],
+      inaccuracyFlags: [],
+      moderationActions,
+      agentSuggestions: [],
+      managementToken: crypto.randomUUID(),
+    } as Case;
+
+    store.cases.push(CaseSchema.parse(candidate));
+  }
 }
 
 function nextSequence(store: CaseStoreState, communityId: string, year: number): number {
