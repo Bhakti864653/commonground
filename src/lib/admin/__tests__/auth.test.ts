@@ -30,4 +30,11 @@ describe("admin auth", () => {
     expect(signAdminToken()).toBeNull();
     expect(verifyAccessCode("anything")).toBe(false);
   });
+
+  it("tolerates a trailing newline/space on either side, from a dashboard paste", () => {
+    process.env.ADMIN_ACCESS_CODE = "test-access-code\n";
+    expect(verifyAccessCode("test-access-code")).toBe(true);
+    expect(verifyAccessCode("test-access-code\n")).toBe(true);
+    expect(verifyAccessCode("test-access-code  ")).toBe(true);
+  });
 });

@@ -11,8 +11,14 @@ import crypto from "crypto";
 export const ADMIN_COOKIE_NAME = "cg_admin";
 const SESSION_MESSAGE = "commonground-admin-session";
 
+/**
+ * Trimmed on read — a value pasted from a chat code block or a dashboard field very easily
+ * picks up a trailing newline/space, which would otherwise silently fail every comparison
+ * here (exact-length check, before timingSafeEqual even runs). Same root cause as the
+ * ANTHROPIC_API_KEY trailing-newline incident documented in Concord's own DEVLOG.
+ */
 function getAccessCode(): string | undefined {
-  return process.env.ADMIN_ACCESS_CODE;
+  return process.env.ADMIN_ACCESS_CODE?.trim();
 }
 
 export function signAdminToken(): string | null {
@@ -31,7 +37,7 @@ function timingSafeEqualStrings(a: string, b: string): boolean {
 export function verifyAccessCode(candidate: string): boolean {
   const code = getAccessCode();
   if (!code) return false;
-  return timingSafeEqualStrings(candidate, code);
+  return timingSafeEqualStrings(candidate.trim(), code);
 }
 
 export async function isAdminAuthenticated(): Promise<boolean> {
