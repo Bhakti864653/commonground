@@ -3,13 +3,27 @@ import { getAdminDuplicateClusters, listCasesForAdmin } from "@/lib/store/admin-
 import { getCommunityById } from "@/data/communities";
 import { STATUS_LABELS, VERIFICATION_LABELS } from "@/lib/schema/report";
 import { DuplicateClusterCard } from "@/components/admin/DuplicateClusterCard";
+import { BriefingPanel } from "@/components/admin/BriefingPanel";
 
 export default async function AdminPage() {
   const [cases, clusters] = await Promise.all([listCasesForAdmin(), getAdminDuplicateClusters()]);
   const caseByNumber = new Map(cases.map((c) => [c.publicCaseNumber, c]));
+  const communityIds = [...new Set(cases.map((c) => c.communityId))];
 
   return (
     <div className="flex flex-col gap-6">
+      {communityIds.length > 0 && (
+        <section className="flex flex-col gap-2">
+          {communityIds.map((id) => (
+            <BriefingPanel
+              key={id}
+              communityId={id}
+              communityDisplayName={getCommunityById(id)?.displayName ?? id}
+            />
+          ))}
+        </section>
+      )}
+
       {clusters.length > 0 && (
         <section className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold text-ink">

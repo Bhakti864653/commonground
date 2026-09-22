@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "eval:guide-safety": "vitest run --config vitest.eval.config.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

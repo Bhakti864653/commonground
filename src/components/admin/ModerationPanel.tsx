@@ -10,7 +10,9 @@ import {
   adminSetVerification,
 } from "@/lib/store/admin-actions";
 import { runCaseAnalysis, reviewAgentSuggestion } from "@/lib/guide/admin-actions";
+import type { AgentTraceStep } from "@/lib/guide/case-analysis";
 import { draftStatusChangeExplanation } from "@/lib/insights/status-explanation";
+import { AnalysisTraceView } from "./AnalysisTraceView";
 import {
   ReportStatusSchema,
   STATUS_LABELS,
@@ -48,10 +50,19 @@ export function ModerationPanel({
   const [duplicateOf, setDuplicateOf] = useState("");
   const [note, setNote] = useState("");
   const [pending, setPending] = useState<string | null>(null);
+  const [analysisTrace, setAnalysisTrace] = useState<AgentTraceStep[] | null>(null);
 
   async function run(key: string, fn: () => Promise<boolean>) {
     setPending(key);
     await fn();
+    setPending(null);
+    router.refresh();
+  }
+
+  async function runAnalysis() {
+    setPending("analyze");
+    const { trace } = await runCaseAnalysis(caseData.publicCaseNumber);
+    setAnalysisTrace(trace);
     setPending(null);
     router.refresh();
   }
@@ -79,15 +90,17 @@ export function ModerationPanel({
           <button
             type="button"
             disabled={pending === "analyze"}
-            onClick={() => run("analyze", () => runCaseAnalysis(caseData.publicCaseNumber))}
+            onClick={runAnalysis}
             className="shrink-0 rounded-md border border-teal/40 px-3 py-1.5 text-sm font-medium text-teal disabled:opacity-50"
           >
             {pending === "analyze" ? "Analyzing..." : "Run analysis"}
           </button>
         </div>
         <p className="mt-1 text-xs text-slate">
-          The Guide only drafts suggestions here — nothing changes until you approve one.
+          Three specialist agents (duplicate, status, verification) run concurrently, then a
+          critique agent reviews their combined output — nothing changes until you approve one.
         </p>
+        {analysisTrace && <AnalysisTraceView trace={analysisTrace} />}
         {caseData.agentSuggestions.length > 0 && (
           <ul className="mt-3 flex flex-col gap-2">
             {caseData.agentSuggestions

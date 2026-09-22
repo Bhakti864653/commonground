@@ -34,10 +34,18 @@ demonstration data.
 - **Admin moderation** — a passphrase-gated local prototype (`/admin`) for status changes,
   verification marking, duplicate marking, private notes, and reviewing the public
   inaccuracy-flag queue. Every action is recorded and attributed.
-- **CommonGround Guide** — an agentic assistant (Groq) with two surfaces: a resident-facing
-  chat that can look up similar cases and explain the process, and an admin case-analysis agent
-  that uses tools to reason about likely duplicates/status/verification and drafts suggestions
-  — a moderator always has to click Approve before anything actually changes.
+- **CommonGround Guide** — an agentic assistant (Groq) with two resident-facing capabilities
+  (look up similar cases/explain the process, and draft-and-confirm a report or proposal
+  conversationally — the resident always reviews and explicitly confirms before anything is
+  created) and one admin capability: case analysis is a small multi-agent system — three
+  independent specialist agents (duplicate/status/verification) run concurrently, then a
+  critique agent reviews their combined output before a moderator ever sees it. A reasoning
+  trace shows exactly what each agent did (including ones that found nothing), and a moderator
+  always has to click Approve before anything actually changes. An on-demand community-briefing
+  agent reasons over the whole case load for patterns/duplicates/stale cases, clearly labeled as
+  AI-generated and on-demand (not a real scheduled job — this is a serverless prototype).
+  Guide safety is covered by a live adversarial eval suite (`npm run eval:guide-safety`), not
+  just unit tests.
 
 ## Stack
 
@@ -60,9 +68,16 @@ flowchart LR
   Guide -->|reasoning| Groq[(Groq API)]
   Moderator -->|passphrase| Admin["/admin (gated)"]
   Admin --> Store
-  Admin --> GuideAnalysis["Guide (case analysis)"]
-  GuideAnalysis -->|drafts suggestions| Store
-  GuideAnalysis -->|reasoning + tools| Groq
+  Admin --> Orchestrator["case-analysis.ts (orchestrator)"]
+  Orchestrator --> DupAgent["duplicate agent"]
+  Orchestrator --> StatusAgent["status agent"]
+  Orchestrator --> VerifyAgent["verification agent"]
+  DupAgent & StatusAgent & VerifyAgent --> Critique["critique agent"]
+  Critique -->|kept suggestions| Store
+  DupAgent -->|reasoning + tools| Groq
+  Critique -->|reasoning| Groq
+  Admin --> Briefing["briefing agent (on-demand)"]
+  Briefing -->|reasoning + tools| Groq
   Admin -->|approve suggestion| Store
 ```
 
@@ -72,9 +87,15 @@ flowchart LR
   reach a public page even by accident, enforced at the type level, not just by convention.
 - `src/app/(app)/` — the resident-facing shell (sidebar/bottom-nav/footer). `src/app/admin/`
   is a sibling of that route group, not nested inside it, so it never inherits that shell.
-- `src/lib/guide/` — the Guide's tools (read-only, public-fields-only), the resident chat, and
-  the bounded admin case-analysis loop. The Guide never mutates a case directly; approving one
-  of its suggestions calls the exact same functions the manual moderation panel buttons do.
+- `src/lib/guide/` — the Guide's tools (read-only, public-fields-only), the resident chat
+  (`chat.ts`, plus `draft-submission.ts` for the draft-and-confirm tool), the multi-agent case
+  analysis (`sub-agents.ts`'s three specialists + `critique.ts`'s reflection pass, orchestrated
+  by `case-analysis.ts`), and the on-demand `briefing.ts`. The Guide never mutates a case
+  directly; approving a suggestion calls the exact same functions the manual moderation panel
+  buttons do, and a drafted chat submission only ever becomes real via the resident's own
+  confirm click, which calls the same `submitCase` path the manual wizard uses.
+  `src/lib/guide/__evals__/` holds the live safety eval suite (run separately from `npm test`,
+  see Commands below).
 - Full behavioral/privacy/moderation rules live in `docs/` (`PRIVACY.md`, `MODERATION.md`,
   `ARCHITECTURE.md`, `DESIGN_SYSTEM.md`, `3D_EXPERIENCE.md`) — read those before changing
   anything safety- or privacy-adjacent.
@@ -98,6 +119,7 @@ npm run build        # production build
 npm run lint         # eslint
 npx tsc --noEmit     # typecheck
 npm test             # vitest, single run
+npm run eval:guide-safety  # live adversarial safety eval against the real Groq API (needs GROQ_API_KEY, costs real calls — not part of `npm test`/CI)
 ```
 
 All four (`build`, `lint`, `tsc --noEmit`, `test`) must be clean before any commit that touches

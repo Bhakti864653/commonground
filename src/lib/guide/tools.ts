@@ -49,7 +49,7 @@ type ToolContext = {
  * `Pick<PublicCase, ...>` still makes it a compile error to ever reference a field that
  * shouldn't reach the model in the first place, same as `PublicCase` does for page rendering.
  */
-function summarizeCase(
+export function summarizeCase(
   c: ReturnType<typeof getCaseByCaseNumber>,
 ): Pick<
   PublicCase,
