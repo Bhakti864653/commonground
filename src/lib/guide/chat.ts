@@ -2,6 +2,7 @@ import type Groq from "groq-sdk";
 import { getGroqClient, GUIDE_MODEL } from "./groq-client";
 import { TOOL_DEFINITIONS, communityContextBlock, executeTool } from "./tools";
 import { detectEmergencyPhrase } from "./emergency";
+import { buildDraftSubmissionTool, parseDraftSubmissionArgs, type GuideDraftSubmission } from "./draft-submission";
 import { getCommunityById } from "@/data/communities";
 import type { Language } from "@/lib/i18n/dictionary";
 
@@ -10,6 +11,14 @@ const MAX_TOOL_STEPS = 3;
 export type GuideChatResult = {
   emergency: boolean;
   answer: string;
+  /** Present only when the model drafted a submission — nothing is created until the resident
+   *  explicitly confirms it client-side (see GuideChat.tsx's DraftReviewCard). */
+  draft?: GuideDraftSubmission;
+};
+
+const DRAFT_READY_MESSAGE = {
+  es: "Preparé un borrador según lo que me contaste. Revísalo abajo antes de enviarlo — no se ha enviado nada todavía.",
+  en: "I've put together a draft based on what you told me. Review it below before sending it — nothing has been submitted yet.",
 };
 
 const EMERGENCY_MESSAGE = {
@@ -33,12 +42,18 @@ ${communityContextBlock(communityId)}
 
 You can: answer questions about how CommonGround's process works, help someone figure out
 which category fits their situation, check whether a similar case already exists (use
-search_similar_cases/get_case_details), and explain what a case's status/verification means.
+search_similar_cases/get_case_details), explain what a case's status/verification means, and —
+once you genuinely have enough from the conversation (type, category, a real description, and
+an area choice or "prefer not to say") — draft a report or proposal with draft_case_submission
+for the resident to review. Ask clarifying questions first if you don't have enough yet; never
+draft from a single vague message.
 
 You must never: invent a phone number, address, official, deadline, or government response;
 claim to be a government employee; promise an issue will be fixed; give a medical or legal
 conclusion; tell someone a dangerous situation is safe; claim you can submit, forward, modify,
-or close a case yourself (you can't — only the resident's own report form or a moderator can).
+or close a case yourself — drafting one is the most you can do, only the resident's own
+explicit confirmation of that draft (or a moderator, separately) actually creates or changes
+anything.
 
 This community currently has no verified official contacts or sources configured yet${
     isDemo ? " (it's a fictional demonstration community)" : ""
@@ -67,6 +82,10 @@ export async function askGuide(
     return { emergency: false, answer: UNAVAILABLE_MESSAGE[language] };
   }
 
+  const community = getCommunityById(communityId);
+  const draftTool = community ? buildDraftSubmissionTool(community) : null;
+  const tools = draftTool ? [...TOOL_DEFINITIONS, draftTool] : TOOL_DEFINITIONS;
+
   const messages: Groq.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: "system", content: systemPrompt(communityId, language) },
     ...history.slice(-6),
@@ -77,7 +96,7 @@ export async function askGuide(
     const completion = await client.chat.completions.create({
       model: GUIDE_MODEL,
       messages,
-      tools: step === MAX_TOOL_STEPS - 1 ? undefined : TOOL_DEFINITIONS,
+      tools: step === MAX_TOOL_STEPS - 1 ? undefined : tools,
       tool_choice: step === MAX_TOOL_STEPS - 1 ? undefined : "auto",
     });
 
@@ -91,6 +110,22 @@ export async function askGuide(
     }
 
     for (const call of toolCalls) {
+      if (call.function.name === "draft_case_submission" && community) {
+        const parsed = parseDraftSubmissionArgs(call.function.arguments, community);
+        if (parsed.ok) {
+          return {
+            emergency: false,
+            answer: responseMessage.content?.trim() || DRAFT_READY_MESSAGE[language],
+            draft: parsed.draft,
+          };
+        }
+        messages.push({
+          role: "tool",
+          tool_call_id: call.id,
+          content: JSON.stringify({ error: parsed.error }),
+        });
+        continue;
+      }
       const result = await executeTool(call.function.name, call.function.arguments, {
         communityId,
       });

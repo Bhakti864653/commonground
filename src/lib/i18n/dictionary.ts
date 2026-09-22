@@ -245,8 +245,17 @@ export const UI_STRINGS = {
     send: { es: "Enviar", en: "Send" },
     thinking: { es: "Pensando...", en: "Thinking..." },
     emptyState: {
-      es: "Pregunta lo que quieras sobre cómo funciona CommonGround.",
-      en: "Ask anything about how CommonGround works.",
+      es: "Pregunta lo que quieras sobre cómo funciona CommonGround. También puedo ayudarte a redactar un reporte o propuesta.",
+      en: "Ask anything about how CommonGround works. I can also help you draft a report or proposal.",
+    },
+    draft: {
+      heading: { es: "Borrador para tu revisión", en: "Draft for your review" },
+      notSubmittedYet: {
+        es: "Nada de esto se ha enviado todavía.",
+        en: "Nothing here has been submitted yet.",
+      },
+      confirm: { es: "Confirmar y enviar", en: "Confirm & submit" },
+      discard: { es: "Descartar borrador", en: "Discard draft" },
     },
   },
   activity: {

@@ -1,21 +1,32 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, Send } from "lucide-react";
 import { useCommunity } from "@/lib/community/context";
 import { useLanguage } from "@/lib/i18n/context";
 import { UI_STRINGS } from "@/lib/i18n/dictionary";
 import { askGuideAction } from "@/lib/guide/actions";
+import type { GuideDraftSubmission } from "@/lib/guide/draft-submission";
+import { buildApproximateArea } from "@/lib/privacy/approximate-area";
+import { buildConsentRecord } from "@/lib/privacy/consent";
+import { submitCase } from "@/lib/store/actions";
+import { DraftReviewCard } from "./DraftReviewCard";
 
 type Turn = { role: "user" | "assistant"; content: string; emergency?: boolean };
 
 export function GuideChat() {
   const { community } = useCommunity();
   const { language } = useLanguage();
+  const router = useRouter();
   const t = UI_STRINGS.guide;
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
+  const [draft, setDraft] = useState<GuideDraftSubmission | null>(null);
+  const [consented, setConsented] = useState(false);
+  const [submittingDraft, setSubmittingDraft] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
 
   async function send() {
     const message = input.trim();
@@ -29,7 +40,43 @@ export function GuideChat() {
       ...prev,
       { role: "assistant", content: result.answer, emergency: result.emergency },
     ]);
+    if (result.draft) {
+      setDraft(result.draft);
+      setConsented(false);
+      setDraftError(null);
+    }
     setPending(false);
+  }
+
+  async function confirmDraft() {
+    if (!draft) return;
+    setSubmittingDraft(true);
+    setDraftError(null);
+    try {
+      const area = draft.areaId ? community.areas.find((a) => a.id === draft.areaId) ?? null : null;
+      const approximateArea = buildApproximateArea(area, language);
+      const consent = buildConsentRecord(community.privacy.consentVersion, language);
+      const created = await submitCase({
+        type: draft.type,
+        communityId: community.id,
+        categoryId: draft.categoryId,
+        description: draft.description,
+        approximateArea,
+        consent,
+      });
+      router.push(
+        `/cases/${created.publicCaseNumber}?new=1&manage=${encodeURIComponent(created.managementToken)}`,
+      );
+    } catch {
+      setDraftError(UI_STRINGS.reportFlow.reviewStep.genericError[language]);
+      setSubmittingDraft(false);
+    }
+  }
+
+  function discardDraft() {
+    setDraft(null);
+    setConsented(false);
+    setDraftError(null);
   }
 
   return (
@@ -61,6 +108,20 @@ export function GuideChat() {
         )}
         {pending && <p className="self-start text-sm text-slate">{t.thinking[language]}</p>}
       </div>
+
+      {draft && (
+        <DraftReviewCard
+          draft={draft}
+          community={community}
+          language={language}
+          consented={consented}
+          onConsentedChange={setConsented}
+          onConfirm={confirmDraft}
+          onDiscard={discardDraft}
+          submitting={submittingDraft}
+          error={draftError}
+        />
+      )}
 
       <form
         onSubmit={(e) => {
