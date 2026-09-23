@@ -50,7 +50,33 @@ describe("analyzeCaseForSuggestions (orchestration, mocked model boundary)", () 
     expect(result.suggestions).toEqual([]);
     expect(result.decisions).toEqual([]);
     expect(result.trace).toHaveLength(4);
-    expect(critiqueSuggestions).toHaveBeenCalledWith(expect.anything(), TARGET_CASE, []);
+    expect(critiqueSuggestions).toHaveBeenCalledWith(expect.anything(), TARGET_CASE, [], expect.anything());
+  });
+
+  it("passes each specialist's real tool calls to critique as evidence", async () => {
+    const duplicateSuggestion = {
+      kind: "duplicate" as const,
+      suggestedValue: OTHER_CASE.publicCaseNumber,
+      reasoning: "same light pole",
+    };
+    const toolCalls = [
+      { name: "search_similar_cases", args: "{}", result: [{ caseNumber: OTHER_CASE.publicCaseNumber }] },
+    ];
+    vi.mocked(runDuplicateAgent).mockResolvedValue({
+      suggestion: duplicateSuggestion,
+      trace: { agent: "duplicate", toolCalls, outcome: "Suggested duplicate." },
+    });
+    vi.mocked(runStatusAgent).mockResolvedValue(noSuggestion("status"));
+    vi.mocked(runVerificationAgent).mockResolvedValue(noSuggestion("verification"));
+    vi.mocked(critiqueSuggestions).mockResolvedValue(emptyCritique());
+
+    await analyzeCaseForSuggestions(TARGET_CASE.publicCaseNumber);
+    expect(critiqueSuggestions).toHaveBeenCalledWith(
+      expect.anything(),
+      TARGET_CASE,
+      [duplicateSuggestion],
+      expect.objectContaining({ duplicate: toolCalls }),
+    );
   });
 
   it("does not crash when one specialist throws — the other two still produce results", async () => {
@@ -91,7 +117,7 @@ describe("analyzeCaseForSuggestions (orchestration, mocked model boundary)", () 
     vi.mocked(critiqueSuggestions).mockResolvedValue(emptyCritique());
 
     const result = await analyzeCaseForSuggestions(TARGET_CASE.publicCaseNumber);
-    expect(critiqueSuggestions).toHaveBeenCalledWith(expect.anything(), TARGET_CASE, []);
+    expect(critiqueSuggestions).toHaveBeenCalledWith(expect.anything(), TARGET_CASE, [], expect.anything());
     expect(result.suggestions).toEqual([]);
     expect(result.decisions[0]).toMatchObject({ finalDecision: "rejected_deterministic" });
   });

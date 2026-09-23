@@ -3,7 +3,7 @@ import { z } from "zod";
 import { GUIDE_MODEL } from "./groq-client";
 import type { Case } from "@/lib/schema/report";
 import type { CaseAnalysisSuggestion } from "./case-analysis";
-import type { AgentTraceStep } from "./sub-agents";
+import type { AgentTraceStep, AgentTraceToolCall } from "./sub-agents";
 
 export type CritiqueDecision = {
   suggestion: CaseAnalysisSuggestion;
@@ -41,6 +41,36 @@ const CRITIQUE_TOOL: Groq.Chat.Completions.ChatCompletionTool = {
   },
 };
 
+/** Each specialist's real tool calls, keyed by the suggestion kind that specialist produces. */
+export type SpecialistEvidence = Partial<Record<CaseAnalysisSuggestion["kind"], AgentTraceToolCall[]>>;
+
+/** Keeps the critique prompt bounded no matter how large a tool result was. */
+const MAX_TOOL_RESULT_CHARS = 1500;
+
+/**
+ * Computed in code, never by a model: a duplicate suggestion is tool-grounded only if the case
+ * number it points to actually appeared in a real tool result the duplicate agent received.
+ * Status/verification specialists have no tools, so the question doesn't apply to them (null).
+ */
+export function isToolGrounded(
+  suggestion: CaseAnalysisSuggestion,
+  toolCalls: AgentTraceToolCall[] = [],
+): boolean | null {
+  if (suggestion.kind !== "duplicate") return null;
+  return toolCalls.some((call) => JSON.stringify(call.result ?? null).includes(suggestion.suggestedValue));
+}
+
+function summarizeToolCalls(toolCalls: AgentTraceToolCall[] = []) {
+  return toolCalls.map((call) => {
+    const result = JSON.stringify(call.result ?? null);
+    return {
+      tool: call.name,
+      args: call.args,
+      result: result.length > MAX_TOOL_RESULT_CHARS ? `${result.slice(0, MAX_TOOL_RESULT_CHARS)}…(truncated)` : result,
+    };
+  });
+}
+
 const CritiqueArgsSchema = z.object({
   verdicts: z.array(
     z.object({
@@ -65,6 +95,13 @@ which can't happen here since each specialist only ever produces one suggestion 
 kind). A tool-grounded duplicate match is real evidence — never prefer an unsupported or vaguely
 reasoned suggestion over one backed by an actual tool result.
 
+Each candidate comes with the real tool calls its specialist made ("toolCalls") and, for
+duplicates, a "toolGrounded" flag the system computed in code (true = the suggested case number
+really appeared in a tool result). Treat both as established fact. Never claim a suggestion lacks
+tool evidence when toolGrounded is true or its toolCalls are non-empty — judge what the evidence
+actually shows instead. An empty toolCalls list is normal for status/verification specialists,
+which have no tools by design; don't hold that against them.
+
 For each candidate, decide keep or discard on reasoning quality alone:
 - A "status" suggestion must be grounded in real evidence in the description, not a guess.
 - A "needs_verification" suggestion's reasoning must quote a specific, checkable claim from the
@@ -85,6 +122,7 @@ export async function critiqueSuggestions(
   client: Groq,
   targetCase: Case,
   raw: CaseAnalysisSuggestion[],
+  evidence: SpecialistEvidence = {},
 ): Promise<{ decisions: CritiqueDecision[]; trace: AgentTraceStep }> {
   if (raw.length === 0) {
     return { decisions: [], trace: { agent: "critique", toolCalls: [], outcome: "No suggestions to critique." } };
@@ -98,7 +136,14 @@ export async function critiqueSuggestions(
         {
           role: "user",
           content: `Case description:\n${targetCase.description}\n\nCandidate suggestions:\n${JSON.stringify(
-            raw.map((s, index) => ({ index, kind: s.kind, suggestedValue: s.suggestedValue, reasoning: s.reasoning })),
+            raw.map((s, index) => ({
+              index,
+              kind: s.kind,
+              suggestedValue: s.suggestedValue,
+              reasoning: s.reasoning,
+              toolCalls: summarizeToolCalls(evidence[s.kind]),
+              toolGrounded: isToolGrounded(s, evidence[s.kind]),
+            })),
           )}`,
         },
       ],

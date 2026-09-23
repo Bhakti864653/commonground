@@ -115,6 +115,13 @@ export async function analyzeCaseForSuggestions(caseNumber: string): Promise<Cas
     client,
     targetCase,
     deterministicallyValid,
+    // Give critique the same evidence the moderator's trace view shows — without it, critique
+    // could only see each suggestion's own prose and had no way to know a tool call happened.
+    {
+      duplicate: duplicate.trace.toolCalls,
+      status: status.trace.toolCalls,
+      verification: verification.trace.toolCalls,
+    },
   );
 
   const kept: CaseAnalysisSuggestion[] = [];

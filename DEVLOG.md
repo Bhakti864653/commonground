@@ -141,3 +141,17 @@ can produce a plausible-sounding but factually wrong justification, even when th
 window contains the evidence that contradicts it. The reasoning-trace UI is what actually
 surfaces this instead of hiding it — a moderator reading both the duplicate agent's real tool
 calls and critique's stated reason side by side can catch the inconsistency themselves.
+
+**Update — root cause found and fixed.** The critique agent wasn't hallucinating the missing
+evidence: `critique.ts` only ever sent it each suggestion's kind, value, and reasoning prose —
+never the specialists' tool calls. From its own point of view there genuinely was "no tool call
+evidence"; the trace UI showed the moderator facts the critic never had. Fix: the orchestrator
+now passes each specialist's real tool calls to critique (results truncated to keep the prompt
+bounded), plus a `toolGrounded` flag computed in code (`isToolGrounded` — true only if the
+suggested case number actually appears in a real tool result), which the prompt tells critique
+to treat as established fact. Critique still makes the keep/discard call itself — this gives it
+the same information a moderator has, rather than overriding its judgment. Live re-test on
+`SV-2026-0002`: critique kept the correct duplicate with reasoning that cites the actual
+`search_similar_cases`/`get_case_details` results, and still rejected an unsupported status
+suggestion in the same run (so it isn't just rubber-stamping). **Lesson:** before calling a
+model's reasoning "wrong," check what was actually in its context window.
