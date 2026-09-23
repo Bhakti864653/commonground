@@ -10,7 +10,7 @@ import {
   adminSetVerification,
 } from "@/lib/store/admin-actions";
 import { runCaseAnalysis, reviewAgentSuggestion } from "@/lib/guide/admin-actions";
-import type { AgentTraceStep } from "@/lib/guide/case-analysis";
+import type { AgentTraceStep, SuggestionDecision } from "@/lib/guide/case-analysis";
 import { draftStatusChangeExplanation } from "@/lib/insights/status-explanation";
 import { AnalysisTraceView } from "./AnalysisTraceView";
 import {
@@ -51,6 +51,8 @@ export function ModerationPanel({
   const [note, setNote] = useState("");
   const [pending, setPending] = useState<string | null>(null);
   const [analysisTrace, setAnalysisTrace] = useState<AgentTraceStep[] | null>(null);
+  const [analysisDecisions, setAnalysisDecisions] = useState<SuggestionDecision[]>([]);
+  const [verifyEvidence, setVerifyEvidence] = useState<{ title: string; url: string } | null>(null);
 
   async function run(key: string, fn: () => Promise<boolean>) {
     setPending(key);
@@ -61,8 +63,9 @@ export function ModerationPanel({
 
   async function runAnalysis() {
     setPending("analyze");
-    const { trace } = await runCaseAnalysis(caseData.publicCaseNumber);
+    const { trace, decisions } = await runCaseAnalysis(caseData.publicCaseNumber);
     setAnalysisTrace(trace);
+    setAnalysisDecisions(decisions);
     setPending(null);
     router.refresh();
   }
@@ -100,7 +103,7 @@ export function ModerationPanel({
           Three specialist agents (duplicate, status, verification) run concurrently, then a
           critique agent reviews their combined output — nothing changes until you approve one.
         </p>
-        {analysisTrace && <AnalysisTraceView trace={analysisTrace} />}
+        {analysisTrace && <AnalysisTraceView trace={analysisTrace} decisions={analysisDecisions} />}
         {caseData.agentSuggestions.length > 0 && (
           <ul className="mt-3 flex flex-col gap-2">
             {caseData.agentSuggestions
@@ -215,13 +218,39 @@ export function ModerationPanel({
           Verification{" "}
           <span className="text-slate">({VERIFICATION_LABELS[caseData.verificationState].en})</span>
         </h2>
+        <p className="mt-1 text-xs text-slate">
+          Specific claims may be verifiable, but they are not verified until checked against an
+          approved external source.
+        </p>
+        {caseData.verificationState === "officially_verified" && caseData.verifiedSource && (
+          <p className="mt-2 text-xs text-ink/70">
+            Verified via{" "}
+            <a
+              href={caseData.verifiedSource.url}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-teal underline"
+            >
+              {caseData.verifiedSource.title}
+            </a>
+            , checked {new Date(caseData.verifiedSource.checkedAt).toLocaleDateString()} by{" "}
+            {caseData.verifiedSource.moderatorActorId}.
+          </p>
+        )}
         <div className="mt-2 flex flex-wrap gap-2">
           {VERIFICATION_OPTIONS.map((v) => (
             <button
               key={v}
               type="button"
               disabled={pending === "verify" || v === caseData.verificationState}
-              onClick={() => run("verify", () => adminSetVerification(caseData.publicCaseNumber, v))}
+              onClick={() => {
+                if (v === "officially_verified") {
+                  setVerifyEvidence({ title: "", url: "" });
+                  return;
+                }
+                setVerifyEvidence(null);
+                run("verify", () => adminSetVerification(caseData.publicCaseNumber, v));
+              }}
               className={`rounded-full px-3 py-1.5 text-sm font-medium disabled:opacity-40 ${
                 v === caseData.verificationState
                   ? "bg-teal text-cream"
@@ -232,6 +261,57 @@ export function ModerationPanel({
             </button>
           ))}
         </div>
+        {verifyEvidence && (
+          <div className="mt-3 flex flex-col gap-2 rounded-md border border-ink/10 bg-cream p-3">
+            <p className="text-xs text-ink/70">
+              A moderator must provide the real external source checked before this case can be
+              marked officially verified — an AI agent is never allowed to set this state itself.
+            </p>
+            <input
+              value={verifyEvidence.title}
+              onChange={(e) => setVerifyEvidence({ ...verifyEvidence, title: e.target.value })}
+              aria-label="Source title"
+              placeholder="Source title (e.g. municipal public-works notice)"
+              className="rounded-md border border-ink/15 bg-white px-2 py-1.5 text-sm text-ink"
+            />
+            <input
+              value={verifyEvidence.url}
+              onChange={(e) => setVerifyEvidence({ ...verifyEvidence, url: e.target.value })}
+              aria-label="Source URL"
+              placeholder="https://..."
+              className="rounded-md border border-ink/15 bg-white px-2 py-1.5 text-sm text-ink"
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setVerifyEvidence(null)}
+                className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={
+                  pending === "verify" || !verifyEvidence.title.trim() || !verifyEvidence.url.trim()
+                }
+                onClick={() =>
+                  run("verify", async () => {
+                    const ok = await adminSetVerification(
+                      caseData.publicCaseNumber,
+                      "officially_verified",
+                      verifyEvidence,
+                    );
+                    if (ok) setVerifyEvidence(null);
+                    return ok;
+                  })
+                }
+                className="rounded-md bg-teal px-3 py-1.5 text-sm font-medium text-cream disabled:opacity-50"
+              >
+                Confirm verified
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Duplicate marking */}

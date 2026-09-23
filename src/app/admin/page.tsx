@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { getAdminDuplicateClusters, listCasesForAdmin } from "@/lib/store/admin-actions";
 import { getCommunityById } from "@/data/communities";
 import { STATUS_LABELS, VERIFICATION_LABELS } from "@/lib/schema/report";
@@ -6,6 +7,12 @@ import { DuplicateClusterCard } from "@/components/admin/DuplicateClusterCard";
 import { BriefingPanel } from "@/components/admin/BriefingPanel";
 
 export default async function AdminPage() {
+  // The layout's own auth check does NOT stop this page from being invoked to produce its
+  // `children` value — Next.js renders a page and the layout it's nested in as one pass, so a
+  // parent's conditional can't skip a child that already ran. Every protected page needs its
+  // own guard, checked before any protected data fetch, not just the layout's UI swap.
+  if (!(await isAdminAuthenticated())) return null;
+
   const [cases, clusters] = await Promise.all([listCasesForAdmin(), getAdminDuplicateClusters()]);
   const caseByNumber = new Map(cases.map((c) => [c.publicCaseNumber, c]));
   const communityIds = [...new Set(cases.map((c) => c.communityId))];

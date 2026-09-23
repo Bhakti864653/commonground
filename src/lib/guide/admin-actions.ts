@@ -1,7 +1,7 @@
 "use server";
 
 import { requireAdmin } from "@/lib/admin/auth";
-import { analyzeCaseForSuggestions, type AgentTraceStep } from "./case-analysis";
+import { analyzeCaseForSuggestions, type AgentTraceStep, type SuggestionDecision } from "./case-analysis";
 import { generateCommunityBriefing, type CommunityBriefing } from "./briefing";
 import {
   addAgentSuggestions,
@@ -17,11 +17,11 @@ const ACTOR_ID = "guide-agent";
 
 export async function runCaseAnalysis(
   caseNumber: string,
-): Promise<{ ok: boolean; trace: AgentTraceStep[] }> {
+): Promise<{ ok: boolean; trace: AgentTraceStep[]; decisions: SuggestionDecision[] }> {
   await requireAdmin();
-  const { suggestions, trace } = await analyzeCaseForSuggestions(caseNumber);
+  const { suggestions, trace, decisions } = await analyzeCaseForSuggestions(caseNumber);
   const ok = suggestions.length === 0 ? true : addAgentSuggestions(caseNumber, suggestions);
-  return { ok, trace };
+  return { ok, trace, decisions };
 }
 
 export async function generateBriefingAction(communityId: string): Promise<CommunityBriefing | null> {

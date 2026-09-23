@@ -2,7 +2,7 @@ import type Groq from "groq-sdk";
 import { z } from "zod";
 import { GUIDE_MODEL } from "./groq-client";
 import { TOOL_DEFINITIONS, communityContextBlock, executeTool } from "./tools";
-import { ReportStatusSchema, type Case } from "@/lib/schema/report";
+import { ReportStatusSchema, type Case, type VerificationState } from "@/lib/schema/report";
 import type { CaseAnalysisSuggestion } from "./case-analysis";
 
 export type AgentTraceToolCall = { name: string; args: string; result: unknown };
@@ -231,7 +231,21 @@ than guessing. You must finish by calling record_status_suggestion exactly once.
   };
 }
 
-const VERIFICATION_OR_NONE = ["officially_verified", "none"] as const;
+/**
+ * "officially_verified" is deliberately not in this enum at all — a claim being checkable is
+ * not the same as it having been checked, and an AI agent has no access to a real external
+ * source, so it structurally cannot recommend that state. "needs_verification" is the strongest
+ * recommendation this agent is allowed to make; only a human moderator with an actual approved
+ * source (title/URL/checked date, see VerifiedSourceSchema) can ever set officially_verified.
+ */
+const VERIFICATION_OR_NONE = ["needs_verification", "none"] as const;
+
+/** States where this agent should never suggest anything — see runVerificationAgent below. */
+const VERIFICATION_NO_CHANGE_STATES: VerificationState[] = [
+  "officially_verified",
+  "demonstration_data",
+  "needs_verification",
+];
 
 const VERIFICATION_RECORD_TOOL: Groq.Chat.Completions.ChatCompletionTool = {
   type: "function",
@@ -244,7 +258,7 @@ const VERIFICATION_RECORD_TOOL: Groq.Chat.Completions.ChatCompletionTool = {
         newVerificationState: { type: "string", enum: [...VERIFICATION_OR_NONE] },
         reasoning: {
           type: "string",
-          description: "Must quote the specific checkable claim from the description, if suggesting officially_verified.",
+          description: "Must quote the specific checkable claim from the description, if suggesting needs_verification.",
         },
       },
       required: ["newVerificationState", "reasoning"],
@@ -264,10 +278,17 @@ export async function runVerificationAgent(
 ): Promise<{ suggestion: CaseAnalysisSuggestion | null; trace: AgentTraceStep }> {
   const systemPrompt = `You are a specialist verification-review agent, one worker in a larger
 moderation system. Your only job: decide whether this case's description contains a specific,
-checkable claim that would justify marking it "officially_verified" (given below — you have
-everything you need, no tools). Never speculate — only suggest officially_verified if your
-reasoning quotes the exact claim from the description. Otherwise record "none". You must finish
-by calling record_verification_suggestion exactly once.`;
+checkable claim that a human moderator should verify against a real external source (given
+below — you have everything you need, no tools).
+
+A claim being checkable is NOT the same as it having been checked. You must NEVER recommend
+"officially_verified" — that tool doesn't even offer it as an option, because you have no access
+to a real external source, and community-submitted text (the resident's own description) is
+never evidence that verifies itself. Never invent an official source, a source URL, a
+verification date, or an organization/government response — you have none of those. The
+strongest recommendation you are allowed to make is "needs_verification". If you have no real
+basis for that, record "none" rather than guessing. You must finish by calling
+record_verification_suggestion exactly once.`;
 
   const { result, toolCalls } = await runFocusedAgent({
     client,
@@ -288,7 +309,11 @@ by calling record_verification_suggestion exactly once.`;
     },
   });
 
-  if (!result || result.newVerificationState === "none" || result.newVerificationState === targetCase.verificationState) {
+  if (
+    !result ||
+    result.newVerificationState === "none" ||
+    VERIFICATION_NO_CHANGE_STATES.includes(targetCase.verificationState)
+  ) {
     return { suggestion: null, trace: { agent: "verification", toolCalls, outcome: "No verification change suggested." } };
   }
   return {

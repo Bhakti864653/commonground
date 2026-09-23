@@ -7,6 +7,7 @@ import {
   type ReportStatus,
   type UserConsent,
   type VerificationState,
+  type VerifiedSource,
 } from "@/lib/schema/report";
 import { getCommunityById } from "@/data/communities";
 import { validateImageMetadata } from "@/lib/privacy/image-validation";
@@ -406,15 +407,24 @@ export function changeCaseStatus(
   return true;
 }
 
+/**
+ * `verifiedSource` is required by the caller (see `src/lib/admin/actions.ts`'s
+ * `adminSetVerification`) whenever `verificationState` is "officially_verified" — this function
+ * itself still guards it too, since it's callable from other code paths (defense in depth, same
+ * discipline as everywhere else in this file).
+ */
 export function setVerificationState(
   publicCaseNumber: string,
   verificationState: VerificationState,
   actorId: string,
+  verifiedSource?: VerifiedSource,
   now: () => Date = () => new Date(),
 ): boolean {
+  if (verificationState === "officially_verified" && !verifiedSource) return false;
   const found = getCaseByCaseNumber(publicCaseNumber);
   if (!found) return false;
   found.verificationState = verificationState;
+  found.verifiedSource = verificationState === "officially_verified" ? verifiedSource : undefined;
   recordModerationAction(
     found,
     verificationState === "officially_verified" ? "mark_verified" : "mark_unverified",

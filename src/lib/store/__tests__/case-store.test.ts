@@ -250,12 +250,29 @@ describe("setVerificationState", () => {
     __resetCaseStoreForTests();
   });
 
-  it("updates verification and records mark_verified", () => {
+  const REAL_SOURCE = {
+    title: "Municipal notice",
+    url: "https://example.gov/notice",
+    checkedAt: new Date().toISOString(),
+    moderatorActorId: "admin",
+  };
+
+  it("updates verification and records mark_verified, given real evidence", () => {
     const created = createCase(baseInput());
-    expect(setVerificationState(created.publicCaseNumber, "officially_verified", "admin")).toBe(true);
+    expect(
+      setVerificationState(created.publicCaseNumber, "officially_verified", "admin", REAL_SOURCE),
+    ).toBe(true);
     const found = getCaseByCaseNumber(created.publicCaseNumber)!;
     expect(found.verificationState).toBe("officially_verified");
+    expect(found.verifiedSource).toEqual(REAL_SOURCE);
     expect(found.moderationActions[0].action).toBe("mark_verified");
+  });
+
+  it("refuses officially_verified with no evidence provided", () => {
+    const created = createCase(baseInput());
+    expect(setVerificationState(created.publicCaseNumber, "officially_verified", "admin")).toBe(false);
+    const found = getCaseByCaseNumber(created.publicCaseNumber)!;
+    expect(found.verificationState).not.toBe("officially_verified");
   });
 
   it("records mark_unverified for a non-verified state", () => {

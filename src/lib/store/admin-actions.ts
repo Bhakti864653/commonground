@@ -10,7 +10,13 @@ import {
   setVerificationState,
 } from "@/lib/store/case-store";
 import { getCaseByCaseNumber } from "@/lib/store/case-store";
-import { toPublicCase, type Case, type ReportStatus, type VerificationState } from "@/lib/schema/report";
+import {
+  toPublicCase,
+  type Case,
+  type ReportStatus,
+  type VerificationState,
+  type VerifiedSource,
+} from "@/lib/schema/report";
 import { findDuplicateClusters, type DuplicateCluster } from "@/lib/insights/duplicate-clusters";
 
 const ACTOR_ID = "admin";
@@ -45,12 +51,29 @@ export async function adminChangeStatus(
   return changeCaseStatus(caseNumber, status, ACTOR_ID, note);
 }
 
+/**
+ * "officially_verified" is not a bare label a moderator can toggle on — it requires providing a
+ * real external source, checked at the moment of marking it (spec: "a moderator must provide or
+ * select approved evidence before manually marking information officially verified"). Every
+ * other verification state needs no evidence and rejects one passed by mistake.
+ */
 export async function adminSetVerification(
   caseNumber: string,
   verificationState: VerificationState,
+  source?: { title: string; url: string },
 ): Promise<boolean> {
   await requireAdmin();
-  return setVerificationState(caseNumber, verificationState, ACTOR_ID);
+  let verifiedSource: VerifiedSource | undefined;
+  if (verificationState === "officially_verified") {
+    if (!source?.title.trim() || !source.url.trim()) return false;
+    verifiedSource = {
+      title: source.title.trim(),
+      url: source.url.trim(),
+      checkedAt: new Date().toISOString(),
+      moderatorActorId: ACTOR_ID,
+    };
+  }
+  return setVerificationState(caseNumber, verificationState, ACTOR_ID, verifiedSource);
 }
 
 export async function adminMarkDuplicate(
