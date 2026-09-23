@@ -103,3 +103,41 @@ both ways: reran with the real prompt (passes), and separately confirmed the eva
 is sensitive to a real regression by deliberately instructing the Guide to draft immediately
 from any vague message — the corresponding eval correctly failed, then passed again once the
 instruction was reverted.
+
+## `/admin` production build was failing since Phase 5, undetected
+
+**Problem:** `npm run build` (and CI) failed prerendering `/admin` with `Error: Admin
+authentication required`, going back to at least the `Fix admin login` commit. `admin/layout.tsx`
+checked auth and rendered `<AdminLogin/>` instead of `{children}` when unauthenticated — but
+that never stopped the nested page from being invoked to *produce* that `children` value in the
+first place. Next.js renders a page and its enclosing layout as one pass; a layout's own
+conditional can't skip a child that already ran and already threw.
+
+**Fix:** `export const dynamic = "force-dynamic"` on the whole `/admin` route tree (stops the
+build from ever attempting to prerender it) plus an explicit auth guard at the top of every
+protected page itself (`admin/page.tsx`, `admin/cases/[caseNumber]/page.tsx`), not just the
+layout. Verified by moving `.env.local` aside and running a real build locally before trusting
+it against CI — a clean way to reproduce a CI-only env-var-absence bug without needing CI itself.
+
+**Lesson:** a parent layout's `if (!authed) return <Fallback/>` is not an access-control
+boundary for the page underneath it — every protected page needs its own guard, checked before
+any protected data fetch, because the framework may invoke it regardless of what the layout
+decides to render instead.
+
+## The critique agent's stated reasoning can be factually wrong even when its final call is defensible
+
+Live-testing the corrected critique agent on the known near-duplicate pair
+(`SV-2026-0001`/`SV-2026-0002`) after removing its false duplicate-vs-verification conflict rule:
+the duplicate specialist correctly called `search_similar_cases` and `get_case_details` and
+found a real match — but critique discarded that suggestion with the stated reason "lacks a
+tool-grounded match... no actual tool call evidence," which is directly contradicted by the
+trace two lines above it in the same UI.
+
+**Not treated as a bug to silently patch** — the deterministic safety boundary
+(`suggestion-validation.ts`) never depended on critique's stated reasoning being accurate, only
+on the suggestion's structure being valid, so this doesn't compromise safety. But it's a real
+critique-quality limitation worth knowing: a model asked to explain *why* it rejected something
+can produce a plausible-sounding but factually wrong justification, even when the same context
+window contains the evidence that contradicts it. The reasoning-trace UI is what actually
+surfaces this instead of hiding it — a moderator reading both the duplicate agent's real tool
+calls and critique's stated reason side by side can catch the inconsistency themselves.
