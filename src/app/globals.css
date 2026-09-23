@@ -13,9 +13,47 @@
   --coral: #d96555;
   --blue: #dceaf3;
   --slate: #65727d;
+  /* Raised surfaces that should read as "a field" rather than the page (text inputs). */
+  --surface: #ffffff;
 
   --background: var(--cream);
   --foreground: var(--ink);
+  color-scheme: light;
+}
+
+/*
+ * Dark theme: the same tokens with dark values, so every component follows automatically.
+ * `cream` stays "the page/on-accent color" and `ink` stays "the text color" — which is why
+ * `bg-teal text-cream` buttons still read correctly (dark text on a lighter teal). Every
+ * pairing used in the app was checked at WCAG AA (4.5:1) or better. Applies when the visitor
+ * picked dark, or hasn't picked and their system prefers dark (see src/lib/theme/theme.ts).
+ */
+:root[data-theme="dark"] {
+  --ink: #e6ecef;
+  --cream: #121a21;
+  --teal: #4db6ac;
+  --mint: #173a36;
+  --yellow: #e0b54a;
+  --coral: #ef8a7a;
+  --blue: #1c3142;
+  --slate: #9aa8b3;
+  --surface: #1a242d;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #e6ecef;
+    --cream: #121a21;
+    --teal: #4db6ac;
+    --mint: #173a36;
+    --yellow: #e0b54a;
+    --coral: #ef8a7a;
+    --blue: #1c3142;
+    --slate: #9aa8b3;
+    --surface: #1a242d;
+    color-scheme: dark;
+  }
 }
 
 @theme inline {
@@ -29,6 +67,7 @@
   --color-coral: var(--coral);
   --color-blue: var(--blue);
   --color-slate: var(--slate);
+  --color-surface: var(--surface);
   --font-sans: var(--font-inter);
   --font-heading: var(--font-lora);
 }

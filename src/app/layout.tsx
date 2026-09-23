@@ -3,6 +3,7 @@ import { Inter, Lora } from "next/font/google";
 import "./globals.css";
 import { CommunityProvider } from "@/lib/community/context";
 import { LanguageProvider } from "@/lib/i18n/context";
+import { THEME_INIT_SCRIPT } from "@/lib/theme/theme";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,7 +30,16 @@ export const metadata: Metadata = {
  */
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${lora.variable} h-full antialiased`}>
+    // suppressHydrationWarning: THEME_INIT_SCRIPT sets data-theme on <html> before React
+    // hydrates, so the server's markup (no attribute) intentionally differs on that one element.
+    <html
+      lang="en"
+      className={`${inter.variable} ${lora.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full">
         <CommunityProvider>
           <LanguageProvider>{children}</LanguageProvider>

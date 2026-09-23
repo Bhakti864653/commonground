@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminLogoutButton } from "./AdminLogoutButton";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 /** "Explicitly labeled as a prototype everywhere it appears" — MODERATION.md. */
 export function AdminShell({ children }: { children: ReactNode }) {
@@ -15,7 +16,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
             Never forwards anything externally. Every action is recorded.
           </p>
         </div>
-        <AdminLogoutButton />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <AdminLogoutButton />
+        </div>
       </header>
       <main className="mx-auto max-w-4xl px-4 py-8">{children}</main>
     </div>

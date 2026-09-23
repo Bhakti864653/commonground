@@ -4,6 +4,7 @@ import { useLanguage } from "@/lib/i18n/context";
 import { Wordmark } from "./Logo";
 import { CommunitySelector } from "./CommunitySelector";
 import { LanguageToggle } from "./LanguageToggle";
+import { ThemeToggle } from "./ThemeToggle";
 import { NavLink } from "./NavLink";
 import { DESKTOP_NAV_ITEMS } from "./nav-items";
 
@@ -19,7 +20,10 @@ export function Sidebar() {
           <NavLink key={item.key} item={item} orientation="vertical" />
         ))}
       </nav>
-      <LanguageToggle />
+      <div className="flex flex-wrap gap-2">
+        <LanguageToggle />
+        <ThemeToggle />
+      </div>
     </aside>
   );
 }

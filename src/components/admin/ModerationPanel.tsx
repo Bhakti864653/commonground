@@ -272,14 +272,14 @@ export function ModerationPanel({
               onChange={(e) => setVerifyEvidence({ ...verifyEvidence, title: e.target.value })}
               aria-label="Source title"
               placeholder="Source title (e.g. municipal public-works notice)"
-              className="rounded-md border border-ink/15 bg-white px-2 py-1.5 text-sm text-ink"
+              className="rounded-md border border-ink/15 bg-surface px-2 py-1.5 text-sm text-ink"
             />
             <input
               value={verifyEvidence.url}
               onChange={(e) => setVerifyEvidence({ ...verifyEvidence, url: e.target.value })}
               aria-label="Source URL"
               placeholder="https://..."
-              className="rounded-md border border-ink/15 bg-white px-2 py-1.5 text-sm text-ink"
+              className="rounded-md border border-ink/15 bg-surface px-2 py-1.5 text-sm text-ink"
             />
             <div className="flex gap-2">
               <button

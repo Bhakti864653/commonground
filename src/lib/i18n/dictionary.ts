@@ -8,6 +8,12 @@ export type Language = "es" | "en";
 export const UI_STRINGS = {
   wordmark: { es: "CommonGround", en: "CommonGround" },
   languageToggle: { es: "English", en: "Español" },
+  // Named for the theme the button switches *to*, same convention as languageToggle.
+  themeToggle: {
+    toDark: { es: "Oscuro", en: "Dark" },
+    toLight: { es: "Claro", en: "Light" },
+    ariaLabel: { es: "Cambiar tema de color", en: "Change color theme" },
+  },
   nav: {
     home: { es: "Inicio", en: "Home" },
     activity: { es: "Actividad", en: "Activity" },

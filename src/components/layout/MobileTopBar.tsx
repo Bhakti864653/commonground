@@ -4,6 +4,7 @@ import { useLanguage } from "@/lib/i18n/context";
 import { Wordmark } from "./Logo";
 import { CommunitySelector } from "./CommunitySelector";
 import { LanguageToggle } from "./LanguageToggle";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function MobileTopBar() {
   const { language } = useLanguage();
@@ -14,6 +15,7 @@ export function MobileTopBar() {
       <div className="flex items-center gap-2">
         <CommunitySelector compact />
         <LanguageToggle className="px-2 py-1.5 text-xs [&>svg]:h-3.5 [&>svg]:w-3.5" />
+        <ThemeToggle className="px-2 py-1.5 text-xs [&>svg]:h-3.5 [&>svg]:w-3.5" />
       </div>
     </header>
   );

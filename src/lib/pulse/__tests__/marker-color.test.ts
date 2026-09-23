@@ -18,4 +18,10 @@ describe("markerColorForCase", () => {
     expect(colors.every((c) => c === "#65727d")).toBe(true);
     expect(colors).not.toContain("#d96555"); // coral — never assigned automatically
   });
+
+  it("uses the dark theme's matching colors when asked, keeping the same meanings", () => {
+    expect(markerColorForCase({ type: "proposal", status: "closed" }, "dark")).toBe("#4db6ac");
+    expect(markerColorForCase({ type: "report", status: "under_review" }, "dark")).toBe("#e0b54a");
+    expect(markerColorForCase({ type: "report", status: "closed" }, "dark")).toBe("#9aa8b3");
+  });
 });
