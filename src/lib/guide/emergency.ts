@@ -10,12 +10,19 @@ const TRIGGER_PHRASES = [
   "fuego",
   "persona herida",
   "ayuda urgente",
+  "fuga de gas",
+  "olor a gas",
+  "huele a gas",
   "i'm drowning",
   "im drowning",
   "immediate danger",
   "fire",
   "person injured",
   "urgent help",
+  "gas leak",
+  "smell gas",
+  "smells like gas",
+  "smell of gas",
 ];
 
 function normalize(text: string): string {

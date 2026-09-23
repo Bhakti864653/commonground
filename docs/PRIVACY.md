@@ -63,8 +63,9 @@ information.
 ### Emergency detection
 
 Trigger phrases (Spanish and English equivalents) include: "me estoy ahogando," "hay peligro
-inmediato," "fuego," "persona herida," "ayuda urgente," and their English equivalents ("I'm
-drowning," "immediate danger," "fire," "person injured," "urgent help"). When detected: show an
+inmediato," "fuego," "persona herida," "ayuda urgente," "fuga de gas," "olor a gas," "huele a
+gas," and their English equivalents ("I'm drowning," "immediate danger," "fire," "person
+injured," "urgent help," "gas leak," "smell gas," "smells like gas," "smell of gas"). When detected: show an
 emergency banner **immediately**, above any normal assistant response (never buried in a longer
 answer), telling the user to contact official emergency services directly. Never provide an
 invented emergency contact — only a verified one, or none.
