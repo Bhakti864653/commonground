@@ -12,6 +12,7 @@ import {
 import { getCaseByCaseNumber } from "@/lib/store/case-store";
 import {
   toPublicCase,
+  VerificationStateSchema,
   VerifiedSourceSchema,
   type Case,
   type ReportStatus,
@@ -62,6 +63,7 @@ export async function adminChangeStatus(
  * caller's TypeScript type or any client-side validation, since this is a server action anyone
  * with a valid admin session can call directly with arbitrary arguments. This is what rejects a
  * `javascript:` URL, a blank/whitespace-only value, or an unreasonably long title/URL.
+ * Every rejection is a plain `false` — no validation or internal error detail reaches the caller.
  */
 export async function adminSetVerification(
   caseNumber: string,
@@ -69,6 +71,9 @@ export async function adminSetVerification(
   source?: { title: string; url: string },
 ): Promise<boolean> {
   await requireAdmin();
+  // The TypeScript type isn't enforced at runtime for a direct server-action call — without
+  // this, an arbitrary string would be stored as the case's verification state.
+  if (!VerificationStateSchema.safeParse(verificationState).success) return false;
   let verifiedSource: VerifiedSource | undefined;
   if (verificationState === "officially_verified") {
     if (!source) return false;

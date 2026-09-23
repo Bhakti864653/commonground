@@ -153,4 +153,87 @@ describe("adminSetVerification requires approved evidence for officially_verifie
     });
     expect(ok).toBe(true);
   });
+
+  it.each([
+    ["data:", "data:text/html,<script>alert(1)</script>"],
+    ["file:", "file:///etc/passwd"],
+    ["ftp:", "ftp://example.gov/notice"],
+    ["vbscript:", "vbscript:msgbox(1)"],
+  ])("rejects an unsupported %s URL scheme", async (_scheme, url) => {
+    const created = makeRealCase();
+    const ok = await adminSetVerification(created.publicCaseNumber, "officially_verified", {
+      title: "Municipal notice",
+      url,
+    });
+    expect(ok).toBe(false);
+    const fetched = await getCaseForAdmin(created.publicCaseNumber);
+    expect(fetched?.verificationState).not.toBe("officially_verified");
+    expect(fetched?.verifiedSource).toBeUndefined();
+  });
+});
+
+/**
+ * A server action is a public endpoint — anyone with an admin session can call it with
+ * arbitrary JSON, bypassing both the UI and TypeScript. These cast past the declared types on
+ * purpose to simulate exactly that.
+ */
+describe("adminSetVerification rejects invalid runtime input from a direct call", () => {
+  type Args = Parameters<typeof adminSetVerification>;
+
+  beforeEach(() => {
+    __resetCaseStoreForTests();
+    vi.mocked(requireAdmin).mockResolvedValue(undefined);
+  });
+
+  it("rejects an unknown verification state instead of storing it", async () => {
+    const created = makeRealCase();
+    const before = (await getCaseForAdmin(created.publicCaseNumber))?.verificationState;
+    const ok = await adminSetVerification(created.publicCaseNumber, "hacked" as Args[1]);
+    expect(ok).toBe(false);
+    const fetched = await getCaseForAdmin(created.publicCaseNumber);
+    expect(fetched?.verificationState).toBe(before);
+    expect(fetched?.moderationActions ?? []).toHaveLength(0);
+  });
+
+  it("rejects a non-string verification state", async () => {
+    const created = makeRealCase();
+    const ok = await adminSetVerification(created.publicCaseNumber, 42 as unknown as Args[1]);
+    expect(ok).toBe(false);
+  });
+
+  it.each([
+    ["a string", "https://example.gov/notice"],
+    ["null", null],
+    ["an array", ["Municipal notice", "https://example.gov/notice"]],
+    ["non-string fields", { title: 123, url: { href: "https://example.gov/notice" } }],
+    ["missing url", { title: "Municipal notice" }],
+  ])("rejects officially_verified when the source is %s", async (_label, source) => {
+    const created = makeRealCase();
+    const ok = await adminSetVerification(
+      created.publicCaseNumber,
+      "officially_verified",
+      source as unknown as Args[2],
+    );
+    expect(ok).toBe(false);
+    const fetched = await getCaseForAdmin(created.publicCaseNumber);
+    expect(fetched?.verificationState).not.toBe("officially_verified");
+  });
+
+  it("returns a plain false (never throws or leaks validation detail) for invalid input", async () => {
+    const created = makeRealCase();
+    await expect(
+      adminSetVerification(created.publicCaseNumber, "officially_verified", {
+        title: "",
+        url: "javascript:alert(1)",
+      }),
+    ).resolves.toBe(false);
+  });
+
+  it("returns false for a case number that doesn't exist", async () => {
+    const ok = await adminSetVerification("SV-2026-9999", "officially_verified", {
+      title: "Municipal notice",
+      url: "https://example.gov/notice",
+    });
+    expect(ok).toBe(false);
+  });
 });
