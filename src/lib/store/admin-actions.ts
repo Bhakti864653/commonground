@@ -12,6 +12,7 @@ import {
 import { getCaseByCaseNumber } from "@/lib/store/case-store";
 import {
   toPublicCase,
+  VerifiedSourceSchema,
   type Case,
   type ReportStatus,
   type VerificationState,
@@ -56,6 +57,11 @@ export async function adminChangeStatus(
  * real external source, checked at the moment of marking it (spec: "a moderator must provide or
  * select approved evidence before manually marking information officially verified"). Every
  * other verification state needs no evidence and rejects one passed by mistake.
+ *
+ * The candidate source is validated with `VerifiedSourceSchema.safeParse` — never trusting the
+ * caller's TypeScript type or any client-side validation, since this is a server action anyone
+ * with a valid admin session can call directly with arbitrary arguments. This is what rejects a
+ * `javascript:` URL, a blank/whitespace-only value, or an unreasonably long title/URL.
  */
 export async function adminSetVerification(
   caseNumber: string,
@@ -65,13 +71,15 @@ export async function adminSetVerification(
   await requireAdmin();
   let verifiedSource: VerifiedSource | undefined;
   if (verificationState === "officially_verified") {
-    if (!source?.title.trim() || !source.url.trim()) return false;
-    verifiedSource = {
-      title: source.title.trim(),
-      url: source.url.trim(),
+    if (!source) return false;
+    const parsed = VerifiedSourceSchema.safeParse({
+      title: source.title,
+      url: source.url,
       checkedAt: new Date().toISOString(),
       moderatorActorId: ACTOR_ID,
-    };
+    });
+    if (!parsed.success) return false;
+    verifiedSource = parsed.data;
   }
   return setVerificationState(caseNumber, verificationState, ACTOR_ID, verifiedSource);
 }

@@ -85,4 +85,72 @@ describe("adminSetVerification requires approved evidence for officially_verifie
     const ok = await adminSetVerification(created.publicCaseNumber, "needs_verification");
     expect(ok).toBe(true);
   });
+
+  it("rejects a javascript: URL rather than storing it as a clickable link", async () => {
+    const created = makeRealCase();
+    const ok = await adminSetVerification(created.publicCaseNumber, "officially_verified", {
+      title: "Fake notice",
+      url: "javascript:alert(document.cookie)",
+    });
+    expect(ok).toBe(false);
+    const fetched = await getCaseForAdmin(created.publicCaseNumber);
+    expect(fetched?.verificationState).not.toBe("officially_verified");
+  });
+
+  it("rejects a malformed URL", async () => {
+    const created = makeRealCase();
+    const ok = await adminSetVerification(created.publicCaseNumber, "officially_verified", {
+      title: "Bad URL",
+      url: "not a url at all",
+    });
+    expect(ok).toBe(false);
+  });
+
+  it("rejects a blank title with an otherwise valid URL", async () => {
+    const created = makeRealCase();
+    const ok = await adminSetVerification(created.publicCaseNumber, "officially_verified", {
+      title: "   ",
+      url: "https://example.gov/notice",
+    });
+    expect(ok).toBe(false);
+  });
+
+  it("rejects an excessively long title", async () => {
+    const created = makeRealCase();
+    const ok = await adminSetVerification(created.publicCaseNumber, "officially_verified", {
+      title: "x".repeat(500),
+      url: "https://example.gov/notice",
+    });
+    expect(ok).toBe(false);
+  });
+
+  it("rejects an excessively long URL", async () => {
+    const created = makeRealCase();
+    const ok = await adminSetVerification(created.publicCaseNumber, "officially_verified", {
+      title: "Municipal notice",
+      url: `https://example.gov/${"x".repeat(3000)}`,
+    });
+    expect(ok).toBe(false);
+  });
+
+  it("accepts a valid https URL and trims surrounding whitespace", async () => {
+    const created = makeRealCase();
+    const ok = await adminSetVerification(created.publicCaseNumber, "officially_verified", {
+      title: "  Municipal notice  ",
+      url: "  https://example.gov/notice  ",
+    });
+    expect(ok).toBe(true);
+    const fetched = await getCaseForAdmin(created.publicCaseNumber);
+    expect(fetched?.verifiedSource?.title).toBe("Municipal notice");
+    expect(fetched?.verifiedSource?.url).toBe("https://example.gov/notice");
+  });
+
+  it("accepts a valid plain http URL too", async () => {
+    const created = makeRealCase();
+    const ok = await adminSetVerification(created.publicCaseNumber, "officially_verified", {
+      title: "Legacy notice board",
+      url: "http://example.gov/notice",
+    });
+    expect(ok).toBe(true);
+  });
 });
