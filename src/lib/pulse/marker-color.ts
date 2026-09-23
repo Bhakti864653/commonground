@@ -11,10 +11,10 @@ import type { Theme } from "@/lib/theme/theme";
  * a neutral tone rather than a guessed one.
  */
 const PULSE_COLORS = {
-  light: { teal: "#167d78", yellow: "#f4c95d", slate: "#65727d" },
-  // Same meanings, the dark theme's token values (globals.css) — the light teal/slate nearly
-  // disappear against the dark ground.
-  dark: { teal: "#4db6ac", yellow: "#e0b54a", slate: "#9aa8b3" },
+  // Proposals use the fresh turquoise of the landscape palette (globals.css); the dark set is
+  // brighter so markers stay visible against the night-time ground.
+  light: { teal: "#1f8f84", yellow: "#f2b92a", slate: "#56665f" },
+  dark: { teal: "#45c9bb", yellow: "#f0c75a", slate: "#9db0a8" },
 } as const;
 
 const UNDER_REVIEW_STATUSES: Case["status"][] = ["received", "under_review", "in_discussion"];

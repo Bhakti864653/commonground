@@ -1,20 +1,27 @@
 import type { Metadata } from "next";
-import { Inter, Lora } from "next/font/google";
+import { Atkinson_Hyperlegible_Next, Young_Serif } from "next/font/google";
 import "./globals.css";
 import { CommunityProvider } from "@/lib/community/context";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { THEME_INIT_SCRIPT } from "@/lib/theme/theme";
 
-const inter = Inter({
-  variable: "--font-inter",
+// Body: designed by the Braille Institute for legibility — the right tool for a civic app read
+// on inexpensive phones, often in bright sun. Display: a sturdy, slightly hand-cut serif with
+// the feel of painted town signage. One weight only, so hierarchy comes from size.
+const body = Atkinson_Hyperlegible_Next({
+  variable: "--font-body",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "700"],
+  // Next has no metrics to size-match a fallback for this family, so say so explicitly and
+  // fall back to the system UI face while it loads.
+  adjustFontFallback: false,
+  fallback: ["system-ui", "sans-serif"],
 });
 
-const lora = Lora({
-  variable: "--font-lora",
+const display = Young_Serif({
+  variable: "--font-display",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -34,7 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     // hydrates, so the server's markup (no attribute) intentionally differs on that one element.
     <html
       lang="en"
-      className={`${inter.variable} ${lora.variable} h-full antialiased`}
+      className={`${body.variable} ${display.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

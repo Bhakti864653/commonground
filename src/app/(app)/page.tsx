@@ -1,115 +1,205 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Info, MapPin } from "lucide-react";
+import { BadgeCheck, Lightbulb, MessageCircleQuestion, PenLine, Search, ShieldCheck, TriangleAlert, Waypoints } from "lucide-react";
 import { useCommunity } from "@/lib/community/context";
 import { useLanguage } from "@/lib/i18n/context";
 import { UI_STRINGS } from "@/lib/i18n/dictionary";
-import { getCategoryIcon } from "@/components/icons/category-icon-map";
+import { EXPERIENCE, fill } from "@/lib/i18n/experience";
+import { listCasesForActivity } from "@/lib/store/actions";
+import type { PublicCase } from "@/lib/schema/report";
 import { CaseLookupForm } from "@/components/case/CaseLookupForm";
+import { CommunityLandscape } from "@/components/landscape/CommunityLandscape";
+import { CaseSelectionPanel } from "@/components/landscape/CaseSelectionPanel";
+import { LandscapeLegend } from "@/components/landscape/LandscapeLegend";
+import { CivicJourney } from "@/components/journey/CivicJourney";
+import { CaseRow } from "@/components/journey/CaseRow";
 
 export default function Home() {
   const { community } = useCommunity();
   const { language } = useLanguage();
-  const t = UI_STRINGS.home;
+  const t = EXPERIENCE.home;
   const isFictional = community.status === "demo";
+  const [cases, setCases] = useState<PublicCase[]>([]);
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
+  const [selectedCase, setSelectedCase] = useState<PublicCase | null>(null);
 
-  const actionCards = [
-    { ...t.actions.report, href: "/report/new?type=report" },
-    { ...t.actions.propose, href: "/report/new?type=proposal" },
-    { ...t.actions.learn, href: "/how-it-works" },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+    listCasesForActivity(community.id).then((result) => {
+      if (!cancelled) {
+        setCases(result);
+        setSelectedCase(null);
+        setSelectedAreaId(null);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [community.id]);
+
+  const recent = [...cases].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-10 px-4 py-10 md:px-8">
-      {/* 1. What CommonGround is */}
-      <section className="flex flex-col gap-3">
-        <h1 className="text-3xl font-semibold text-ink md:text-4xl">{t.tagline[language]}</h1>
-        <p className="text-base leading-relaxed text-slate">{t.intro[language]}</p>
-      </section>
-
-      {/* 2. Which community is active */}
-      <section className="rounded-lg border border-ink/10 bg-mint/40 p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-teal">
-          {t.activeCommunityHeading[language]}
-        </h2>
-        <div className="mt-2 flex items-baseline justify-between gap-3">
-          <p className="text-xl font-semibold text-ink">{community.displayName}</p>
-          {isFictional && (
-            <span className="shrink-0 rounded-full bg-coral/15 px-2.5 py-0.5 text-xs font-medium text-coral">
-              {UI_STRINGS.fictionalBadge[language]}
-            </span>
-          )}
+    <div className="flex flex-col">
+      {/* Hero: the promise on the left, the living town on the right. */}
+      <section className="mx-auto grid w-full max-w-7xl gap-8 px-4 pb-10 pt-8 md:px-8 lg:grid-cols-12 lg:gap-10 lg:pb-16 lg:pt-14">
+        <div className="flex flex-col justify-center gap-6 lg:col-span-5">
+          <p className="flex flex-wrap items-center gap-2 text-sm text-slate">
+            <span className="inline-block h-2 w-2 rounded-full bg-turquoise" aria-hidden="true" />
+            {fill(t.pilotLine[language], { community: community.displayName })}
+            {isFictional && (
+              <span className="rounded-full border border-coral/40 px-2 py-0.5 text-xs font-medium text-coral">
+                {t.fictional[language]}
+              </span>
+            )}
+          </p>
+          <h1 className="text-[2.6rem] leading-[1.05] text-ink sm:text-5xl lg:text-[3.6rem]">{t.title[language]}</h1>
+          <p className="max-w-[34rem] text-lg leading-relaxed text-ink/80">{t.intro[language]}</p>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/report/new?type=report"
+              className="inline-flex items-center gap-2 rounded-full bg-teal px-5 py-3 font-medium text-cream hover:bg-teal/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+            >
+              <PenLine aria-hidden="true" className="h-4.5 w-4.5" />
+              {t.reportCta[language]}
+            </Link>
+            <Link
+              href="/report/new?type=proposal"
+              className="inline-flex items-center gap-2 rounded-full border border-teal/40 px-5 py-3 font-medium text-teal hover:bg-mint focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+            >
+              <Lightbulb aria-hidden="true" className="h-4.5 w-4.5" />
+              {t.proposeCta[language]}
+            </Link>
+          </div>
         </div>
-        <p className="mt-1 flex items-center gap-1.5 text-sm text-slate">
-          <MapPin aria-hidden="true" className="h-4 w-4" />
-          {community.country}
-          {community.region ? `, ${community.region}` : ""}
-        </p>
-        <ul className="mt-4 flex flex-wrap gap-2">
-          {community.categories.map((category) => {
-            const Icon = getCategoryIcon(category.icon);
-            return (
-              <li
-                key={category.id}
-                className="flex items-center gap-1.5 rounded-full border border-ink/10 bg-cream px-3 py-1 text-xs font-medium text-ink"
-              >
-                <Icon aria-hidden="true" className="h-3.5 w-3.5 text-teal" />
-                {language === "es" ? category.labelEs : category.label}
-              </li>
-            );
-          })}
-        </ul>
-        <p className="mt-4 text-sm italic text-slate">{t.pilotQuestion[language]}</p>
+
+        <div className="flex flex-col gap-3 lg:col-span-7">
+          <div className="relative">
+            <CommunityLandscape
+              community={community}
+              cases={cases}
+              language={language}
+              selectedAreaId={selectedAreaId}
+              selectedCaseId={selectedCase?.id ?? null}
+              onSelectArea={(id) => {
+                setSelectedAreaId(id);
+                setSelectedCase(null);
+              }}
+              onSelectCase={setSelectedCase}
+              className="h-[22rem] rounded-[2rem] border border-ink/10 bg-cream sm:h-[28rem] lg:h-[34rem]"
+            />
+            {selectedCase && (
+              // Above the scene's HTML area labels (their z-index tops out at 20).
+              <div className="pointer-events-none absolute bottom-4 left-4 z-[25] hidden w-[22rem] lg:block">
+                <div className="pointer-events-auto">
+                  <CaseSelectionPanel caseItem={selectedCase} community={community} language={language} onClose={() => setSelectedCase(null)} />
+                </div>
+              </div>
+            )}
+          </div>
+          {selectedCase && (
+            <div className="lg:hidden">
+              <CaseSelectionPanel caseItem={selectedCase} community={community} language={language} onClose={() => setSelectedCase(null)} />
+            </div>
+          )}
+          <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+            <p className="max-w-md text-sm text-slate">{t.landscapeCaption[language]}</p>
+            <LandscapeLegend language={language} />
+          </div>
+        </div>
       </section>
 
-      {/* 3. What the user can do now */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold text-ink">{t.actionsHeading[language]}</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {actionCards.map((action) => {
-            const card = (
-              <div className="flex h-full flex-col gap-1 rounded-lg border border-ink/10 p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-semibold text-ink">{action.title[language]}</p>
-                  {action.href === null && (
-                    <span className="shrink-0 text-[11px] font-medium text-slate">
-                      {UI_STRINGS.comingSoon[language]}
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-slate">{action.body[language]}</p>
-              </div>
-            );
-            return action.href ? (
+      {/* The journey every report takes. */}
+      <section className="border-y border-ink/10 bg-surface">
+        <div className="mx-auto max-w-7xl px-4 py-14 md:px-8 lg:py-20">
+          <div className="mb-10 max-w-2xl">
+            <h2 className="text-3xl text-ink md:text-4xl">{t.journeyHeading[language]}</h2>
+            <p className="mt-3 text-lg text-slate">{t.journeyIntro[language]}</p>
+          </div>
+          <CivicJourney language={language} />
+        </div>
+      </section>
+
+      <section className="mx-auto grid w-full max-w-7xl gap-12 px-4 py-14 md:px-8 lg:grid-cols-12 lg:py-20">
+        {/* Latest activity, as a ledger. */}
+        <div className="lg:col-span-7">
+          <div className="mb-4 flex items-baseline justify-between gap-4">
+            <h2 className="text-2xl text-ink md:text-3xl">{t.recentHeading[language]}</h2>
+            <Link href="/activity" className="shrink-0 text-sm font-medium text-teal underline decoration-teal/40 underline-offset-4 hover:decoration-teal">
+              {t.seeAllActivity[language]}
+            </Link>
+          </div>
+          <ul className="-mx-3 divide-y divide-ink/10">
+            {recent.map((c) => (
+              <CaseRow key={c.id} caseItem={c} category={community.categories.find((cat) => cat.id === c.categoryId)} language={language} />
+            ))}
+          </ul>
+        </div>
+
+        {/* The Guide, shown by what it does rather than what it is. */}
+        <div className="flex flex-col gap-5 lg:col-span-5">
+          <div className="rounded-[2rem] bg-teal p-7 text-cream">
+            <h2 className="text-2xl md:text-3xl">{t.guideHeading[language]}</h2>
+            <p className="mt-3 leading-relaxed text-cream/85">{t.guideBody[language]}</p>
+            <ol className="mt-6 flex flex-col gap-3 text-sm">
+              {[
+                { Icon: Search, text: EXPERIENCE.demo.steps[2].title[language] },
+                { Icon: ShieldCheck, text: t.guideSafetyStep[language] },
+                { Icon: PenLine, text: EXPERIENCE.demo.steps[5].title[language] },
+                { Icon: BadgeCheck, text: EXPERIENCE.demo.steps[6].title[language], approval: true },
+              ].map(({ Icon, text, approval }) => (
+                <li key={text} className="flex items-center gap-3">
+                  <span
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                      approval ? "bg-yellow text-on-yellow" : "bg-cream/15 text-cream"
+                    }`}
+                  >
+                    <Icon aria-hidden="true" className="h-4 w-4" />
+                  </span>
+                  <span>
+                    {text}
+                    {approval && <span className="ml-2 text-xs text-cream/70">({EXPERIENCE.guide.status.approval[language]})</span>}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-7 flex flex-wrap gap-3">
               <Link
-                key={action.title.en}
-                href={action.href}
-                className="rounded-lg transition-colors hover:bg-mint/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+                href="/guide"
+                className="inline-flex items-center gap-2 rounded-full bg-cream px-4 py-2.5 text-sm font-medium text-teal hover:bg-cream/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream"
               >
-                {card}
+                <MessageCircleQuestion aria-hidden="true" className="h-4 w-4" />
+                {t.guideCta[language]}
               </Link>
-            ) : (
-              <div key={action.title.en} aria-disabled="true" className="opacity-80">
-                {card}
-              </div>
-            );
-          })}
-          <div className="flex h-full flex-col gap-1 rounded-lg border border-ink/10 p-4">
-            <p className="font-semibold text-ink">{t.actions.track.title[language]}</p>
-            <p className="text-sm text-slate">{t.actions.track.body[language]}</p>
+              <Link
+                href="/guide/how-it-works"
+                className="inline-flex items-center gap-2 rounded-full border border-cream/40 px-4 py-2.5 text-sm font-medium text-cream hover:bg-cream/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream"
+              >
+                <Waypoints aria-hidden="true" className="h-4 w-4" />
+                {t.guideDemoCta[language]}
+              </Link>
+            </div>
+          </div>
+
+          <div className="rounded-[2rem] border border-ink/10 p-6">
+            <h2 className="text-xl text-ink">{t.trackHeading[language]}</h2>
+            <p className="mt-1 text-sm text-slate">{t.trackBody[language]}</p>
             <CaseLookupForm />
           </div>
         </div>
       </section>
 
-      {/* What CommonGround is not */}
-      <section className="rounded-lg border border-ink/10 bg-blue/50 p-5">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
-          <Info aria-hidden="true" className="h-4 w-4 text-slate" />
-          {t.disclaimerHeading[language]}
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-ink/80">{t.disclaimerBody[language]}</p>
+      {/* What CommonGround is not — kept, because it's a safety promise. */}
+      <section className="mx-auto w-full max-w-7xl px-4 pb-14 md:px-8">
+        <div className="flex gap-4 rounded-[2rem] bg-blue/60 p-6 md:p-8">
+          <TriangleAlert aria-hidden="true" className="mt-1 h-5 w-5 shrink-0 text-ink/70" />
+          <div>
+            <h2 className="text-xl text-ink">{UI_STRINGS.home.disclaimerHeading[language]}</h2>
+            <p className="mt-2 max-w-3xl leading-relaxed text-ink/80">{UI_STRINGS.home.disclaimerBody[language]}</p>
+          </div>
+        </div>
       </section>
     </div>
   );

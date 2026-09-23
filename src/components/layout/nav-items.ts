@@ -1,50 +1,37 @@
-import {
-  Compass,
-  FileText,
-  Home,
-  LayoutList,
-  Lightbulb,
-  MessageCircleQuestion,
-  Plus,
-  Settings,
-  type LucideIcon,
-} from "lucide-react";
-import { UI_STRINGS } from "@/lib/i18n/dictionary";
+import { Compass, Home, MessageCircleQuestion, Plus, Waypoints, type LucideIcon } from "lucide-react";
+import { EXPERIENCE } from "@/lib/i18n/experience";
 
-/**
- * `href: null` means the destination is real per the design system's target nav, but its page
- * doesn't exist yet (Settings has no dedicated phase) — rendered as a disabled "coming soon"
- * item rather than a dead link, matching CommonGround's own rule against implying
- * functionality that isn't real yet. Reports/Proposals/Create link into the Phase 3 wizard
- * (pre-selecting step 1's choice via `?type=`); Activity/Explore link into the Phase 4
- * dashboard; Guide links into the Phase 6 assistant.
- */
 export type NavItem = {
   key: string;
-  label: (typeof UI_STRINGS.nav)[keyof typeof UI_STRINGS.nav];
+  label: { es: string; en: string };
   icon: LucideIcon;
-  href: string | null;
+  href: string;
+  /** Other paths that should also mark this item as the current page. */
+  alsoActiveOn?: string[];
 };
 
+/**
+ * Only destinations that really exist — no disabled "coming soon" items in the primary nav.
+ * Report/propose live behind the header's primary action and the mobile "Create" button.
+ */
 export const DESKTOP_NAV_ITEMS: NavItem[] = [
-  { key: "home", label: UI_STRINGS.nav.home, icon: Home, href: "/" },
-  { key: "activity", label: UI_STRINGS.nav.activity, icon: LayoutList, href: "/activity" },
-  { key: "reports", label: UI_STRINGS.nav.reports, icon: FileText, href: "/report/new?type=report" },
-  {
-    key: "proposals",
-    label: UI_STRINGS.nav.proposals,
-    icon: Lightbulb,
-    href: "/report/new?type=proposal",
-  },
-  { key: "guide", label: UI_STRINGS.nav.guide, icon: MessageCircleQuestion, href: "/guide" },
-  { key: "how-it-works", label: UI_STRINGS.nav.howItWorks, icon: Compass, href: "/how-it-works" },
-  { key: "settings", label: UI_STRINGS.nav.settings, icon: Settings, href: null },
+  { key: "home", label: EXPERIENCE.nav.home, icon: Home, href: "/" },
+  { key: "activity", label: EXPERIENCE.nav.activity, icon: Compass, href: "/activity", alsoActiveOn: ["/cases"] },
+  { key: "guide", label: EXPERIENCE.nav.guide, icon: MessageCircleQuestion, href: "/guide" },
+  { key: "agents", label: EXPERIENCE.nav.howGuideWorks, icon: Waypoints, href: "/guide/how-it-works" },
+  { key: "how-it-works", label: EXPERIENCE.nav.howItWorks, icon: Compass, href: "/how-it-works" },
 ];
 
 export const MOBILE_NAV_ITEMS: NavItem[] = [
-  { key: "home", label: UI_STRINGS.nav.home, icon: Home, href: "/" },
-  { key: "explore", label: UI_STRINGS.nav.explore, icon: Compass, href: "/activity" },
-  { key: "create", label: UI_STRINGS.nav.create, icon: Plus, href: "/report/new" },
-  { key: "guide", label: UI_STRINGS.nav.guide, icon: MessageCircleQuestion, href: "/guide" },
-  { key: "more", label: UI_STRINGS.nav.more, icon: Settings, href: null },
+  { key: "home", label: EXPERIENCE.nav.home, icon: Home, href: "/" },
+  { key: "activity", label: EXPERIENCE.nav.activity, icon: Compass, href: "/activity", alsoActiveOn: ["/cases"] },
+  { key: "create", label: EXPERIENCE.nav.create, icon: Plus, href: "/report/new" },
+  { key: "guide", label: EXPERIENCE.nav.guide, icon: MessageCircleQuestion, href: "/guide" },
+  { key: "agents", label: EXPERIENCE.nav.agents, icon: Waypoints, href: "/guide/how-it-works" },
 ];
+
+export function isNavItemActive(item: NavItem, pathname: string): boolean {
+  const path = item.href.split("?")[0];
+  if (pathname === path) return true;
+  return (item.alsoActiveOn ?? []).some((prefix) => pathname.startsWith(prefix));
+}

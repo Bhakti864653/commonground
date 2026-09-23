@@ -47,9 +47,9 @@ export function DraftReviewCard({
   const isEmergency = detectEmergencyPhrase(draft.description);
 
   return (
-    <section className="flex flex-col gap-4 rounded-lg border border-teal/40 bg-mint/20 p-4">
+    <section className="cg-arrive flex flex-col gap-4 rounded-[2rem] border-2 border-yellow bg-surface p-5 md:p-6">
       <div>
-        <h3 className="text-sm font-semibold text-ink">{t.heading[language]}</h3>
+        <h3 className="text-xl text-ink">{t.heading[language]}</h3>
         <p className="mt-1 text-xs text-slate">{t.notSubmittedYet[language]}</p>
       </div>
 
@@ -115,7 +115,7 @@ export function DraftReviewCard({
           type="button"
           onClick={onDiscard}
           disabled={submitting}
-          className="rounded-md border border-ink/15 px-3 py-2 text-sm font-medium text-ink disabled:opacity-40"
+          className="rounded-full border border-ink/15 px-4 py-2 text-sm font-medium text-ink hover:bg-mint disabled:opacity-40"
         >
           {t.discard[language]}
         </button>
@@ -123,7 +123,7 @@ export function DraftReviewCard({
           type="button"
           onClick={onConfirm}
           disabled={!consented || submitting}
-          className="rounded-md bg-teal px-3 py-2 text-sm font-medium text-cream disabled:opacity-40"
+          className="rounded-full bg-teal px-4 py-2 text-sm font-medium text-cream hover:bg-teal/90 disabled:opacity-40"
         >
           {submitting
             ? UI_STRINGS.reportFlow.reviewStep.submitting[language]

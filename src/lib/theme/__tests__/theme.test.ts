@@ -2,20 +2,20 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { THEME_INIT_SCRIPT, THEME_STORAGE_KEY, isTheme, resolveTheme } from "@/lib/theme/theme";
 
 describe("resolveTheme", () => {
-  it("uses an explicit stored choice over the system preference", () => {
-    expect(resolveTheme("light", true)).toBe("light");
-    expect(resolveTheme("dark", false)).toBe("dark");
+  it("uses an explicit stored choice", () => {
+    expect(resolveTheme("light")).toBe("light");
+    expect(resolveTheme("dark")).toBe("dark");
   });
 
-  it("follows the system when nothing is stored", () => {
-    expect(resolveTheme(null, true)).toBe("dark");
-    expect(resolveTheme(null, false)).toBe("light");
+  it("defaults to light when nothing is stored", () => {
+    expect(resolveTheme(null)).toBe("light");
+    expect(resolveTheme(undefined)).toBe("light");
   });
 
   it("ignores a corrupted stored value instead of trusting it", () => {
-    expect(resolveTheme("purple", true)).toBe("dark");
-    expect(resolveTheme("", false)).toBe("light");
-    expect(resolveTheme(42, false)).toBe("light");
+    expect(resolveTheme("purple")).toBe("light");
+    expect(resolveTheme("")).toBe("light");
+    expect(resolveTheme(42)).toBe("light");
   });
 });
 
@@ -40,28 +40,25 @@ describe("THEME_INIT_SCRIPT", () => {
     vi.unstubAllGlobals();
   });
 
-  function runScript(systemPrefersDark: boolean) {
-    // jsdom doesn't implement matchMedia at all, so stub it rather than spy on it.
-    vi.stubGlobal("matchMedia", () => ({ matches: systemPrefersDark }) as MediaQueryList);
+  function runScript() {
     new Function(THEME_INIT_SCRIPT)();
     return document.documentElement.getAttribute("data-theme");
   }
 
-  it.each([
-    [null, true],
-    [null, false],
-    ["light", true],
-    ["dark", false],
-    ["purple", true],
-  ])("matches resolveTheme for stored=%s, systemPrefersDark=%s", (stored, systemPrefersDark) => {
+  it.each([[null], ["light"], ["dark"], ["purple"]])("matches resolveTheme for stored=%s", (stored) => {
     if (stored !== null) localStorage.setItem(THEME_STORAGE_KEY, stored);
-    expect(runScript(systemPrefersDark)).toBe(resolveTheme(stored, systemPrefersDark));
+    expect(runScript()).toBe(resolveTheme(stored));
   });
 
-  it("still applies the system theme when localStorage throws", () => {
+  it("stays light even when the operating system prefers dark", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true }) as MediaQueryList);
+    expect(runScript()).toBe("light");
+  });
+
+  it("falls back to light when localStorage throws", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("blocked");
     });
-    expect(runScript(true)).toBe("dark");
+    expect(runScript()).toBe("light");
   });
 });

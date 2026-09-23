@@ -1,59 +1,55 @@
 @import "tailwindcss";
 
 /*
- * CommonGround design tokens (docs/DESIGN_SYSTEM.md). Color is never the only signal for
- * meaning — every status/verification/urgency indicator pairs a color with text or an icon.
+ * CommonGround design tokens — "a living civic community" (docs/DESIGN_SYSTEM.md).
+ * Warm ivory ground, deep teal + forest for the landscape and constructive actions, turquoise
+ * for water/drainage, sun for things under review, coral only for urgent warnings. Color is
+ * never the only signal for meaning — every status/verification/urgency indicator pairs a color
+ * with text or an icon. Every text pairing below was checked at WCAG AA (4.5:1) or better in
+ * both themes; turquoise is used for graphics only in light mode (3.7:1 on ivory).
+ *
+ * Light is the default. Dark applies only when the visitor picks it (src/lib/theme/theme.ts).
  */
 :root {
-  --ink: #17212b;
-  --cream: #faf8f3;
-  --teal: #167d78;
-  --mint: #dff1ec;
-  --yellow: #f4c95d;
-  --coral: #d96555;
-  --blue: #dceaf3;
-  --slate: #65727d;
-  /* Raised surfaces that should read as "a field" rather than the page (text inputs). */
-  --surface: #ffffff;
+  --ink: #13261f;
+  --cream: #fbf6ea;
+  --surface: #fffdf7;
+  --teal: #0e5e57;
+  --mint: #dcefe8;
+  --forest: #2e5b3b;
+  --turquoise: #1f8f84;
+  --yellow: #f2b92a;
+  /* Text that sits on a solid sun-yellow chip — dark in both themes. */
+  --on-yellow: #13261f;
+  --coral: #b04d38;
+  --blue: #d6e7ef;
+  --slate: #56665f;
+  /* Landscape-only materials (never used for text). */
+  --sand: #eadfc6;
+  --meadow: #cfe3c4;
 
   --background: var(--cream);
   --foreground: var(--ink);
   color-scheme: light;
 }
 
-/*
- * Dark theme: the same tokens with dark values, so every component follows automatically.
- * `cream` stays "the page/on-accent color" and `ink` stays "the text color" — which is why
- * `bg-teal text-cream` buttons still read correctly (dark text on a lighter teal). Every
- * pairing used in the app was checked at WCAG AA (4.5:1) or better. Applies when the visitor
- * picked dark, or hasn't picked and their system prefers dark (see src/lib/theme/theme.ts).
- */
+/* Night over the same town: forest-dark ground rather than a neutral near-black. */
 :root[data-theme="dark"] {
-  --ink: #e6ecef;
-  --cream: #121a21;
-  --teal: #4db6ac;
-  --mint: #173a36;
-  --yellow: #e0b54a;
-  --coral: #ef8a7a;
-  --blue: #1c3142;
-  --slate: #9aa8b3;
-  --surface: #1a242d;
+  --ink: #e8efe9;
+  --cream: #0f1a16;
+  --surface: #16241f;
+  --teal: #5cc2b4;
+  --mint: #183a33;
+  --forest: #86b891;
+  --turquoise: #45c9bb;
+  --yellow: #f0c75a;
+  --on-yellow: #13261f;
+  --coral: #ee8a74;
+  --blue: #1b3140;
+  --slate: #9db0a8;
+  --sand: #2c3a33;
+  --meadow: #1d3328;
   color-scheme: dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --ink: #e6ecef;
-    --cream: #121a21;
-    --teal: #4db6ac;
-    --mint: #173a36;
-    --yellow: #e0b54a;
-    --coral: #ef8a7a;
-    --blue: #1c3142;
-    --slate: #9aa8b3;
-    --surface: #1a242d;
-    color-scheme: dark;
-  }
 }
 
 @theme inline {
@@ -61,26 +57,81 @@
   --color-foreground: var(--foreground);
   --color-ink: var(--ink);
   --color-cream: var(--cream);
+  --color-surface: var(--surface);
   --color-teal: var(--teal);
   --color-mint: var(--mint);
+  --color-forest: var(--forest);
+  --color-turquoise: var(--turquoise);
   --color-yellow: var(--yellow);
+  --color-on-yellow: var(--on-yellow);
   --color-coral: var(--coral);
   --color-blue: var(--blue);
   --color-slate: var(--slate);
-  --color-surface: var(--surface);
-  --font-sans: var(--font-inter);
-  --font-heading: var(--font-lora);
+  --color-sand: var(--sand);
+  --color-meadow: var(--meadow);
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-display);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
+/* Young Serif ships a single weight — hierarchy comes from size and spacing, not boldness. */
 h1,
 h2,
-h3,
-h4 {
+h3 {
   font-family: var(--font-heading);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/*
+ * The one orchestrated motion moment: the civic journey path on the home page draws itself once.
+ * Everything else moves only in answer to what a person does.
+ */
+@keyframes cg-draw {
+  from {
+    stroke-dashoffset: var(--cg-path-length, 1200);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes cg-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.cg-draw-path {
+  stroke-dasharray: var(--cg-path-length, 1200);
+  animation: cg-draw 1.8s cubic-bezier(0.45, 0, 0.2, 1) both;
+}
+
+.cg-arrive {
+  animation: cg-arrive 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cg-draw-path,
+  .cg-arrive {
+    animation: none;
+  }
 }

@@ -21,14 +21,14 @@ export function CommunitySelector({ compact = false }: { compact?: boolean }) {
       <label className="sr-only" htmlFor="community-selector">
         {UI_STRINGS.communitySelector.label[language]}
       </label>
-      <div className="relative">
+      <div className={`relative ${compact ? "inline-block w-full max-w-[13rem]" : ""}`}>
         <select
           id="community-selector"
           value={community.id}
           onChange={(e) => setCommunityId(e.target.value)}
           aria-label={UI_STRINGS.communitySelector.switchTo[language]}
-          className={`w-full appearance-none rounded-md border border-ink/15 bg-cream py-1.5 pl-2.5 pr-7 text-sm font-medium text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${
-            compact ? "max-w-[11rem] truncate" : ""
+          className={`w-full appearance-none rounded-full border border-ink/15 bg-surface py-1.5 pl-3 pr-8 text-sm font-medium text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${
+            compact ? "truncate" : ""
           }`}
         >
           {COMMUNITIES.map((c) => (
@@ -39,7 +39,7 @@ export function CommunitySelector({ compact = false }: { compact?: boolean }) {
         </select>
         <ChevronDown
           aria-hidden="true"
-          className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate"
+          className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate"
         />
       </div>
       {isFictional && (
