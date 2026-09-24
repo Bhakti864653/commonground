@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { LANGUAGE_CODES } from "@/lib/i18n/languages";
+
+/** Translations beyond English (`label`) and Spanish (`labelEs`); missing ones fall back to English. */
+export const ExtraTranslationsSchema = z.object({ pt: z.string(), fr: z.string(), zh: z.string() }).partial();
 
 /**
  * A category is always shown with both an icon and a text label (spec §6:
@@ -11,6 +15,7 @@ export const CategoryConfigSchema = z.object({
   description: z.string().optional(),
   descriptionEs: z.string().optional(),
   icon: z.string(),
+  labels: ExtraTranslationsSchema.optional(),
 });
 export type CategoryConfig = z.infer<typeof CategoryConfigSchema>;
 /** Alias matching the model name from the CommonGround spec §22. */
@@ -21,6 +26,7 @@ export const AreaConfigSchema = z.object({
   label: z.string(),
   labelEs: z.string(),
   kind: z.enum(["neighborhood", "landmark", "region"]),
+  labels: ExtraTranslationsSchema.optional(),
 });
 export type AreaConfig = z.infer<typeof AreaConfigSchema>;
 
@@ -57,6 +63,7 @@ export const PrivacyConfigSchema = z.object({
   consentVersion: z.string(),
   consentTextEs: z.string(),
   consentTextEn: z.string(),
+  consentTexts: ExtraTranslationsSchema.optional(),
 });
 export type PrivacyConfig = z.infer<typeof PrivacyConfigSchema>;
 
@@ -80,8 +87,8 @@ export const CommunityConfigSchema = z.object({
   displayName: z.string(),
   country: z.string(),
   region: z.string().optional(),
-  defaultLanguage: z.enum(["es", "en"]),
-  supportedLanguages: z.array(z.enum(["es", "en"])).min(1),
+  defaultLanguage: z.enum(LANGUAGE_CODES),
+  supportedLanguages: z.array(z.enum(LANGUAGE_CODES)).min(1),
   /** "demo" communities must be labeled as fictional everywhere they render (spec §3, §23). */
   status: z.enum(["pilot", "active", "demo"]),
   categories: z.array(CategoryConfigSchema).min(1),

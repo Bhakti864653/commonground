@@ -15,6 +15,7 @@ import { DescriptionStep } from "./DescriptionStep";
 import { AreaStep } from "./AreaStep";
 import { ReviewStep } from "./ReviewStep";
 import type { ImagePick } from "./types";
+import { labelOf } from "@/lib/i18n/labels";
 
 const TOTAL_STEPS = 5;
 
@@ -56,7 +57,6 @@ export function ReportWizard({ initialType }: { initialType: "report" | "proposa
     try {
       const approximateArea = buildApproximateArea(
         areaValue === "prefer_not_to_say" ? null : area,
-        language,
       );
       const consent = buildConsentRecord(community.privacy.consentVersion, language);
       const created = await submitCase({
@@ -117,7 +117,7 @@ export function ReportWizard({ initialType }: { initialType: "report" | "proposa
           areaLabel={
             areaValue === "prefer_not_to_say"
               ? UI_STRINGS.reportFlow.areaStep.preferNotToSay[language]
-              : (language === "es" ? area?.labelEs : area?.label) ?? ""
+              : labelOf(area, language) ?? ""
           }
           image={image}
           privacy={community.privacy}

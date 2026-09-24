@@ -24,6 +24,7 @@ import { EXPERIENCE, fill } from "@/lib/i18n/experience";
 import { listCasesForActivity } from "@/lib/store/actions";
 import type { PublicCase } from "@/lib/schema/report";
 import { LogoMark } from "@/components/layout/Logo";
+import { labelOf } from "@/lib/i18n/labels";
 
 const STEP_ICONS: Record<string, LucideIcon> = {
   community: MapPinned,
@@ -85,8 +86,8 @@ export function AgentDemo() {
   // The example: the community's drainage category (or its first one) in its northern area.
   const category = community.categories.find((c) => /flood|drain/.test(c.id)) ?? community.categories[0];
   const area = community.areas.find((a) => a.id === "norte") ?? community.areas[0];
-  const categoryLabel = language === "es" ? category.labelEs : category.label;
-  const areaLabel = language === "es" ? area.labelEs : area.label;
+  const categoryLabel = labelOf(category, language);
+  const areaLabel = labelOf(area, language);
   const similar = cases.filter(
     (c) => c.categoryId === category.id && c.approximateArea.areaId === area.id && c.status !== "closed",
   );

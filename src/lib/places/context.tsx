@@ -2,9 +2,10 @@
 
 import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { PLACES_STORAGE_KEY, parseStoredPlaces } from "./places";
+import type { LocalizedText } from "@/lib/i18n/languages";
 
 /** Either a configured community (see CommunityProvider) or a place with nothing set up yet. */
-export type ActivePlace = { kind: "community" } | { kind: "unconfigured"; name: { es: string; en: string } };
+export type ActivePlace = { kind: "community" } | { kind: "unconfigured"; name: LocalizedText };
 
 type PlacesContextValue = {
   activePlace: ActivePlace;

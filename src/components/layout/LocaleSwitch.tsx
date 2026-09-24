@@ -1,39 +1,45 @@
 "use client";
 
+import { ChevronDown, Languages as LanguagesIcon } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/context";
 import { FIELD } from "@/lib/i18n/field-notes";
+import { LANGUAGES, isLanguage } from "@/lib/i18n/languages";
 
-/** EN / ES segmented switch from the reference. `onDark` for the sidebar. */
+/**
+ * The language picker. Five languages don't fit a segmented toggle, so it's a native select —
+ * each option written in its own language, so anyone can find theirs. `onDark` for the sidebar.
+ */
 export function LocaleSwitch({ onDark = false, className }: { onDark?: boolean; className?: string }) {
   const { language, setLanguage } = useLanguage();
-  const options = [
-    { value: "es" as const, label: "ES", name: "Español" },
-    { value: "en" as const, label: "EN", name: "English" },
-  ];
+
   return (
-    <div
-      role="group"
-      aria-label={FIELD.shell.languageLabel[language]}
-      className={`flex gap-1 rounded-full border p-1 ${onDark ? "border-sidebar-text/30" : "border-line"} ${className ?? ""}`}
-    >
-      {options.map((option) => {
-        const active = language === option.value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            lang={option.value}
-            aria-label={option.name}
-            aria-pressed={active}
-            onClick={() => setLanguage(option.value)}
-            className={`flex-1 rounded-full px-3 py-1.5 text-xs font-extrabold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime ${
-              active ? "bg-lime text-[#172b25]" : onDark ? "text-sidebar-text hover:text-white" : "text-ink/70 hover:text-ink"
-            }`}
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
+    <label className={`relative inline-flex shrink-0 items-center ${className ?? ""}`}>
+      <span className="sr-only">{FIELD.shell.languageLabel[language]}</span>
+      <LanguagesIcon
+        aria-hidden="true"
+        className={`pointer-events-none absolute left-2.5 h-3.5 w-3.5 ${onDark ? "text-sidebar-text" : "text-ink/70"}`}
+      />
+      <select
+        value={language}
+        onChange={(e) => {
+          if (isLanguage(e.target.value)) setLanguage(e.target.value);
+        }}
+        className={`w-full appearance-none rounded-full border py-1.5 pl-7 pr-7 text-xs font-extrabold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+          onDark
+            ? "border-sidebar-text/30 bg-sidebar text-sidebar-text focus-visible:outline-lime"
+            : "border-line bg-transparent text-ink focus-visible:outline-teal"
+        }`}
+      >
+        {LANGUAGES.map((l) => (
+          <option key={l.code} value={l.code} lang={l.htmlLang}>
+            {l.nativeName}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        aria-hidden="true"
+        className={`pointer-events-none absolute right-2 h-3.5 w-3.5 ${onDark ? "text-sidebar-text" : "text-ink/70"}`}
+      />
+    </label>
   );
 }

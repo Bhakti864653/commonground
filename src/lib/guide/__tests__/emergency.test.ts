@@ -17,6 +17,23 @@ describe("detectEmergencyPhrase", () => {
     expect(detectEmergencyPhrase("It smells like gas in here")).toBe(true);
   });
 
+  it("catches the same emergencies in Portuguese, French, and Chinese", () => {
+    expect(detectEmergencyPhrase("Tem um vazamento de gás na minha casa")).toBe(true);
+    expect(detectEmergencyPhrase("Há perigo imediato na rua")).toBe(true);
+    expect(detectEmergencyPhrase("Il y a le feu dans l’immeuble")).toBe(true);
+    expect(detectEmergencyPhrase("Une fuite de gaz dans la cuisine")).toBe(true);
+    expect(detectEmergencyPhrase("Ça sent le gaz ici")).toBe(true);
+    expect(detectEmergencyPhrase("我家煤气泄漏了")).toBe(true);
+    expect(detectEmergencyPhrase("楼下着火了")).toBe(true);
+    expect(detectEmergencyPhrase("路口有人受伤")).toBe(true);
+  });
+
+  it("does not fire on everyday words that merely contain a short trigger", () => {
+    expect(detectEmergencyPhrase("Les feuilles bouchent la gouttière")).toBe(false);
+    expect(detectEmergencyPhrase("O fogão comunitário precisa de conserto")).toBe(false);
+    expect(detectEmergencyPhrase("路灯不亮了")).toBe(false);
+  });
+
   it("does not treat an ordinary mention of gas as an emergency", () => {
     expect(detectEmergencyPhrase("¿Dónde queda la estación de gas más cercana?")).toBe(false);
     expect(detectEmergencyPhrase("The gas station on the corner closed")).toBe(false);

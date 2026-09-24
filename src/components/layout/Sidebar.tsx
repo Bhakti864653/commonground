@@ -62,7 +62,7 @@ export function Sidebar() {
           <strong className="mb-1 block text-lime">{FIELD.shell.sideNoteTitle[language]}</strong>
           {FIELD.shell.sideNote[language]}
         </div>
-        <LocaleSwitch onDark />
+        <LocaleSwitch onDark className="w-full" />
         <ThemeToggle onDark />
       </div>
     </aside>

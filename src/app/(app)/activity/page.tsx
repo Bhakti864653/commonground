@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Search, TrendingUp, X } from "lucide-react";
 import { useCommunity } from "@/lib/community/context";
 import { useLanguage } from "@/lib/i18n/context";
-import { UI_STRINGS } from "@/lib/i18n/dictionary";
+import { UI_STRINGS, type Language } from "@/lib/i18n/dictionary";
 import { FIELD } from "@/lib/i18n/field-notes";
 import { fill } from "@/lib/i18n/experience";
 import { usePlaces } from "@/lib/places/context";
@@ -15,6 +15,7 @@ import type { CaseFilters } from "@/lib/explore/filter-cases";
 import { CaseRow } from "@/components/journey/CaseRow";
 import { UnconfiguredPlace } from "@/components/map/UnconfiguredPlace";
 import { CaseLookupForm } from "@/components/case/CaseLookupForm";
+import { labelOf } from "@/lib/i18n/labels";
 
 const EMPTY_FILTERS: CaseFilters = { query: "", type: "all", status: "all", categoryId: "all", areaId: "all" };
 
@@ -110,7 +111,7 @@ export default function ExplorePage() {
           <option value="all">{t.allCategories[language]}</option>
           {community.categories.map((c) => (
             <option key={c.id} value={c.id}>
-              {language === "es" ? c.labelEs : c.label}
+              {labelOf(c, language)}
             </option>
           ))}
         </Select>
@@ -118,7 +119,7 @@ export default function ExplorePage() {
           <option value="all">{t.allAreas[language]}</option>
           {community.areas.map((a) => (
             <option key={a.id} value={a.id}>
-              {language === "es" ? a.labelEs : a.label}
+              {labelOf(a, language)}
             </option>
           ))}
           <option value="none">{t.noArea[language]}</option>
@@ -145,8 +146,8 @@ export default function ExplorePage() {
             const area = community.areas.find((a) => a.id === trend.areaId);
             const sentence = UI_STRINGS.activity.trendSentence[language]
               .replace("{count}", String(trend.count))
-              .replace("{category}", (language === "es" ? category?.labelEs : category?.label) ?? trend.categoryId)
-              .replace("{area}", (language === "es" ? area?.labelEs : area?.label) ?? "—")
+              .replace("{category}", labelOf(category, language) ?? trend.categoryId)
+              .replace("{area}", labelOf(area, language) ?? "—")
               .replace("{days}", String(trend.windowDays));
             return (
               <li key={`${trend.categoryId}-${trend.areaId}`}>
@@ -198,7 +199,7 @@ function Select({ label, value, onChange, children }: { label: string; value: st
   );
 }
 
-function PageHead({ language }: { language: "es" | "en" }) {
+function PageHead({ language }: { language: Language }) {
   const t = FIELD.explore;
   return (
     <header className="mb-7 flex flex-col gap-6 min-[1000px]:flex-row min-[1000px]:items-end min-[1000px]:justify-between">

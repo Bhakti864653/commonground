@@ -14,6 +14,8 @@ import { StatusPill, VerificationPill } from "@/components/journey/Pills";
 import { StageMeter } from "@/components/journey/StageMeter";
 import { InaccuracyFlagForm } from "./InaccuracyFlagForm";
 import { DeleteSubmission } from "./DeleteSubmission";
+import { dateLocale } from "@/lib/i18n/languages";
+import { labelOf, noteOf } from "@/lib/i18n/labels";
 
 export function CaseView({
   caseData,
@@ -35,7 +37,7 @@ export function CaseView({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const area = formatApproximateAreaLabel(caseData.approximateArea, language);
   const dateFormat = (iso: string) =>
-    new Date(iso).toLocaleDateString(language === "es" ? "es-PA" : "en-US", { day: "numeric", month: "long", year: "numeric" });
+    new Date(iso).toLocaleDateString(dateLocale(language), { day: "numeric", month: "long", year: "numeric" });
 
   // Focus management after the multi-step submission flow (EVALUATION.md's accessibility
   // checklist) — a screen-reader user landing here right after submitting needs to be told
@@ -81,7 +83,7 @@ export function CaseView({
             <span className="tabular-nums">{caseData.publicCaseNumber}</span> · {area}
           </p>
           <h1 ref={headingRef} tabIndex={-1} className="mb-4 mt-3.5 text-[clamp(2.5rem,4.5vw,5rem)] text-ink outline-none">
-            {language === "es" ? category.labelEs : category.label}
+            {labelOf(category, language)}
           </h1>
           <p className="whitespace-pre-wrap text-[1.05rem] leading-relaxed text-ink/90">{caseData.description}</p>
 
@@ -104,7 +106,7 @@ export function CaseView({
           <h2 className="mt-11 text-[clamp(2.2rem,3.4vw,3.2rem)] text-ink">{f.timelineTitle[language]}</h2>
           <ol className="ml-2 mt-7 border-l-2 border-[#b9cbb9] pl-[25px]">
             {events.map((event, i) => {
-              const note = language === "es" ? event.noteEs ?? event.note : event.note;
+              const note = noteOf(event, language);
               return (
                 <li key={event.id} className="relative pb-[29px] last:pb-2">
                   <span aria-hidden="true" className="absolute -left-[33px] top-1 h-[13px] w-[13px] rounded-full border-[3px] border-surface bg-ink" />
@@ -159,9 +161,7 @@ export function CaseView({
             <DeleteSubmission caseNumber={caseData.publicCaseNumber} managementToken={managementToken} onDeleted={() => setDeleted(true)} />
           ) : (
             <p className="text-[0.85rem] text-slate">
-              {language === "es"
-                ? "Solo quien tiene el enlace privado de gestión puede eliminar su propio envío."
-                : "Only the person holding the private management link can delete their own submission."}
+              {f.manageHint[language]}
             </p>
           )}
         </aside>

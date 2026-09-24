@@ -1,5 +1,7 @@
 import type { ReportStatus } from "@/lib/schema/report";
-import type { Language } from "@/lib/i18n/dictionary";
+
+/** The admin tools are English-only today; Spanish is kept for a future bilingual admin. */
+type AdminLanguage = "es" | "en";
 
 /**
  * Rule-based templates, not an LLM call — a moderator's own note (if any) is appended
@@ -7,7 +9,7 @@ import type { Language } from "@/lib/i18n/dictionary";
  * resident-visible status note (PRIVACY.md: never claim a case was forwarded/acted on unless a
  * moderator explicitly said so).
  */
-const TEMPLATES: Record<ReportStatus, { es: string; en: string }> = {
+const TEMPLATES: Record<ReportStatus, Record<AdminLanguage, string>> = {
   received: {
     es: "Tu envío fue recibido y está en la fila para revisión.",
     en: "Your submission was received and is in the queue for review.",
@@ -44,7 +46,7 @@ const TEMPLATES: Record<ReportStatus, { es: string; en: string }> = {
 
 export function draftStatusChangeExplanation(
   newStatus: ReportStatus,
-  language: Language,
+  language: AdminLanguage,
   moderatorNote?: string,
 ): string {
   const base = TEMPLATES[newStatus][language];

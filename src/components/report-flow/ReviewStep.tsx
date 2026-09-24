@@ -3,6 +3,7 @@
 import { UI_STRINGS, type Language } from "@/lib/i18n/dictionary";
 import type { CategoryConfig, PrivacyConfig } from "@/lib/schema/community";
 import type { ImagePick } from "./types";
+import { consentTextOf, labelOf } from "@/lib/i18n/labels";
 
 export function ReviewStep({
   type,
@@ -30,7 +31,7 @@ export function ReviewStep({
     type === "report"
       ? UI_STRINGS.reportFlow.typeStep.report.title[language]
       : UI_STRINGS.reportFlow.typeStep.proposal.title[language];
-  const consentText = language === "es" ? privacy.consentTextEs : privacy.consentTextEn;
+  const consentText = consentTextOf(privacy, language);
 
   return (
     <div className="flex flex-col gap-5">
@@ -48,7 +49,7 @@ export function ReviewStep({
           <div>
             <dt className="text-slate">{UI_STRINGS.reportFlow.categoryStep.heading[language]}</dt>
             <dd className="font-medium text-ink">
-              {language === "es" ? category.labelEs : category.label}
+              {labelOf(category, language)}
             </dd>
           </div>
           <div>
@@ -69,7 +70,7 @@ export function ReviewStep({
         <p className="mt-1 text-sm text-ink/80">{t.privateBody[language]}</p>
         {image && (
           <p className="mt-2 text-sm text-ink/80">
-            {language === "es" ? "Foto adjunta: " : "Attached photo: "}
+            {t.attachedPhoto[language]} 
             <span className="font-medium">{image.fileName}</span>
           </p>
         )}

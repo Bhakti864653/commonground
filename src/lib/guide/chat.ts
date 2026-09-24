@@ -5,6 +5,8 @@ import { detectEmergencyPhrase } from "./emergency";
 import { buildDraftSubmissionTool, parseDraftSubmissionArgs, type GuideDraftSubmission } from "./draft-submission";
 import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 import type { Language } from "@/lib/i18n/dictionary";
+import { modelLanguageName } from "@/lib/i18n/languages";
+import { labelOf } from "@/lib/i18n/labels";
 
 const MAX_TOOL_STEPS = 3;
 
@@ -19,29 +21,43 @@ export type GuideChatResult = {
 const DRAFT_READY_MESSAGE = {
   es: "Preparé un borrador según lo que me contaste. Revísalo abajo antes de enviarlo — no se ha enviado nada todavía.",
   en: "I've put together a draft based on what you told me. Review it below before sending it — nothing has been submitted yet.",
+  pt: "Preparei um rascunho com base no que você me contou. Revise-o abaixo antes de enviar — nada foi enviado ainda.",
+  fr: "J’ai préparé un brouillon à partir de ce que vous m’avez dit. Relisez-le ci-dessous avant de l’envoyer : rien n’a encore été envoyé.",
+  zh: "我根据你告诉我的内容准备了一份草稿。提交前请在下方查看——目前还没有提交任何内容。",
 };
 
 const EMERGENCY_MESSAGE = {
   es: "Esto suena a una emergencia. CommonGround no es un servicio de emergencia y no puede ayudar en este momento — por favor contacta directamente a los servicios de emergencia oficiales de tu área.",
   en: "This sounds like it could be an emergency. CommonGround is not an emergency service and can't help right now — please contact your local official emergency services directly.",
+  pt: "Isto parece ser uma emergência. O CommonGround não é um serviço de emergência e não pode ajudar agora — entre em contato diretamente com os serviços oficiais de emergência da sua região.",
+  fr: "Cela ressemble à une urgence. CommonGround n’est pas un service d’urgence et ne peut pas aider maintenant : contactez directement les services d’urgence officiels de votre région.",
+  zh: "这听起来可能是紧急情况。CommonGround 不是紧急服务，现在无法提供帮助——请直接联系当地官方紧急服务。",
 };
 
 const UNAVAILABLE_MESSAGE = {
   es: "La Guía no está disponible en este momento.",
   en: "The Guide isn't available right now.",
+  pt: "O Guia não está disponível agora.",
+  fr: "Le Guide n’est pas disponible pour le moment.",
+  zh: "向导暂时不可用。",
 };
 
 function systemPrompt(communityId: string, language: Language): string {
   const community = getCommunityById(communityId);
   const isDemo = community?.status === "demo";
   const areaNames = (community?.areas ?? [])
-    .map((a) => (language === "es" ? a.labelEs : a.label))
+    .map((a) => labelOf(a, language))
+    .join(", ");
+  const categoryNames = (community?.categories ?? [])
+    .map((c) => `${c.id} = "${labelOf(c, language)}"`)
     .join(", ");
   return `You are the CommonGround Guide — a calm community navigator, not the product itself.
-Respond in ${language === "es" ? "Spanish" : "English"}, in plain text only — no markdown
+Respond in ${modelLanguageName(language)}, in plain text only — no markdown
 formatting (no **bold**, no bullet lists with dashes), since this chat renders plain text.
 
 ${communityContextBlock(communityId)}
+When talking to the resident, call categories by these names (never by their internal ids):
+${categoryNames || "none configured"}.
 
 You can: answer questions about how CommonGround's process works, help someone figure out
 which category fits their situation, check whether a similar case already exists (use

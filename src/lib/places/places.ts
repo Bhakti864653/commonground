@@ -9,7 +9,9 @@ export const PLACES_STORAGE_KEY = "commonground-places";
 export const MAX_PLACE_NAME_LENGTH = 60;
 const MAX_PLACES = 20;
 
-export const BUILT_IN_PLACES = [{ key: "panama-city", es: "Ciudad de Panamá", en: "Panama City" }] as const;
+export const BUILT_IN_PLACES = [
+  { key: "panama-city", es: "Ciudad de Panamá", en: "Panama City", pt: "Cidade do Panamá", fr: "Panama (ville)", zh: "巴拿马城" },
+] as const;
 
 /** Parses stored place names defensively: anything malformed is dropped, never trusted. */
 export function parseStoredPlaces(raw: string | null): string[] {

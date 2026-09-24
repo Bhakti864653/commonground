@@ -5,6 +5,7 @@ import { UI_STRINGS, type Language } from "@/lib/i18n/dictionary";
 import { detectEmergencyPhrase } from "@/lib/guide/emergency";
 import type { GuideDraftSubmission } from "@/lib/guide/draft-submission";
 import type { CommunityConfig } from "@/lib/schema/community";
+import { consentTextOf, labelOf } from "@/lib/i18n/labels";
 
 /**
  * Mirrors ReportWizard's ReviewStep (same field set, same consent gating) so a chat-drafted
@@ -39,11 +40,7 @@ export function DraftReviewCard({
     draft.type === "report"
       ? UI_STRINGS.reportFlow.typeStep.report.title[language]
       : UI_STRINGS.reportFlow.typeStep.proposal.title[language];
-  const areaLabel = area
-    ? language === "es"
-      ? area.labelEs
-      : area.label
-    : UI_STRINGS.reportFlow.areaStep.preferNotToSay[language];
+  const areaLabel = area ? labelOf(area, language) : UI_STRINGS.reportFlow.areaStep.preferNotToSay[language];
   const isEmergency = detectEmergencyPhrase(draft.description);
 
   return (
@@ -61,7 +58,7 @@ export function DraftReviewCard({
         <div>
           <dt className="text-slate">{UI_STRINGS.reportFlow.categoryStep.heading[language]}</dt>
           <dd className="font-medium text-ink">
-            {category ? (language === "es" ? category.labelEs : category.label) : draft.categoryId}
+            {category ? labelOf(category, language) : draft.categoryId}
           </dd>
         </div>
         <div>
@@ -104,7 +101,7 @@ export function DraftReviewCard({
           <span className="font-medium">
             {UI_STRINGS.reportFlow.reviewStep.consentLabel[language]}
           </span>{" "}
-          {language === "es" ? community.privacy.consentTextEs : community.privacy.consentTextEn}
+          {consentTextOf(community.privacy, language)}
         </span>
       </label>
 

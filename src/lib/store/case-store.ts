@@ -10,6 +10,7 @@ import {
   type VerifiedSource,
 } from "@/lib/schema/report";
 import { getCommunity as getCommunityById } from "@/lib/store/community-store";
+import { SANTIAGO_VERAGUAS } from "@/data/communities";
 import { validateImageMetadata } from "@/lib/privacy/image-validation";
 
 export type NewCaseInput = {
@@ -165,6 +166,8 @@ const DEMO_CASE_SEEDS: DemoCaseSeed[] = [
 function seedDemoCases(store: CaseStoreState): void {
   const year = new Date().getUTCFullYear();
   for (const seed of DEMO_CASE_SEEDS) {
+    // Carry the pilot area's translated names, the same as a real submission would.
+    const areaLabels = SANTIAGO_VERAGUAS.areas.find((a) => a.id === seed.areaId)?.labels;
     const createdAt = daysAgoIso(seed.daysAgo);
     const sequence = nextSequence(store, DEMO_COMMUNITY_ID, year);
     const statusHistory: Case["statusHistory"] = [
@@ -187,6 +190,11 @@ function seedDemoCases(store: CaseStoreState): void {
         // Describes only what CommonGround itself recorded — never an institution's action.
         note: "A community moderator updated this case's status.",
         noteEs: "Un moderador de la comunidad actualizó el estado de este caso.",
+        notes: {
+          pt: "Um moderador da comunidade atualizou o status deste caso.",
+          fr: "Un modérateur de la communauté a mis à jour l’état de ce dossier.",
+          zh: "一位社区版主更新了此案件的状态。",
+        },
       });
       moderationActions.push({
         id: crypto.randomUUID(),
@@ -223,6 +231,7 @@ function seedDemoCases(store: CaseStoreState): void {
         kind: "neighborhood",
         areaId: seed.areaId,
         label: seed.areaLabel,
+        ...(areaLabels ? { labels: areaLabels } : {}),
         labelEs: seed.areaLabelEs,
       },
       createdAt,

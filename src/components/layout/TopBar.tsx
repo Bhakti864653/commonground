@@ -24,10 +24,10 @@ export function TopBar() {
           <span className="sr-only">CommonGround</span>
         </Link>
         <Asterisk aria-hidden="true" className="hidden h-6 w-6 shrink-0 text-[#e78b5f] md:block" strokeWidth={2.2} />
-        <span className="hidden text-[0.8rem] font-extrabold uppercase tracking-[0.11em] text-ink min-[520px]:inline">
+        <span className="hidden whitespace-nowrap text-[0.8rem] font-extrabold uppercase tracking-[0.11em] text-ink min-[900px]:inline">
           {FIELD.shell.communityLabel[language]}
         </span>
-        <span aria-hidden="true" className="hidden text-2xl font-light text-line md:inline">
+        <span aria-hidden="true" className="hidden text-2xl font-light text-line min-[900px]:inline">
           /
         </span>
         <PlaceSelector compact />
@@ -38,12 +38,12 @@ export function TopBar() {
           {FIELD.shell.pilotBadge[language]}
         </span>
         <div className="flex items-center gap-2 min-[1100px]:hidden">
-          <LocaleSwitch className="[&>button]:px-2 [&>button]:py-1" />
+          <LocaleSwitch />
           <ThemeToggle className="px-2.5 [&>svg]:hidden sm:[&>svg]:block" />
         </div>
         <Link
           href="/report/new"
-          className="hidden items-center gap-1.5 rounded-full bg-ink px-3.5 py-2 text-[0.8rem] font-extrabold text-paper hover:bg-ink/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal sm:inline-flex"
+          className="hidden items-center gap-1.5 rounded-full bg-ink px-3.5 py-2 text-[0.8rem] font-extrabold text-paper hover:bg-ink/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal min-[900px]:inline-flex"
         >
           <Plus aria-hidden="true" className="h-4 w-4" />
           {FIELD.shell.newCase[language]}

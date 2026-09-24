@@ -107,7 +107,7 @@ export function createCommunity(rawInput: unknown): CreateCommunityResult {
     country: input.country,
     region: input.region,
     defaultLanguage: "es",
-    supportedLanguages: ["es", "en"],
+    supportedLanguages: ["es", "en", "pt", "fr", "zh"],
     status: "pilot",
     categories: CATEGORY_PRESETS.filter((c) => categoryIds.has(c.id)).map((c) => ({ ...c })),
     areas: input.areas.map((area, i) => ({ id: areaIds[i], label: area.label, labelEs: area.labelEs, kind: "neighborhood" })),
@@ -121,6 +121,11 @@ export function createCommunity(rawInput: unknown): CreateCommunityResult {
         "Tu información se utilizará para organizar y revisar esta contribución comunitaria. No mostraremos públicamente tu identidad ni una ubicación exacta. Puedes solicitar la eliminación de tu envío cuando sea posible.",
       consentTextEn:
         "Your information will be used to organize and review this community contribution. We will not publicly display your identity or an exact location. You can request deletion of your submission where possible.",
+      consentTexts: {
+        pt: "Suas informações serão usadas para organizar e revisar esta contribuição comunitária. Não mostraremos publicamente sua identidade nem uma localização exata. Você pode pedir a exclusão do seu envio quando for possível.",
+        fr: "Vos informations seront utilisées pour organiser et examiner cette contribution communautaire. Nous n’afficherons publiquement ni votre identité ni un lieu exact. Vous pouvez demander la suppression de votre envoi lorsque c’est possible.",
+        zh: "你的信息将用于整理和审核这份社区贡献。我们不会公开显示你的身份或确切位置。在可行的情况下，你可以要求删除你的提交。",
+      },
     },
     moderation: { requireReviewBeforePublish: true, moderatorEmails: [] },
     enabledFeatures: { mapView: true, threeDView: false, aiGuide: true, proposals: true, duplicateDetection: true },

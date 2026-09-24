@@ -3,6 +3,7 @@
 import { getCategoryIcon } from "@/components/icons/category-icon-map";
 import { UI_STRINGS, type Language } from "@/lib/i18n/dictionary";
 import type { CategoryConfig } from "@/lib/schema/community";
+import { labelOf } from "@/lib/i18n/labels";
 
 export function CategoryStep({
   categories,
@@ -36,7 +37,7 @@ export function CategoryStep({
             >
               <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-teal" />
               <span className="font-medium text-ink">
-                {language === "es" ? category.labelEs : category.label}
+                {labelOf(category, language)}
               </span>
             </button>
           );

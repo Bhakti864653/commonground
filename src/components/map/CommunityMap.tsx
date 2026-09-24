@@ -10,6 +10,7 @@ import type { CommunityConfig } from "@/lib/schema/community";
 import { fill } from "@/lib/i18n/experience";
 import { STATUS_TONE } from "@/components/journey/Pills";
 import { mapAreaPosition, mapPinPosition } from "@/lib/map/positions";
+import { labelOf } from "@/lib/i18n/labels";
 
 /**
  * The reference's soft green community view. It is illustrative, not geographic: areas sit by
@@ -61,7 +62,7 @@ export function CommunityMap({
               style={{ left: `${x}%`, top: `${y}%` }}
               className="absolute z-[1] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-[0.7rem] font-bold uppercase tracking-[0.16em] text-map-text/80"
             >
-              {language === "es" ? area.labelEs : area.label}
+              {labelOf(area, language)}
             </span>
           );
         })}
@@ -129,7 +130,7 @@ export function CommunityMap({
           <span className="text-[0.73rem] font-extrabold text-slate">
             <span className="tabular-nums">{selected.publicCaseNumber}</span> · {formatApproximateAreaLabel(selected.approximateArea, language)} ·{" "}
             {STATUS_LABELS[selected.status][language]}
-            {category ? ` · ${language === "es" ? category.labelEs : category.label}` : ""}
+            {category ? ` · ${labelOf(category, language)}` : ""}
           </span>
         </Link>
       )}

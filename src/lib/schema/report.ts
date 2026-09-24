@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { LANGUAGE_CODES, type LocalizedText } from "@/lib/i18n/languages";
+import { ExtraTranslationsSchema } from "./community";
 
 export const ReportTypeSchema = z.enum(["report", "proposal"]);
 export type ReportTypeValue = z.infer<typeof ReportTypeSchema>;
@@ -16,15 +18,15 @@ export const ReportStatusSchema = z.enum([
 export type ReportStatus = z.infer<typeof ReportStatusSchema>;
 
 /** Spec §14 — every status must have a plain-language label in both languages. */
-export const STATUS_LABELS: Record<ReportStatus, { es: string; en: string }> = {
-  received: { es: "Recibido", en: "Received" },
-  under_review: { es: "En revisión", en: "Under review" },
-  in_discussion: { es: "En discusión", en: "In discussion" },
-  referred: { es: "Derivado", en: "Referred" },
-  in_progress: { es: "En progreso", en: "In progress" },
-  updated: { es: "Actualizado", en: "Updated" },
-  closed: { es: "Cerrado", en: "Closed" },
-  not_verifiable: { es: "No verificable", en: "Not verifiable" },
+export const STATUS_LABELS: Record<ReportStatus, LocalizedText> = {
+  received: { es: "Recibido", en: "Received", pt: "Recebido", fr: "Reçu", zh: "已接收" },
+  under_review: { es: "En revisión", en: "Under review", pt: "Em revisão", fr: "En cours d’examen", zh: "审核中" },
+  in_discussion: { es: "En discusión", en: "In discussion", pt: "Em discussão", fr: "En discussion", zh: "讨论中" },
+  referred: { es: "Derivado", en: "Referred", pt: "Encaminhado", fr: "Transmis", zh: "已转介" },
+  in_progress: { es: "En progreso", en: "In progress", pt: "Em andamento", fr: "En cours", zh: "进行中" },
+  updated: { es: "Actualizado", en: "Updated", pt: "Atualizado", fr: "Mis à jour", zh: "已更新" },
+  closed: { es: "Cerrado", en: "Closed", pt: "Encerrado", fr: "Clos", zh: "已结案" },
+  not_verifiable: { es: "No verificable", en: "Not verifiable", pt: "Não verificável", fr: "Non vérifiable", zh: "无法核实" },
 };
 
 /** Spec §18 — the fixed "Observed -> Organized -> Reviewed -> Connected -> Updated" action trail. */
@@ -57,11 +59,11 @@ export const VerificationStateSchema = z.enum([
 ]);
 export type VerificationState = z.infer<typeof VerificationStateSchema>;
 
-export const VERIFICATION_LABELS: Record<VerificationState, { es: string; en: string }> = {
-  community_report: { es: "Reportado por la comunidad", en: "Community report" },
-  officially_verified: { es: "Información oficial verificada", en: "Officially verified" },
-  needs_verification: { es: "Pendiente de verificación", en: "Needs verification" },
-  demonstration_data: { es: "Datos de demostración", en: "Demonstration data" },
+export const VERIFICATION_LABELS: Record<VerificationState, LocalizedText> = {
+  community_report: { es: "Reportado por la comunidad", en: "Community report", pt: "Relato da comunidade", fr: "Signalement de la communauté", zh: "社区报告" },
+  officially_verified: { es: "Información oficial verificada", en: "Officially verified", pt: "Verificado oficialmente", fr: "Vérifié officiellement", zh: "官方已核实" },
+  needs_verification: { es: "Pendiente de verificación", en: "Needs verification", pt: "Precisa de verificação", fr: "À vérifier", zh: "待核实" },
+  demonstration_data: { es: "Datos de demostración", en: "Demonstration data", pt: "Dados de demonstração", fr: "Données de démonstration", zh: "演示数据" },
 };
 
 /**
@@ -73,6 +75,7 @@ export const ApproximateAreaSchema = z.object({
   areaId: z.string().optional(),
   label: z.string(),
   labelEs: z.string().optional(),
+  labels: ExtraTranslationsSchema.optional(),
   approxLat: z.number().optional(),
   approxLng: z.number().optional(),
 });
@@ -85,13 +88,14 @@ export const ReportStatusEventSchema = z.object({
   actorType: z.enum(["system", "moderator", "verified_source"]),
   note: z.string().optional(),
   noteEs: z.string().optional(),
+  notes: ExtraTranslationsSchema.optional(),
 });
 export type ReportStatusEvent = z.infer<typeof ReportStatusEventSchema>;
 
 export const UserConsentSchema = z.object({
   consentVersion: z.string(),
   consentedAt: z.string(),
-  language: z.enum(["es", "en"]),
+  language: z.enum(LANGUAGE_CODES),
 });
 export type UserConsent = z.infer<typeof UserConsentSchema>;
 

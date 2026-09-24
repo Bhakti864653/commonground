@@ -16,6 +16,7 @@ import { LogoMark } from "@/components/layout/Logo";
 import { DraftReviewCard } from "./DraftReviewCard";
 import { GuideActionTrail, buildGuideTrail } from "./GuideActionTrail";
 import { GuideSidePanel } from "./GuideSidePanel";
+import { labelOf } from "@/lib/i18n/labels";
 
 type Turn = { role: "user" | "assistant"; content: string; emergency?: boolean };
 
@@ -59,7 +60,7 @@ export function GuideChat() {
     setDraftError(null);
     try {
       const area = draft.areaId ? community.areas.find((a) => a.id === draft.areaId) ?? null : null;
-      const approximateArea = buildApproximateArea(area, language);
+      const approximateArea = buildApproximateArea(area);
       const consent = buildConsentRecord(community.privacy.consentVersion, language);
       const created = await submitCase({
         type: draft.type,
@@ -97,13 +98,9 @@ export function GuideChat() {
     draft: draft
       ? {
           summary: `${EXPERIENCE.landscape.markerLegend[draft.type][language]}, ${
-            (language === "es" ? draftCategory?.labelEs : draftCategory?.label) ?? draft.categoryId
+            labelOf(draftCategory, language) ?? draft.categoryId
           }`,
-          areaLabel: draftArea
-            ? language === "es"
-              ? draftArea.labelEs
-              : draftArea.label
-            : UI_STRINGS.reportFlow.areaStep.preferNotToSay[language],
+          areaLabel: draftArea ? labelOf(draftArea, language) : UI_STRINGS.reportFlow.areaStep.preferNotToSay[language],
         }
       : null,
   });
@@ -155,7 +152,7 @@ export function GuideChat() {
                       {turn.emergency && (
                         <p className="mb-1 flex items-center gap-1.5 text-sm font-medium text-coral">
                           <AlertTriangle aria-hidden="true" className="h-4 w-4" />
-                          {language === "es" ? "No es un servicio de emergencia" : "Not an emergency service"}
+                          {UI_STRINGS.reportFlow.descriptionStep.emergencyWarningTitle[language]}
                         </p>
                       )}
                       <p className="whitespace-pre-wrap">{turn.content}</p>

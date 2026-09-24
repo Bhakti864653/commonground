@@ -9,6 +9,7 @@ import { formatApproximateAreaLabel } from "@/lib/privacy/approximate-area";
 import type { PublicCase } from "@/lib/schema/report";
 import type { CategoryConfig } from "@/lib/schema/community";
 import { StatusPill } from "./Pills";
+import { labelOf } from "@/lib/i18n/labels";
 
 /**
  * One row of the public record, as in the reference: a numbered category mark (the number
@@ -27,7 +28,7 @@ export function CaseRow({
   language: Language;
 }) {
   const typeLabel = FIELD.explore[caseItem.type][language];
-  const categoryLabel = (language === "es" ? category?.labelEs : category?.label) ?? "";
+  const categoryLabel = labelOf(category, language) ?? "";
   const area = formatApproximateAreaLabel(caseItem.approximateArea, language);
 
   return (

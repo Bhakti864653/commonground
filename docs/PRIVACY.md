@@ -65,7 +65,12 @@ information.
 Trigger phrases (Spanish and English equivalents) include: "me estoy ahogando," "hay peligro
 inmediato," "fuego," "persona herida," "ayuda urgente," "fuga de gas," "olor a gas," "huele a
 gas," and their English equivalents ("I'm drowning," "immediate danger," "fire," "person
-injured," "urgent help," "gas leak," "smell gas," "smells like gas," "smell of gas"). When detected: show an
+injured," "urgent help," "gas leak," "smell gas," "smells like gas," "smell of gas"), plus the
+same situations in Portuguese ("estou me afogando," "perigo imediato," "fogo," "incêndio,"
+"pessoa ferida," "ajuda urgente," "vazamento de gás," "cheiro de gás"), French ("je me noie,"
+"danger immédiat," "au feu," "il y a le feu," "incendie," "personne blessée," "aide urgente,"
+"fuite de gaz," "odeur de gaz," "ça sent le gaz"), and Simplified Chinese ("溺水," "快淹死,"
+"紧急危险," "着火," "火灾," "有人受伤," "紧急求助," "煤气泄漏," "燃气泄漏," "闻到煤气," "闻到燃气"). When detected: show an
 emergency banner **immediately**, above any normal assistant response (never buried in a longer
 answer), telling the user to contact official emergency services directly. Never provide an
 invented emergency contact — only a verified one, or none.

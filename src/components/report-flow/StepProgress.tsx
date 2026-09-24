@@ -1,4 +1,5 @@
 import type { Language } from "@/lib/i18n/dictionary";
+import { EXPERIENCE, fill } from "@/lib/i18n/experience";
 
 /** "Paso 2 de 5" plus the reference's segmented stepper — visible progress on every step. */
 export function StepProgress({
@@ -18,7 +19,7 @@ export function StepProgress({
         ))}
       </div>
       <p className="cg-eyebrow mt-6">
-        {language === "es" ? `Paso ${step} de ${totalSteps}` : `Step ${step} of ${totalSteps}`}
+        {fill(EXPERIENCE.demo.controls.progress[language], { n: step, total: totalSteps })}
       </p>
     </div>
   );

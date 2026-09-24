@@ -2,6 +2,7 @@
 
 import { UI_STRINGS, type Language } from "@/lib/i18n/dictionary";
 import type { AreaConfig } from "@/lib/schema/community";
+import { labelOf } from "@/lib/i18n/labels";
 
 /** `value` is either a real area's id or the literal "prefer_not_to_say" — never free text. */
 export function AreaStep({
@@ -36,7 +37,7 @@ export function AreaStep({
                   : "border-line bg-surface text-ink hover:bg-mint/60"
               }`}
             >
-              {language === "es" ? area.labelEs : area.label}
+              {labelOf(area, language)}
             </button>
           );
         })}

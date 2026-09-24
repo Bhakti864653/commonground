@@ -24,7 +24,7 @@ function baseInput(overrides: Partial<NewCaseInput> = {}): NewCaseInput {
     communityId: SANTIAGO_VERAGUAS.id,
     categoryId: SANTIAGO_VERAGUAS.categories[0].id,
     description: "Storm drain has been blocked for two weeks near the plaza.",
-    approximateArea: buildApproximateArea(SANTIAGO_VERAGUAS.areas[0], "en"),
+    approximateArea: buildApproximateArea(SANTIAGO_VERAGUAS.areas[0]),
     consent: buildConsentRecord(SANTIAGO_VERAGUAS.privacy.consentVersion, "en", () =>
       "2026-09-20T00:00:00.000Z",
     ),
@@ -52,7 +52,7 @@ describe("createCase", () => {
       baseInput({
         communityId: RIVERBEND_DEMO.id,
         categoryId: RIVERBEND_DEMO.categories[0].id,
-        approximateArea: buildApproximateArea(RIVERBEND_DEMO.areas[0], "en"),
+        approximateArea: buildApproximateArea(RIVERBEND_DEMO.areas[0]),
         consent: buildConsentRecord(RIVERBEND_DEMO.privacy.consentVersion, "en", () =>
           "2026-09-20T00:00:00.000Z",
         ),
@@ -70,7 +70,7 @@ describe("createCase", () => {
       baseInput({
         communityId: RIVERBEND_DEMO.id,
         categoryId: RIVERBEND_DEMO.categories[0].id,
-        approximateArea: buildApproximateArea(RIVERBEND_DEMO.areas[0], "en"),
+        approximateArea: buildApproximateArea(RIVERBEND_DEMO.areas[0]),
       }),
       fixedNow,
     );
@@ -135,7 +135,7 @@ describe("getCaseByCaseNumber / listCasesForCommunity", () => {
       baseInput({
         communityId: RIVERBEND_DEMO.id,
         categoryId: RIVERBEND_DEMO.categories[0].id,
-        approximateArea: buildApproximateArea(RIVERBEND_DEMO.areas[0], "en"),
+        approximateArea: buildApproximateArea(RIVERBEND_DEMO.areas[0]),
       }),
     );
     expect(listCasesForCommunity(SANTIAGO_VERAGUAS.id)).toHaveLength(1);
@@ -355,7 +355,7 @@ describe("listAllCasesForAdmin", () => {
       baseInput({
         communityId: RIVERBEND_DEMO.id,
         categoryId: RIVERBEND_DEMO.categories[0].id,
-        approximateArea: buildApproximateArea(RIVERBEND_DEMO.areas[0], "en"),
+        approximateArea: buildApproximateArea(RIVERBEND_DEMO.areas[0]),
       }),
     );
     deleteCase(santiago.publicCaseNumber, santiago.managementToken);

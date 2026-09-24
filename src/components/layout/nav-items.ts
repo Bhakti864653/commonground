@@ -1,9 +1,10 @@
 import { Home, MessageSquareText, Plus, Search, ShieldCheck, type LucideIcon } from "lucide-react";
 import { FIELD } from "@/lib/i18n/field-notes";
+import type { LocalizedText } from "@/lib/i18n/languages";
 
 export type NavItem = {
   key: string;
-  label: { es: string; en: string };
+  label: LocalizedText;
   icon: LucideIcon;
   href: string;
   /** Other path prefixes that should also mark this item as the current page. */

@@ -24,7 +24,7 @@ function makeRealCase() {
     communityId: SANTIAGO_VERAGUAS.id,
     categoryId: SANTIAGO_VERAGUAS.categories[0].id,
     description: "Test case",
-    approximateArea: buildApproximateArea(SANTIAGO_VERAGUAS.areas[0], "en"),
+    approximateArea: buildApproximateArea(SANTIAGO_VERAGUAS.areas[0]),
     consent: buildConsentRecord(SANTIAGO_VERAGUAS.privacy.consentVersion, "en"),
   });
 }

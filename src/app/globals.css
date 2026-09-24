@@ -233,3 +233,31 @@
     animation: none;
   }
 }
+
+/*
+ * Chinese: the Latin display settings (tight negative tracking, synthesized italics, tracked
+ * uppercase labels) squash or distort Han characters, so reset them and give text more room.
+ */
+@layer base {
+  :lang(zh) h1,
+  :lang(zh) h2,
+  :lang(zh) h3 {
+    letter-spacing: 0 !important;
+    line-height: 1.25;
+  }
+
+  :lang(zh) body {
+    line-height: 1.7;
+  }
+}
+
+@layer components {
+  :lang(zh) .cg-highlight {
+    font-style: normal;
+  }
+
+  :lang(zh) .cg-caps,
+  :lang(zh) .cg-eyebrow {
+    letter-spacing: 0.04em;
+  }
+}
