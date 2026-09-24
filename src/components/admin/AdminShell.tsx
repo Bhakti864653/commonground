@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 export function AdminShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-cream">
-      <header className="flex items-center justify-between gap-3 border-b border-coral/30 bg-coral/5 px-4 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-coral/30 bg-coral/5 px-4 py-3">
         <div>
           <Link href="/admin" className="text-sm font-semibold text-ink">
             CommonGround — Admin (local prototype)
@@ -16,7 +16,15 @@ export function AdminShell({ children }: { children: ReactNode }) {
             Never forwards anything externally. Every action is recorded.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <nav aria-label="Admin" className="flex items-center gap-1 text-sm font-semibold">
+            <Link href="/admin" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
+              Cases
+            </Link>
+            <Link href="/admin/communities" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
+              Communities
+            </Link>
+          </nav>
           <ThemeToggle />
           <AdminLogoutButton />
         </div>

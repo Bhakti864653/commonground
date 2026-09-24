@@ -1,37 +1,65 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import { COMMUNITIES, getCommunityById } from "@/data/communities";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { COMMUNITIES } from "@/data/communities";
 import type { CommunityConfig } from "@/lib/schema/community";
+import { listCommunitiesForResidents } from "@/lib/store/actions";
 
 const DEFAULT_COMMUNITY_ID = COMMUNITIES[0].id;
 
 type CommunityContextValue = {
   community: CommunityConfig;
+  /** Built-in communities plus any a moderator has set up (loaded from the server). */
+  communities: CommunityConfig[];
   setCommunityId: (id: string) => void;
+  refreshCommunities: () => Promise<void>;
 };
 
 const CommunityContext = createContext<CommunityContextValue | null>(null);
 
 /**
- * In-memory only, matching this prototype phase's "local mock persistence" scope
- * (ARCHITECTURE.md) — the active community resets to the default on reload rather than
- * persisting, which also sidesteps this repo's strict no-setState-in-effect lint rule that a
- * localStorage-hydration approach would otherwise hit.
+ * The active community is in-memory only (it resets to the default on reload), matching this
+ * prototype's "local mock persistence" scope (ARCHITECTURE.md). The list starts as the
+ * built-in communities (so server and first client render agree) and is then refreshed from
+ * the server to include any a moderator created.
  */
 export function CommunityProvider({ children }: { children: ReactNode }) {
-  const [communityId, setCommunityId] = useState(DEFAULT_COMMUNITY_ID);
+  const [communityId, setCommunityIdState] = useState(DEFAULT_COMMUNITY_ID);
+  const [communities, setCommunities] = useState<CommunityConfig[]>(COMMUNITIES);
 
-  const value = useMemo<CommunityContextValue>(
-    () => ({
-      community: getCommunityById(communityId) ?? COMMUNITIES[0],
+  const refreshCommunities = useCallback(async () => {
+    try {
+      const list = await listCommunitiesForResidents();
+      if (list.length > 0) setCommunities(list);
+    } catch {
+      // Keep the built-in list if the server can't be reached.
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    listCommunitiesForResidents()
+      .then((list) => {
+        if (!cancelled && list.length > 0) setCommunities(list);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const value = useMemo<CommunityContextValue>(() => {
+    const find = (id: string) => communities.find((c) => c.id === id);
+    return {
+      community: find(communityId) ?? communities[0],
+      communities,
       setCommunityId: (id: string) => {
-        if (!getCommunityById(id)) return;
-        setCommunityId(id);
+        if (!find(id)) return;
+        setCommunityIdState(id);
       },
-    }),
-    [communityId],
-  );
+      refreshCommunities,
+    };
+  }, [communityId, communities, refreshCommunities]);
 
   return <CommunityContext.Provider value={value}>{children}</CommunityContext.Provider>;
 }

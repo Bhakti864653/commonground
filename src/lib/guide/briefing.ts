@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getGroqClient, GUIDE_MODEL } from "./groq-client";
 import { communityContextBlock, summarizeCase } from "./tools";
 import { listCasesForCommunity } from "@/lib/store/case-store";
-import { getCommunityById } from "@/data/communities";
+import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 
 export type BriefingItem = {
   kind: "pattern" | "duplicate" | "stale" | "other";

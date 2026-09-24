@@ -59,8 +59,8 @@ export const FIELD = {
       en: "CommonGround isn't set up in {place} yet.",
     },
     unconfiguredBody: {
-      es: "Este lugar no tiene áreas, categorías ni casos. Para explorar o enviar casos, elige una comunidad de CommonGround.",
-      en: "This place has no areas, categories, or cases. To explore or send cases, choose a CommonGround community.",
+      es: "Este lugar todavía no tiene áreas, categorías ni casos: un moderador de CommonGround tiene que configurarlo primero. Mientras tanto, elige una comunidad de CommonGround para explorar o enviar casos.",
+      en: "This place has no areas, categories, or cases yet — a CommonGround moderator needs to set it up first. Meanwhile, choose a CommonGround community to explore or send cases.",
     },
     backTo: { es: "Volver a {community}", en: "Back to {community}" },
   },

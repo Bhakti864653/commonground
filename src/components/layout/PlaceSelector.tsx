@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import { ChevronDown, X } from "lucide-react";
-import { COMMUNITIES } from "@/data/communities";
 import { useCommunity } from "@/lib/community/context";
 import { useLanguage } from "@/lib/i18n/context";
 import { FIELD } from "@/lib/i18n/field-notes";
@@ -17,13 +16,19 @@ const ADD = "__add__";
  * nothing set up behind them, so choosing one shows an honest "not set up yet" state.
  */
 export function PlaceSelector({ compact = false }: { compact?: boolean }) {
-  const { community, setCommunityId } = useCommunity();
+  const { community, communities, setCommunityId } = useCommunity();
   const { language } = useLanguage();
   const { activePlace, setActivePlace, savedPlaces, savePlaces } = usePlaces();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const t = FIELD.place;
+
+  // Once a moderator sets up a real community with the same name, the placeholder entry for
+  // that place disappears — the real community replaces it.
+  const communityNames = new Set(communities.map((c) => normalizeName(c.displayName)));
+  const builtInPlaces = BUILT_IN_PLACES.filter((p) => !communityNames.has(normalizeName(p.es)) && !communityNames.has(normalizeName(p.en)));
+  const visibleSavedPlaces = savedPlaces.filter((p) => !communityNames.has(normalizeName(p)));
 
   const value =
     activePlace.kind === "community"
@@ -54,7 +59,7 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
   function onAdd(e: React.FormEvent) {
     e.preventDefault();
     const existing = [
-      ...COMMUNITIES.map((c) => c.displayName),
+      ...communities.map((c) => c.displayName),
       ...BUILT_IN_PLACES.flatMap((p) => [p.es, p.en]),
     ];
     const result = addPlace(savedPlaces, name, existing);
@@ -82,19 +87,19 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
           }`}
         >
           <optgroup label={t.communitiesGroup[language]}>
-            {COMMUNITIES.map((c) => (
+            {communities.map((c) => (
               <option key={c.id} value={`c:${c.id}`}>
                 {c.displayName}
               </option>
             ))}
           </optgroup>
           <optgroup label={t.placesGroup[language]}>
-            {BUILT_IN_PLACES.map((p) => (
+            {builtInPlaces.map((p) => (
               <option key={p.key} value={`b:${p.key}`}>
                 {p[language]}
               </option>
             ))}
-            {savedPlaces.map((p) => (
+            {visibleSavedPlaces.map((p) => (
               <option key={p} value={`u:${p}`}>
                 {p}
               </option>
@@ -159,4 +164,12 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
       </dialog>
     </>
   );
+}
+
+function normalizeName(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }

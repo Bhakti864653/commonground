@@ -1,6 +1,6 @@
 import type Groq from "groq-sdk";
 import { getCaseByCaseNumber, listOpenCasesForCommunity } from "@/lib/store/case-store";
-import { getCommunityById } from "@/data/communities";
+import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 import { toPublicCase, type PublicCase } from "@/lib/schema/report";
 
 /**

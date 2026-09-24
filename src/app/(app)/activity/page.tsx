@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, TrendingUp, X } from "lucide-react";
 import { useCommunity } from "@/lib/community/context";
 import { useLanguage } from "@/lib/i18n/context";
@@ -8,10 +8,10 @@ import { UI_STRINGS } from "@/lib/i18n/dictionary";
 import { FIELD } from "@/lib/i18n/field-notes";
 import { fill } from "@/lib/i18n/experience";
 import { usePlaces } from "@/lib/places/context";
-import { getTrendsForActivity, listCasesForActivity } from "@/lib/store/actions";
-import { ReportStatusSchema, STATUS_LABELS, type PublicCase, type ReportStatus } from "@/lib/schema/report";
+import { getTrendsForActivity, searchCases, type CaseSearchResult } from "@/lib/store/actions";
+import { ReportStatusSchema, STATUS_LABELS, type ReportStatus } from "@/lib/schema/report";
 import type { Trend } from "@/lib/insights/trends";
-import { filterCases, type CaseFilters } from "@/lib/explore/filter-cases";
+import type { CaseFilters } from "@/lib/explore/filter-cases";
 import { CaseRow } from "@/components/journey/CaseRow";
 import { UnconfiguredPlace } from "@/components/map/UnconfiguredPlace";
 import { CaseLookupForm } from "@/components/case/CaseLookupForm";
@@ -23,25 +23,48 @@ export default function ExplorePage() {
   const { language } = useLanguage();
   const { activePlace } = usePlaces();
   const t = FIELD.explore;
-  const [cases, setCases] = useState<PublicCase[] | null>(null);
+  const [results, setResults] = useState<CaseSearchResult | null>(null);
   const [trends, setTrends] = useState<Trend[]>([]);
   const [filters, setFilters] = useState<CaseFilters>(EMPTY_FILTERS);
+  const [searchedCommunity, setSearchedCommunity] = useState(community.id);
+
+  // Switching community starts from a clean slate (filters from one community's areas and
+  // categories don't apply to another's).
+  if (searchedCommunity !== community.id) {
+    setSearchedCommunity(community.id);
+    setFilters(EMPTY_FILTERS);
+    setResults(null);
+  }
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([listCasesForActivity(community.id), getTrendsForActivity(community.id)]).then(([caseResult, trendResult]) => {
-      if (!cancelled) {
-        setCases([...caseResult].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
-        setTrends(trendResult);
-        setFilters(EMPTY_FILTERS);
-      }
+    getTrendsForActivity(community.id).then((trendResult) => {
+      if (!cancelled) setTrends(trendResult);
     });
     return () => {
       cancelled = true;
     };
   }, [community.id]);
 
-  const visible = useMemo(() => (cases ? filterCases(cases, filters, community) : []), [cases, filters, community]);
+  // Search runs on the server. Typing is debounced; a response that arrives after a newer
+  // search started is ignored, so results never flicker back to an older query.
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(
+      () => {
+        searchCases(community.id, filters).then((result) => {
+          if (!cancelled) setResults(result);
+        });
+      },
+      filters.query ? 250 : 0,
+    );
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [community.id, filters]);
+
+  const visible = results?.items ?? [];
   const isFiltered = JSON.stringify(filters) !== JSON.stringify(EMPTY_FILTERS);
   const set = <K extends keyof CaseFilters>(key: K, value: CaseFilters[K]) => setFilters((f) => ({ ...f, [key]: value }));
 
@@ -143,18 +166,18 @@ export default function ExplorePage() {
         </ul>
       )}
 
-      {cases === null ? (
+      {results === null ? (
         <p className="py-9 text-slate">{UI_STRINGS.activity.loading[language]}</p>
       ) : visible.length === 0 ? (
         <p className="border-t border-[#9faf9d] py-9 text-slate">{t.empty[language]}</p>
       ) : (
         <ul className="border-t border-[#9faf9d]">
-          {visible.map((c) => (
+          {visible.map(({ caseItem, index }) => (
             <CaseRow
-              key={c.id}
-              caseItem={c}
-              index={cases.indexOf(c)}
-              category={community.categories.find((cat) => cat.id === c.categoryId)}
+              key={caseItem.id}
+              caseItem={caseItem}
+              index={index}
+              category={community.categories.find((cat) => cat.id === caseItem.categoryId)}
               language={language}
             />
           ))}

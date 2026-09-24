@@ -1,5 +1,5 @@
 import { getCaseByCaseNumber } from "@/lib/store/case-store";
-import { getCommunityById } from "@/data/communities";
+import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 import { toPublicCase } from "@/lib/schema/report";
 import { CaseView } from "@/components/case/CaseView";
 import { CaseNotFound } from "@/components/case/CaseNotFound";

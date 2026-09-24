@@ -3,7 +3,7 @@ import { getGroqClient, GUIDE_MODEL } from "./groq-client";
 import { TOOL_DEFINITIONS, communityContextBlock, executeTool } from "./tools";
 import { detectEmergencyPhrase } from "./emergency";
 import { buildDraftSubmissionTool, parseDraftSubmissionArgs, type GuideDraftSubmission } from "./draft-submission";
-import { getCommunityById } from "@/data/communities";
+import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 import type { Language } from "@/lib/i18n/dictionary";
 
 const MAX_TOOL_STEPS = 3;

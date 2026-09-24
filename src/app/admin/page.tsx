@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { getAdminDuplicateClusters, listCasesForAdmin } from "@/lib/store/admin-actions";
-import { getCommunityById } from "@/data/communities";
+import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 import { STATUS_LABELS, VERIFICATION_LABELS } from "@/lib/schema/report";
 import { DuplicateClusterCard } from "@/components/admin/DuplicateClusterCard";
 import { BriefingPanel } from "@/components/admin/BriefingPanel";

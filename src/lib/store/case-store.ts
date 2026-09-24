@@ -9,7 +9,7 @@ import {
   type VerificationState,
   type VerifiedSource,
 } from "@/lib/schema/report";
-import { getCommunityById } from "@/data/communities";
+import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 import { validateImageMetadata } from "@/lib/privacy/image-validation";
 
 export type NewCaseInput = {

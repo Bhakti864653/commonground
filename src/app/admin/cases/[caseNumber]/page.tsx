@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { getCaseForAdmin } from "@/lib/store/admin-actions";
-import { getCommunityById } from "@/data/communities";
+import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 import { ModerationPanel } from "@/components/admin/ModerationPanel";
 
 export default async function AdminCasePage({

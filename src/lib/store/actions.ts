@@ -7,8 +7,12 @@ import {
   listCasesForCommunity,
   type NewCaseInput,
 } from "@/lib/store/case-store";
-import { toPublicCase, type PublicCase } from "@/lib/schema/report";
+import { ReportStatusSchema, toPublicCase, type PublicCase } from "@/lib/schema/report";
+import type { CommunityConfig } from "@/lib/schema/community";
 import { detectTrends, type Trend } from "@/lib/insights/trends";
+import { filterCases } from "@/lib/explore/filter-cases";
+import { getCommunity, listCommunities } from "@/lib/store/community-store";
+import { z } from "zod";
 
 /**
  * Only `publicCaseNumber` + `managementToken` — the wizard needs the token to build the
@@ -40,4 +44,41 @@ export async function deleteSubmission(
 
 export async function reportInaccuracy(caseNumber: string, note?: string): Promise<boolean> {
   return flagInaccuracy(caseNumber, note);
+}
+
+/**
+ * Every community a resident can pick, including ones a moderator set up at runtime. Moderator
+ * emails are stripped — they're never needed client-side.
+ */
+export async function listCommunitiesForResidents(): Promise<CommunityConfig[]> {
+  return listCommunities().map((c) => ({ ...c, moderation: { ...c.moderation, moderatorEmails: [] } }));
+}
+
+/** Runtime-validated: a server action is a public endpoint callable with any JSON. */
+const SearchFiltersSchema = z.object({
+  query: z.string().max(200),
+  type: z.enum(["all", "report", "proposal"]),
+  status: z.union([z.literal("all"), ReportStatusSchema]),
+  categoryId: z.string().max(80),
+  areaId: z.string().max(80),
+});
+
+export type CaseSearchResult = { total: number; items: { caseItem: PublicCase; index: number }[] };
+
+/**
+ * Server-side search and filtering for Explore. Each result carries its position in the
+ * community's newest-first list, so its number still matches its pin on the home map.
+ * Invalid input or an unknown community returns an empty result rather than throwing.
+ */
+export async function searchCases(communityId: string, rawFilters: unknown): Promise<CaseSearchResult> {
+  const community = typeof communityId === "string" ? getCommunity(communityId) : undefined;
+  const parsed = SearchFiltersSchema.safeParse(rawFilters);
+  if (!community || !parsed.success) return { total: 0, items: [] };
+
+  const all = listCasesForCommunity(community.id)
+    .map(toPublicCase)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const indexById = new Map(all.map((c, i) => [c.id, i]));
+  const matches = filterCases(all, parsed.data, community);
+  return { total: all.length, items: matches.map((caseItem) => ({ caseItem, index: indexById.get(caseItem.id) ?? 0 })) };
 }

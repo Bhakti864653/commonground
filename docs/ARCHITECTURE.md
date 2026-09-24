@@ -15,6 +15,12 @@
   the schema layer is designed so persistence can change without touching components.
 - **Testing:** Vitest + Testing Library (`jsdom` environment), colocated `__tests__/`
   directories next to the modules they cover.
+- **Communities:** the built-in configs in `src/data/communities` plus any a moderator sets up at
+  `/admin/communities` (`lib/store/community-store.ts`). Each gets a unique case-number prefix.
+  Runtime-created communities use the same in-memory prototype storage as cases, so they don't
+  survive a restart or redeploy until a database is added.
+- **Search:** Explore filters and searches on the server (`searchCases` in `lib/store/actions.ts`,
+  using `lib/explore/filter-cases.ts`), with runtime-validated input.
 - **Community map:** a 2D, illustrative SVG map (`components/map/`), not geographic — pins are
   placed only by approximate area. The earlier React Three Fiber 3D view was removed in the
   2026-09-24 "community field notes" redesign, along with the `three`/`@react-three/*`
