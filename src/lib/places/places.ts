@@ -10,7 +10,7 @@ export const MAX_PLACE_NAME_LENGTH = 60;
 const MAX_PLACES = 20;
 
 export const BUILT_IN_PLACES = [
-  { key: "panama-city", es: "Ciudad de Panamá", en: "Panama City", pt: "Cidade do Panamá", fr: "Panama (ville)", zh: "巴拿马城" },
+  { key: "panama-city", es: "Ciudad de Panamá", en: "Panama City", pt: "Cidade do Panamá", fr: "Panama (ville)", zh: "巴拿马城", hi: "पनामा सिटी", it: "Città di Panamá" },
 ] as const;
 
 /** Parses stored place names defensively: anything malformed is dropped, never trusted. */

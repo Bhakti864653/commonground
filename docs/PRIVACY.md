@@ -70,7 +70,10 @@ same situations in Portuguese ("estou me afogando," "perigo imediato," "fogo," "
 "pessoa ferida," "ajuda urgente," "vazamento de gás," "cheiro de gás"), French ("je me noie,"
 "danger immédiat," "au feu," "il y a le feu," "incendie," "personne blessée," "aide urgente,"
 "fuite de gaz," "odeur de gaz," "ça sent le gaz"), and Simplified Chinese ("溺水," "快淹死,"
-"紧急危险," "着火," "火灾," "有人受伤," "紧急求助," "煤气泄漏," "燃气泄漏," "闻到煤气," "闻到燃气"). When detected: show an
+"紧急危险," "着火," "火灾," "有人受伤," "紧急求助," "煤气泄漏," "燃气泄漏," "闻到煤气," "闻到燃气"),
+Hindi ("डूब रहा/रही हूँ," "तुरंत ख़तरा," "आग लग," "कोई घायल," "तुरंत मदद," "गैस लीक," "गैस रिस,"
+"गैस की गंध," "गैस की बदबू"), and Italian ("sto annegando," "pericolo immediato," "al fuoco," "c'è un
+incendio," "persona ferita," "aiuto urgente," "fuga di gas," "odore di gas," "puzza di gas"). When detected: show an
 emergency banner **immediately**, above any normal assistant response (never buried in a longer
 answer), telling the user to contact official emergency services directly. Never provide an
 invented emergency contact — only a verified one, or none.

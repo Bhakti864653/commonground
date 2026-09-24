@@ -194,6 +194,8 @@ function seedDemoCases(store: CaseStoreState): void {
           pt: "Um moderador da comunidade atualizou o status deste caso.",
           fr: "Un modérateur de la communauté a mis à jour l’état de ce dossier.",
           zh: "一位社区版主更新了此案件的状态。",
+          hi: "एक सामुदायिक मॉडरेटर ने इस मामले की स्थिति अपडेट की।",
+          it: "Un moderatore della comunità ha aggiornato lo stato di questo caso.",
         },
       });
       moderationActions.push({

@@ -1,6 +1,7 @@
 /**
  * The languages CommonGround's interface speaks. Spanish first for the Santiago de Veraguas
- * pilot, then English; Portuguese, French, and Simplified Chinese were added 2026-09-24.
+ * pilot, then English; Portuguese, French, Simplified Chinese, Hindi, and Italian were added
+ * 2026-09-24.
  * `modelName` is what the Guide is told to reply in; `dateLocale` formats dates.
  */
 export const LANGUAGES = [
@@ -9,6 +10,8 @@ export const LANGUAGES = [
   { code: "pt", nativeName: "Português", htmlLang: "pt-BR", dateLocale: "pt-BR", modelName: "Brazilian Portuguese" },
   { code: "fr", nativeName: "Français", htmlLang: "fr", dateLocale: "fr-FR", modelName: "French" },
   { code: "zh", nativeName: "中文（简体）", htmlLang: "zh-Hans", dateLocale: "zh-CN", modelName: "Simplified Chinese" },
+  { code: "hi", nativeName: "हिन्दी", htmlLang: "hi", dateLocale: "hi-IN", modelName: "Hindi (Devanagari script)" },
+  { code: "it", nativeName: "Italiano", htmlLang: "it", dateLocale: "it-IT", modelName: "Italian" },
 ] as const;
 
 export type Language = (typeof LANGUAGES)[number]["code"];

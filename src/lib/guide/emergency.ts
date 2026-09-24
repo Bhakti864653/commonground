@@ -1,6 +1,7 @@
 /**
- * PRIVACY.md's exact trigger-phrase list (Spanish, English, Portuguese, French, and Simplified
- * Chinese — written without accents, since input is accent-stripped before matching). This runs *before* any LLM
+ * PRIVACY.md's exact trigger-phrase list (Spanish, English, Portuguese, French, Simplified
+ * Chinese, Hindi, and Italian — Latin-script phrases are written without accents, since input
+ * is accent-stripped before matching). This runs *before* any LLM
  * call, deterministically — the emergency banner must never depend on a model actually
  * noticing the phrase, and must show "immediately, above any normal assistant response, never
  * buried in a longer answer."
@@ -56,6 +57,30 @@ const TRIGGER_PHRASES = [
   "燃气泄漏",
   "闻到煤气",
   "闻到燃气",
+  // Hindi (Devanagari) — both common spellings of "leak"
+  "डूब रहा हूँ",
+  "डूब रहा हूं",
+  "डूब रही हूँ",
+  "डूब रही हूं",
+  "तुरंत खतरा",
+  "तुरंत ख़तरा",
+  "आग लग",
+  "कोई घायल",
+  "तुरंत मदद",
+  "गैस लीक",
+  "गैस रिस",
+  "गैस की गंध",
+  "गैस की बदबू",
+  // Italian — "fuoco" alone would also match "fuochi d'artificio", so only full phrases
+  "sto annegando",
+  "pericolo immediato",
+  "al fuoco",
+  "c'e un incendio",
+  "persona ferita",
+  "aiuto urgente",
+  "fuga di gas",
+  "odore di gas",
+  "puzza di gas",
 ];
 
 function normalize(text: string): string {

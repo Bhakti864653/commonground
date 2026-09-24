@@ -27,7 +27,7 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
   // Once a moderator sets up a real community with the same name, the placeholder entry for
   // that place disappears — the real community replaces it.
   const communityNames = new Set(communities.map((c) => normalizeName(c.displayName)));
-  const builtInPlaces = BUILT_IN_PLACES.filter((p) => ![p.es, p.en, p.pt, p.fr, p.zh].some((n) => communityNames.has(normalizeName(n))));
+  const builtInPlaces = BUILT_IN_PLACES.filter((p) => ![p.es, p.en, p.pt, p.fr, p.zh, p.hi, p.it].some((n) => communityNames.has(normalizeName(n))));
   const visibleSavedPlaces = savedPlaces.filter((p) => !communityNames.has(normalizeName(p)));
 
   const value =
@@ -50,9 +50,9 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
       setActivePlace({ kind: "community" });
     } else if (kind === "b") {
       const place = BUILT_IN_PLACES.find((p) => p.key === id);
-      if (place) setActivePlace({ kind: "unconfigured", name: { es: place.es, en: place.en, pt: place.pt, fr: place.fr, zh: place.zh } });
+      if (place) setActivePlace({ kind: "unconfigured", name: { es: place.es, en: place.en, pt: place.pt, fr: place.fr, zh: place.zh, hi: place.hi, it: place.it } });
     } else {
-      setActivePlace({ kind: "unconfigured", name: { es: id, en: id, pt: id, fr: id, zh: id } });
+      setActivePlace({ kind: "unconfigured", name: { es: id, en: id, pt: id, fr: id, zh: id, hi: id, it: id } });
     }
   }
 
@@ -60,7 +60,7 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
     e.preventDefault();
     const existing = [
       ...communities.map((c) => c.displayName),
-      ...BUILT_IN_PLACES.flatMap((p) => [p.es, p.en, p.pt, p.fr, p.zh]),
+      ...BUILT_IN_PLACES.flatMap((p) => [p.es, p.en, p.pt, p.fr, p.zh, p.hi, p.it]),
     ];
     const result = addPlace(savedPlaces, name, existing);
     if (!result.ok) {
@@ -68,7 +68,7 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
       return;
     }
     savePlaces(result.places);
-    setActivePlace({ kind: "unconfigured", name: { es: result.name, en: result.name, pt: result.name, fr: result.name, zh: result.name } });
+    setActivePlace({ kind: "unconfigured", name: { es: result.name, en: result.name, pt: result.name, fr: result.name, zh: result.name, hi: result.name, it: result.name } });
     dialogRef.current?.close();
   }
 

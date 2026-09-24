@@ -235,29 +235,42 @@
 }
 
 /*
- * Chinese: the Latin display settings (tight negative tracking, synthesized italics, tracked
- * uppercase labels) squash or distort Han characters, so reset them and give text more room.
+ * Chinese and Hindi: the Latin display settings (tight negative tracking, synthesized italics,
+ * tracked uppercase labels) squash Han characters and break Devanagari's joined letterforms and
+ * vowel signs, so reset them and give the text more vertical room (Devanagari's matras extend
+ * above and below the line).
  */
 @layer base {
   :lang(zh) h1,
   :lang(zh) h2,
-  :lang(zh) h3 {
+  :lang(zh) h3,
+  :lang(hi) h1,
+  :lang(hi) h2,
+  :lang(hi) h3 {
     letter-spacing: 0 !important;
-    line-height: 1.25;
+    /* !important: the headline's tight Latin line-height is a utility class, which would win. */
+    line-height: 1.3 !important;
   }
 
   :lang(zh) body {
     line-height: 1.7;
   }
+
+  :lang(hi) body {
+    line-height: 1.75;
+  }
 }
 
 @layer components {
-  :lang(zh) .cg-highlight {
+  :lang(zh) .cg-highlight,
+  :lang(hi) .cg-highlight {
     font-style: normal;
   }
 
   :lang(zh) .cg-caps,
-  :lang(zh) .cg-eyebrow {
-    letter-spacing: 0.04em;
+  :lang(zh) .cg-eyebrow,
+  :lang(hi) .cg-caps,
+  :lang(hi) .cg-eyebrow {
+    letter-spacing: 0.02em;
   }
 }

@@ -2,7 +2,9 @@ import { z } from "zod";
 import { LANGUAGE_CODES } from "@/lib/i18n/languages";
 
 /** Translations beyond English (`label`) and Spanish (`labelEs`); missing ones fall back to English. */
-export const ExtraTranslationsSchema = z.object({ pt: z.string(), fr: z.string(), zh: z.string() }).partial();
+export const ExtraTranslationsSchema = z
+  .object({ pt: z.string(), fr: z.string(), zh: z.string(), hi: z.string(), it: z.string() })
+  .partial();
 
 /**
  * A category is always shown with both an icon and a text label (spec §6:

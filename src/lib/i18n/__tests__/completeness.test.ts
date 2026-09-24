@@ -61,18 +61,18 @@ describe("community data", () => {
         for (const lang of LANGUAGE_CODES) {
           expect(labelOf(item, lang), `${community.id}/${item.id}/${lang}`).toBeTruthy();
         }
-        expect(item.labels?.pt && item.labels?.fr && item.labels?.zh, `${community.id}/${item.id}`).toBeTruthy();
+        expect(item.labels?.pt && item.labels?.fr && item.labels?.zh && item.labels?.hi && item.labels?.it, `${community.id}/${item.id}`).toBeTruthy();
       }
       for (const lang of LANGUAGE_CODES) {
         expect(consentTextOf(community.privacy, lang)).toBeTruthy();
       }
-      expect(community.privacy.consentTexts?.zh).toBeTruthy();
+      expect(community.privacy.consentTexts?.zh && community.privacy.consentTexts?.hi && community.privacy.consentTexts?.it).toBeTruthy();
     }
   });
 
   it("translates every category preset a moderator can pick", () => {
     for (const preset of CATEGORY_PRESETS) {
-      expect(preset.labels.pt && preset.labels.fr && preset.labels.zh, preset.id).toBeTruthy();
+      expect(preset.labels.pt && preset.labels.fr && preset.labels.zh && preset.labels.hi && preset.labels.it, preset.id).toBeTruthy();
     }
   });
 });
@@ -93,6 +93,8 @@ describe("helpers", () => {
 
   it("knows each language's html lang and date locale", () => {
     expect(htmlLang("zh")).toBe("zh-Hans");
+    expect(htmlLang("hi")).toBe("hi");
+    expect(dateLocale("it")).toBe("it-IT");
     expect(dateLocale("pt")).toBe("pt-BR");
     expect(isLanguage("fr")).toBe(true);
     expect(isLanguage("de")).toBe(false);

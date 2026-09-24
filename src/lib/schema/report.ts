@@ -19,14 +19,14 @@ export type ReportStatus = z.infer<typeof ReportStatusSchema>;
 
 /** Spec §14 — every status must have a plain-language label in both languages. */
 export const STATUS_LABELS: Record<ReportStatus, LocalizedText> = {
-  received: { es: "Recibido", en: "Received", pt: "Recebido", fr: "Reçu", zh: "已接收" },
-  under_review: { es: "En revisión", en: "Under review", pt: "Em revisão", fr: "En cours d’examen", zh: "审核中" },
-  in_discussion: { es: "En discusión", en: "In discussion", pt: "Em discussão", fr: "En discussion", zh: "讨论中" },
-  referred: { es: "Derivado", en: "Referred", pt: "Encaminhado", fr: "Transmis", zh: "已转介" },
-  in_progress: { es: "En progreso", en: "In progress", pt: "Em andamento", fr: "En cours", zh: "进行中" },
-  updated: { es: "Actualizado", en: "Updated", pt: "Atualizado", fr: "Mis à jour", zh: "已更新" },
-  closed: { es: "Cerrado", en: "Closed", pt: "Encerrado", fr: "Clos", zh: "已结案" },
-  not_verifiable: { es: "No verificable", en: "Not verifiable", pt: "Não verificável", fr: "Non vérifiable", zh: "无法核实" },
+  received: { es: "Recibido", en: "Received", pt: "Recebido", fr: "Reçu", zh: "已接收", hi: "प्राप्त", it: "Ricevuto" },
+  under_review: { es: "En revisión", en: "Under review", pt: "Em revisão", fr: "En cours d’examen", zh: "审核中", hi: "समीक्षाधीन", it: "In revisione" },
+  in_discussion: { es: "En discusión", en: "In discussion", pt: "Em discussão", fr: "En discussion", zh: "讨论中", hi: "चर्चा में", it: "In discussione" },
+  referred: { es: "Derivado", en: "Referred", pt: "Encaminhado", fr: "Transmis", zh: "已转介", hi: "आगे भेजा गया", it: "Inoltrato" },
+  in_progress: { es: "En progreso", en: "In progress", pt: "Em andamento", fr: "En cours", zh: "进行中", hi: "प्रगति पर", it: "In corso" },
+  updated: { es: "Actualizado", en: "Updated", pt: "Atualizado", fr: "Mis à jour", zh: "已更新", hi: "अपडेट किया गया", it: "Aggiornato" },
+  closed: { es: "Cerrado", en: "Closed", pt: "Encerrado", fr: "Clos", zh: "已结案", hi: "बंद", it: "Chiuso" },
+  not_verifiable: { es: "No verificable", en: "Not verifiable", pt: "Não verificável", fr: "Non vérifiable", zh: "无法核实", hi: "सत्यापित नहीं हो सकता", it: "Non verificabile" },
 };
 
 /** Spec §18 — the fixed "Observed -> Organized -> Reviewed -> Connected -> Updated" action trail. */
@@ -60,10 +60,10 @@ export const VerificationStateSchema = z.enum([
 export type VerificationState = z.infer<typeof VerificationStateSchema>;
 
 export const VERIFICATION_LABELS: Record<VerificationState, LocalizedText> = {
-  community_report: { es: "Reportado por la comunidad", en: "Community report", pt: "Relato da comunidade", fr: "Signalement de la communauté", zh: "社区报告" },
-  officially_verified: { es: "Información oficial verificada", en: "Officially verified", pt: "Verificado oficialmente", fr: "Vérifié officiellement", zh: "官方已核实" },
-  needs_verification: { es: "Pendiente de verificación", en: "Needs verification", pt: "Precisa de verificação", fr: "À vérifier", zh: "待核实" },
-  demonstration_data: { es: "Datos de demostración", en: "Demonstration data", pt: "Dados de demonstração", fr: "Données de démonstration", zh: "演示数据" },
+  community_report: { es: "Reportado por la comunidad", en: "Community report", pt: "Relato da comunidade", fr: "Signalement de la communauté", zh: "社区报告", hi: "समुदाय की रिपोर्ट", it: "Segnalazione della comunità" },
+  officially_verified: { es: "Información oficial verificada", en: "Officially verified", pt: "Verificado oficialmente", fr: "Vérifié officiellement", zh: "官方已核实", hi: "आधिकारिक रूप से सत्यापित", it: "Verificato ufficialmente" },
+  needs_verification: { es: "Pendiente de verificación", en: "Needs verification", pt: "Precisa de verificação", fr: "À vérifier", zh: "待核实", hi: "सत्यापन की ज़रूरत", it: "Da verificare" },
+  demonstration_data: { es: "Datos de demostración", en: "Demonstration data", pt: "Dados de demonstração", fr: "Données de démonstration", zh: "演示数据", hi: "प्रदर्शन डेटा", it: "Dati dimostrativi" },
 };
 
 /**

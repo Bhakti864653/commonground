@@ -28,7 +28,18 @@ describe("detectEmergencyPhrase", () => {
     expect(detectEmergencyPhrase("路口有人受伤")).toBe(true);
   });
 
+  it("catches emergencies in Hindi and Italian", () => {
+    expect(detectEmergencyPhrase("मेरे घर में गैस लीक हो रही है")).toBe(true);
+    expect(detectEmergencyPhrase("पड़ोस में आग लग गई है")).toBe(true);
+    expect(detectEmergencyPhrase("सड़क पर कोई घायल पड़ा है")).toBe(true);
+    expect(detectEmergencyPhrase("C’è una fuga di gas in cucina")).toBe(true);
+    expect(detectEmergencyPhrase("Aiuto urgente, c'è un incendio!")).toBe(true);
+    expect(detectEmergencyPhrase("Sento odore di gas nel palazzo")).toBe(true);
+  });
+
   it("does not fire on everyday words that merely contain a short trigger", () => {
+    expect(detectEmergencyPhrase("I fuochi d'artificio di ieri sera erano belli")).toBe(false);
+    expect(detectEmergencyPhrase("गली की स्ट्रीट लाइट ख़राब है")).toBe(false);
     expect(detectEmergencyPhrase("Les feuilles bouchent la gouttière")).toBe(false);
     expect(detectEmergencyPhrase("O fogão comunitário precisa de conserto")).toBe(false);
     expect(detectEmergencyPhrase("路灯不亮了")).toBe(false);

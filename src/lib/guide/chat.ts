@@ -24,6 +24,8 @@ const DRAFT_READY_MESSAGE = {
   pt: "Preparei um rascunho com base no que você me contou. Revise-o abaixo antes de enviar — nada foi enviado ainda.",
   fr: "J’ai préparé un brouillon à partir de ce que vous m’avez dit. Relisez-le ci-dessous avant de l’envoyer : rien n’a encore été envoyé.",
   zh: "我根据你告诉我的内容准备了一份草稿。提交前请在下方查看——目前还没有提交任何内容。",
+  hi: "आपने जो बताया, उसके आधार पर मैंने एक मसौदा तैयार किया है। भेजने से पहले इसे नीचे देख लें — अभी तक कुछ भी नहीं भेजा गया है।",
+  it: "Ho preparato una bozza in base a ciò che mi hai detto. Rivedila qui sotto prima di inviarla: non è stato ancora inviato nulla.",
 };
 
 const EMERGENCY_MESSAGE = {
@@ -32,6 +34,8 @@ const EMERGENCY_MESSAGE = {
   pt: "Isto parece ser uma emergência. O CommonGround não é um serviço de emergência e não pode ajudar agora — entre em contato diretamente com os serviços oficiais de emergência da sua região.",
   fr: "Cela ressemble à une urgence. CommonGround n’est pas un service d’urgence et ne peut pas aider maintenant : contactez directement les services d’urgence officiels de votre région.",
   zh: "这听起来可能是紧急情况。CommonGround 不是紧急服务，现在无法提供帮助——请直接联系当地官方紧急服务。",
+  hi: "यह आपातकालीन स्थिति लग रही है। CommonGround आपातकालीन सेवा नहीं है और अभी मदद नहीं कर सकता — कृपया सीधे अपने क्षेत्र की आधिकारिक आपातकालीन सेवाओं से संपर्क करें।",
+  it: "Sembra un’emergenza. CommonGround non è un servizio di emergenza e non può aiutarti adesso: contatta direttamente i servizi di emergenza ufficiali della tua zona.",
 };
 
 const UNAVAILABLE_MESSAGE = {
@@ -40,6 +44,8 @@ const UNAVAILABLE_MESSAGE = {
   pt: "O Guia não está disponível agora.",
   fr: "Le Guide n’est pas disponible pour le moment.",
   zh: "向导暂时不可用。",
+  hi: "गाइड अभी उपलब्ध नहीं है।",
+  it: "La Guida non è disponibile al momento.",
 };
 
 function systemPrompt(communityId: string, language: Language): string {

@@ -10,7 +10,7 @@ describe("buildApproximateArea", () => {
       areaId: "centro",
       label: "Central area",
       labelEs: "Área central",
-      labels: { pt: "Área central", fr: "Zone centrale", zh: "中心区" },
+      labels: { pt: "Área central", fr: "Zone centrale", zh: "中心区", hi: "केंद्रीय इलाका", it: "Zona centrale" },
     });
   });
 
@@ -29,6 +29,8 @@ describe("formatApproximateAreaLabel", () => {
     expect(formatApproximateAreaLabel(area, "pt")).toBe("Área central");
     expect(formatApproximateAreaLabel(area, "fr")).toBe("Zone centrale");
     expect(formatApproximateAreaLabel(area, "zh")).toBe("中心区");
+    expect(formatApproximateAreaLabel(area, "hi")).toBe("केंद्रीय इलाका");
+    expect(formatApproximateAreaLabel(area, "it")).toBe("Zona centrale");
   });
 
   it("falls back to English for a language the area has no name in", () => {

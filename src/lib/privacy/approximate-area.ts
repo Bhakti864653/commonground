@@ -16,7 +16,7 @@ export function buildApproximateArea(area: AreaConfig | null): ApproximateArea {
       kind: "prefer_not_to_say",
       label: "Prefer not to say",
       labelEs: "Prefiero no decirlo",
-      labels: { pt: "Prefiro não dizer", fr: "Je préfère ne pas le dire", zh: "不愿透露" },
+      labels: { pt: "Prefiro não dizer", fr: "Je préfère ne pas le dire", zh: "不愿透露", hi: "बताना नहीं चाहते", it: "Preferisco non dirlo" },
     };
   }
   return {
