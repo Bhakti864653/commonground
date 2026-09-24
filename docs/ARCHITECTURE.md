@@ -15,9 +15,10 @@
   the schema layer is designed so persistence can change without touching components.
 - **Testing:** Vitest + Testing Library (`jsdom` environment), colocated `__tests__/`
   directories next to the modules they cover.
-- **3D:** React Three Fiber (`@react-three/fiber` + `three`), lazy-loaded, isolated to a single
-  reusable component (`Phase 7` — not yet installed as of Phase 1, added when that phase starts
-  to avoid bundling an unused dependency into every page).
+- **Community map:** a 2D, illustrative SVG map (`components/map/`), not geographic — pins are
+  placed only by approximate area. The earlier React Three Fiber 3D view was removed in the
+  2026-09-24 "community field notes" redesign, along with the `three`/`@react-three/*`
+  dependencies (recoverable from commit `08ecaa6` if a 3D view is ever wanted again).
 
 Next.js 16 breaking changes that matter for this codebase (confirmed against
 `node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md`, not assumed from
@@ -47,7 +48,7 @@ src/
     report-flow/            the 5-step guided form
     dashboard/              case cards, filters, status timeline, action trail
     guide/                  CommonGround Guide chat UI
-    three/                  Community Pulse 3D scene (lazy-loaded, Phase 7)
+    map/                    illustrative community map (2D, approximate areas only)
   lib/
     schema/                 Zod schemas + inferred types (community.ts, report.ts, index.ts)
     guide/                  provider abstraction + mock knowledge base (Phase 6)
