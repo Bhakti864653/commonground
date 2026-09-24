@@ -34,10 +34,10 @@ export function ReviewStep({
 
   return (
     <div className="flex flex-col gap-5">
-      <h2 className="text-lg font-semibold text-ink">{t.heading[language]}</h2>
+      <h2 className="font-heading text-[1.9rem] leading-tight tracking-[-0.05em] text-ink md:text-[2.2rem]">{t.heading[language]}</h2>
 
-      <section className="rounded-lg border border-ink/10 p-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-teal">
+      <section className="rounded-[17px] bg-mint/60 p-5">
+        <h3 className="cg-caps">
           {t.publicHeading[language]}
         </h3>
         <dl className="mt-3 flex flex-col gap-2 text-sm">
@@ -64,7 +64,7 @@ export function ReviewStep({
         </dl>
       </section>
 
-      <section className="rounded-lg border border-ink/10 bg-blue/40 p-4">
+      <section className="rounded-[17px] bg-periwinkle/60 p-5">
         <h3 className="text-sm font-semibold text-ink">{t.privateHeading[language]}</h3>
         <p className="mt-1 text-sm text-ink/80">{t.privateBody[language]}</p>
         {image && (

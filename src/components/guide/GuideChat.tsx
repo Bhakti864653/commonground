@@ -15,6 +15,7 @@ import { submitCase } from "@/lib/store/actions";
 import { LogoMark } from "@/components/layout/Logo";
 import { DraftReviewCard } from "./DraftReviewCard";
 import { GuideActionTrail, buildGuideTrail } from "./GuideActionTrail";
+import { GuideSidePanel } from "./GuideSidePanel";
 
 type Turn = { role: "user" | "assistant"; content: string; emergency?: boolean };
 
@@ -108,14 +109,14 @@ export function GuideChat() {
   });
 
   return (
-    <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
-      <div className="flex flex-col gap-4 lg:col-span-7">
-        <div className="flex min-h-[24rem] flex-col gap-4 rounded-[2rem] border border-ink/10 bg-surface p-5 md:p-6" aria-live="polite">
+    <div className="grid gap-[18px] min-[1000px]:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)]">
+      <div className="flex min-w-0 flex-col gap-4">
+        <div className="flex min-h-[420px] flex-col gap-[13px] rounded-[28px] bg-surface p-[clamp(20px,3.2vw,42px)] shadow-[0_14px_45px_#1c3e2910]" aria-live="polite">
           {turns.length === 0 ? (
             <div className="flex flex-1 flex-col justify-between gap-6">
               <div className="flex items-start gap-3">
-                <LogoMark className="h-9 w-9 shrink-0" />
-                <p className="rounded-2xl rounded-tl-sm bg-mint/70 px-4 py-3 text-ink">{t.emptyState[language]}</p>
+                <LogoMark tone="ink" className="h-9 w-9 shrink-0" />
+                <p className="max-w-[82%] rounded-[20px] bg-mint px-[17px] py-3.5 text-ink">{t.emptyState[language]}</p>
               </div>
               <div>
                 <p className="mb-2 text-sm text-slate">{x.startersLabel[language]}</p>
@@ -126,7 +127,7 @@ export function GuideChat() {
                       type="button"
                       onClick={() => send(starter[language])}
                       disabled={pending}
-                      className="rounded-full border border-teal/30 px-3.5 py-2 text-left text-sm text-teal hover:bg-mint focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal disabled:opacity-50"
+                      className="rounded-full border border-line bg-paper px-3.5 py-2 text-left text-sm font-semibold text-ink hover:bg-mint focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal disabled:opacity-50"
                     >
                       {starter[language]}
                     </button>
@@ -139,16 +140,16 @@ export function GuideChat() {
               turn.role === "user" ? (
                 <div key={i} className="flex flex-col items-end gap-1">
                   <span className="text-xs text-slate">{x.you[language]}</span>
-                  <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-tr-sm bg-teal px-4 py-2.5 text-cream">{turn.content}</p>
+                  <p className="max-w-[82%] whitespace-pre-wrap rounded-[20px] bg-periwinkle px-[17px] py-3.5 text-ink">{turn.content}</p>
                 </div>
               ) : (
                 <div key={i} className="flex items-start gap-3">
-                  <LogoMark className="mt-5 h-8 w-8 shrink-0" />
+                  <LogoMark tone="ink" className="mt-5 h-8 w-8 shrink-0" />
                   <div className="flex max-w-[85%] flex-col gap-1">
                     <span className="text-xs text-slate">{x.guideName[language]}</span>
                     <div
-                      className={`rounded-2xl rounded-tl-sm px-4 py-2.5 ${
-                        turn.emergency ? "border border-coral/40 bg-coral/10 text-ink" : "bg-mint/70 text-ink"
+                      className={`rounded-[20px] px-[17px] py-3.5 ${
+                        turn.emergency ? "border border-coral/40 bg-coral/10 text-ink" : "bg-mint text-ink"
                       }`}
                     >
                       {turn.emergency && (
@@ -166,7 +167,7 @@ export function GuideChat() {
           )}
           {pending && (
             <div className="flex items-center gap-3">
-              <LogoMark className="h-8 w-8 shrink-0 animate-pulse motion-reduce:animate-none" />
+              <LogoMark tone="ink" className="h-8 w-8 shrink-0 animate-pulse motion-reduce:animate-none" />
               <p className="text-sm text-slate">{t.thinking[language]}</p>
             </div>
           )}
@@ -191,19 +192,19 @@ export function GuideChat() {
             e.preventDefault();
             send();
           }}
-          className="flex gap-2 rounded-full border border-ink/15 bg-surface p-1.5 focus-within:border-teal"
+          className="flex gap-2.5"
         >
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             aria-label={t.heading[language]}
             placeholder={t.placeholder[language]}
-            className="min-w-0 flex-1 rounded-full bg-transparent px-4 py-2 text-ink placeholder:text-slate focus-visible:outline-none"
+            className="min-w-0 flex-1 rounded-full border border-line bg-surface px-4 py-3 text-ink placeholder:text-slate focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal"
           />
           <button
             type="submit"
             disabled={pending || !input.trim()}
-            className="flex shrink-0 items-center gap-1.5 rounded-full bg-teal px-4 py-2 text-sm font-medium text-cream hover:bg-teal/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal disabled:opacity-50"
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-teal px-5 py-3 text-sm font-extrabold text-cream hover:bg-teal/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal disabled:opacity-50"
           >
             <Send aria-hidden="true" className="h-4 w-4" />
             {t.send[language]}
@@ -215,10 +216,9 @@ export function GuideChat() {
         </p>
       </div>
 
-      <div className="lg:col-span-5">
-        <div className="lg:sticky lg:top-24">
-          <GuideActionTrail steps={trail} language={language} />
-        </div>
+      <div className="flex min-w-0 flex-col gap-8">
+        <GuideSidePanel language={language} />
+        <GuideActionTrail steps={trail} language={language} />
       </div>
     </div>
   );

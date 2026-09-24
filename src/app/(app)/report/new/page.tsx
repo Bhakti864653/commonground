@@ -1,4 +1,4 @@
-import { ReportWizard } from "@/components/report-flow/ReportWizard";
+import { NewCaseView } from "@/components/report-flow/NewCaseView";
 
 /**
  * `?type=report|proposal` lets a shortcut (e.g. the home page's "Report a problem" card, or
@@ -13,5 +13,5 @@ export default async function NewReportPage({
   const typeParam = typeof params.type === "string" ? params.type : undefined;
   const initialType = typeParam === "report" || typeParam === "proposal" ? typeParam : null;
 
-  return <ReportWizard initialType={initialType} />;
+  return <NewCaseView initialType={initialType} />;
 }

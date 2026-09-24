@@ -1,42 +1,48 @@
-import { BadgeCheck, CircleDashed, CircleHelp, CircleDot, FlaskConical, Hourglass, Users, CheckCheck, ArrowRightLeft, Ban } from "lucide-react";
+import { BadgeCheck, CircleHelp, FlaskConical, Users } from "lucide-react";
 import type { Language } from "@/lib/i18n/dictionary";
 import { STATUS_LABELS, VERIFICATION_LABELS, type ReportStatus, type VerificationState } from "@/lib/schema/report";
 
-const base = "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium";
+const pill = "inline-flex w-max items-center gap-1.5 rounded-full px-3 py-[7px] text-[0.72rem] font-extrabold text-ink";
 
-/** Status is always icon + text + color, never color alone (DESIGN_SYSTEM.md). */
-const STATUS_STYLE: Record<ReportStatus, { className: string; Icon: typeof CircleDot }> = {
-  received: { className: "bg-yellow text-on-yellow", Icon: CircleDot },
-  under_review: { className: "bg-yellow text-on-yellow", Icon: Hourglass },
-  in_discussion: { className: "bg-yellow text-on-yellow", Icon: Users },
-  referred: { className: "bg-mint text-teal", Icon: ArrowRightLeft },
-  in_progress: { className: "bg-mint text-teal", Icon: CircleDashed },
-  updated: { className: "bg-mint text-teal", Icon: CheckCheck },
-  closed: { className: "border border-ink/20 text-ink", Icon: CheckCheck },
-  not_verifiable: { className: "border border-ink/20 text-slate", Icon: Ban },
+/** Soft status tints from the reference. The label is always written out — color is a bonus. */
+export const STATUS_TONE: Record<ReportStatus, "review" | "progress" | "resolved" | "neutral"> = {
+  received: "review",
+  under_review: "review",
+  in_discussion: "review",
+  referred: "progress",
+  in_progress: "progress",
+  updated: "resolved",
+  closed: "resolved",
+  not_verifiable: "neutral",
 };
+
+const TONE_CLASS = {
+  review: "bg-status-review",
+  progress: "bg-status-progress",
+  resolved: "bg-status-resolved",
+  neutral: "bg-status-neutral",
+} as const;
 
 export function StatusPill({ status, language }: { status: ReportStatus; language: Language }) {
-  const { className, Icon } = STATUS_STYLE[status];
-  return (
-    <span className={`${base} ${className}`}>
-      <Icon aria-hidden="true" className="h-3.5 w-3.5" />
-      {STATUS_LABELS[status][language]}
-    </span>
-  );
+  return <span className={`${pill} ${TONE_CLASS[STATUS_TONE[status]]}`}>{STATUS_LABELS[status][language]}</span>;
 }
 
-const VERIFICATION_STYLE: Record<VerificationState, { className: string; Icon: typeof CircleDot }> = {
-  officially_verified: { className: "bg-teal text-cream", Icon: BadgeCheck },
-  community_report: { className: "border border-teal/40 text-teal", Icon: Users },
-  needs_verification: { className: "border border-yellow bg-yellow/15 text-ink", Icon: CircleHelp },
-  demonstration_data: { className: "border border-dashed border-ink/30 text-slate", Icon: FlaskConical },
+const VERIFICATION_ICON: Record<VerificationState, typeof Users> = {
+  officially_verified: BadgeCheck,
+  community_report: Users,
+  needs_verification: CircleHelp,
+  demonstration_data: FlaskConical,
 };
 
+/** Verification is a separate question from status, so it gets an outlined pill with an icon. */
 export function VerificationPill({ state, language }: { state: VerificationState; language: Language }) {
-  const { className, Icon } = VERIFICATION_STYLE[state];
+  const Icon = VERIFICATION_ICON[state];
   return (
-    <span className={`${base} ${className}`}>
+    <span
+      className={`${pill} border ${
+        state === "officially_verified" ? "border-teal bg-mint" : state === "demonstration_data" ? "border-dashed border-ink/35" : "border-line bg-surface"
+      }`}
+    >
       <Icon aria-hidden="true" className="h-3.5 w-3.5" />
       {VERIFICATION_LABELS[state][language]}
     </span>

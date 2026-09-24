@@ -1,27 +1,16 @@
 import type { Metadata } from "next";
-import { Atkinson_Hyperlegible_Next, Young_Serif } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { CommunityProvider } from "@/lib/community/context";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { THEME_INIT_SCRIPT } from "@/lib/theme/theme";
 
-// Body: designed by the Braille Institute for legibility — the right tool for a civic app read
-// on inexpensive phones, often in bright sun. Display: a sturdy, slightly hand-cut serif with
-// the feel of painted town signage. One weight only, so hierarchy comes from size.
-const body = Atkinson_Hyperlegible_Next({
+// Body text in Inter; display type uses the system Georgia stack (see globals.css), matching the
+// reference design's editorial serif without an extra font download.
+const body = Inter({
   variable: "--font-body",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  // Next has no metrics to size-match a fallback for this family, so say so explicitly and
-  // fall back to the system UI face while it loads.
-  adjustFontFallback: false,
-  fallback: ["system-ui", "sans-serif"],
-});
-
-const display = Young_Serif({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: "400",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -41,7 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     // hydrates, so the server's markup (no attribute) intentionally differs on that one element.
     <html
       lang="en"
-      className={`${body.variable} ${display.variable} h-full antialiased`}
+      className={`${body.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

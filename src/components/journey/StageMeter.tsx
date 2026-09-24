@@ -1,7 +1,7 @@
 import { EXPERIENCE, fill } from "@/lib/i18n/experience";
 import type { Language } from "@/lib/i18n/dictionary";
 import { ACTION_TRAIL_STAGES, type ReportStatus } from "@/lib/schema/report";
-import { currentStage, stagesReached } from "@/lib/landscape/layout";
+import { currentStage, stagesReached } from "@/lib/journey/stages";
 
 /**
  * A compact five-segment path for lists and panels: filled segments are stages actually

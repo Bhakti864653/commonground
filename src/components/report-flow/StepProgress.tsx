@@ -1,6 +1,6 @@
 import type { Language } from "@/lib/i18n/dictionary";
 
-/** "Paso 2 de 5" — visible step progress on every step, per CLAUDE.md's UI conventions. */
+/** "Paso 2 de 5" plus the reference's segmented stepper — visible progress on every step. */
 export function StepProgress({
   step,
   totalSteps,
@@ -12,19 +12,14 @@ export function StepProgress({
 }) {
   return (
     <div className="mb-6">
-      <p className="text-sm font-medium text-slate">
-        {language === "es"
-          ? `Paso ${step} de ${totalSteps}`
-          : `Step ${step} of ${totalSteps}`}
-      </p>
-      <div className="mt-2 flex gap-1.5" role="presentation">
+      <div className="flex gap-2" role="presentation">
         {Array.from({ length: totalSteps }, (_, i) => (
-          <div
-            key={i}
-            className={`h-1.5 flex-1 rounded-full ${i < step ? "bg-teal" : "bg-ink/10"}`}
-          />
+          <div key={i} className={`h-1.5 flex-1 rounded-full ${i < step ? "bg-forest" : "bg-line"}`} />
         ))}
       </div>
+      <p className="cg-eyebrow mt-6">
+        {language === "es" ? `Paso ${step} de ${totalSteps}` : `Step ${step} of ${totalSteps}`}
+      </p>
     </div>
   );
 }

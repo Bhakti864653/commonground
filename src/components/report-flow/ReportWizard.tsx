@@ -80,7 +80,7 @@ export function ReportWizard({ initialType }: { initialType: "report" | "proposa
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10 md:px-8">
+    <div className="rounded-[28px] bg-surface p-[clamp(22px,3.2vw,42px)] shadow-[0_14px_45px_#1c3e2910]">
       <StepProgress step={step} totalSteps={TOTAL_STEPS} language={language} />
 
       {step === 1 && <TypeStep value={type} onChange={setType} language={language} />}
@@ -134,7 +134,7 @@ export function ReportWizard({ initialType }: { initialType: "report" | "proposa
           type="button"
           onClick={() => setStep((s) => Math.max(1, s - 1))}
           disabled={step === 1}
-          className="rounded-md border border-ink/15 px-4 py-2 text-sm font-medium text-ink disabled:opacity-40"
+          className="rounded-full border border-ink px-5 py-3 text-sm font-extrabold text-ink hover:bg-mint focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal disabled:invisible"
         >
           {UI_STRINGS.reportFlow.nav.back[language]}
         </button>
@@ -143,7 +143,7 @@ export function ReportWizard({ initialType }: { initialType: "report" | "proposa
             type="button"
             onClick={() => setStep((s) => Math.min(TOTAL_STEPS, s + 1))}
             disabled={!canContinue}
-            className="rounded-md bg-teal px-4 py-2 text-sm font-medium text-cream disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-full bg-lime px-6 py-3.5 text-[0.8rem] font-extrabold text-[#172b25] hover:bg-lime-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal disabled:opacity-45"
           >
             {UI_STRINGS.reportFlow.nav.continue[language]}
           </button>
@@ -152,7 +152,7 @@ export function ReportWizard({ initialType }: { initialType: "report" | "proposa
             type="button"
             onClick={handleSubmit}
             disabled={!consented || submitting}
-            className="rounded-md bg-teal px-4 py-2 text-sm font-medium text-cream disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-full bg-lime px-6 py-3.5 text-[0.8rem] font-extrabold text-[#172b25] hover:bg-lime-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal disabled:opacity-45"
           >
             {submitting
               ? UI_STRINGS.reportFlow.reviewStep.submitting[language]

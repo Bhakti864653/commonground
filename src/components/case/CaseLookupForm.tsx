@@ -19,7 +19,7 @@ export function CaseLookupForm() {
         if (!trimmed) return;
         router.push(`/cases/${encodeURIComponent(trimmed)}`);
       }}
-      className="mt-2 flex gap-2"
+      className="flex gap-2"
     >
       <label className="sr-only" htmlFor="case-lookup">
         {t.heading[language]}
@@ -29,11 +29,11 @@ export function CaseLookupForm() {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={t.placeholder[language]}
-        className="w-full rounded-md border border-ink/15 bg-cream px-3 py-1.5 text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+        className="min-h-[42px] w-full rounded-full border border-line bg-surface px-4 text-[0.85rem] text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
       />
       <button
         type="submit"
-        className="shrink-0 rounded-md bg-teal px-3 py-1.5 text-sm font-medium text-cream"
+        className="shrink-0 rounded-full bg-ink px-4 text-[0.8rem] font-extrabold text-paper hover:bg-ink/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
       >
         {t.submit[language]}
       </button>

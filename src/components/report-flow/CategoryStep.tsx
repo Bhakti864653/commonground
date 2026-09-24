@@ -19,7 +19,7 @@ export function CategoryStep({
 
   return (
     <fieldset>
-      <legend className="text-lg font-semibold text-ink">{t.heading[language]}</legend>
+      <legend className="font-heading text-[1.9rem] leading-tight tracking-[-0.05em] text-ink md:text-[2.2rem]">{t.heading[language]}</legend>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {categories.map((category) => {
           const Icon = getCategoryIcon(category.icon);
@@ -30,8 +30,8 @@ export function CategoryStep({
               type="button"
               onClick={() => onChange(category.id)}
               aria-pressed={selected}
-              className={`flex items-center gap-3 rounded-lg border p-4 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${
-                selected ? "border-teal bg-mint/60" : "border-ink/15 hover:bg-mint/20"
+              className={`flex items-center gap-3 rounded-[15px] border p-[18px] text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${
+                selected ? "border-forest bg-lime/45" : "border-line bg-surface hover:bg-mint/60"
               }`}
             >
               <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-teal" />

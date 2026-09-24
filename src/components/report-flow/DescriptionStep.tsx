@@ -35,7 +35,7 @@ export function DescriptionStep({
 
   return (
     <fieldset className="flex flex-col gap-5">
-      <legend className="text-lg font-semibold text-ink">{t.heading[language]}</legend>
+      <legend className="font-heading text-[1.9rem] leading-tight tracking-[-0.05em] text-ink md:text-[2.2rem]">{t.heading[language]}</legend>
 
       <div>
         <label htmlFor="description" className="text-sm font-medium text-ink">
@@ -47,12 +47,12 @@ export function DescriptionStep({
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder={t.descriptionPlaceholder[language]}
           rows={5}
-          className="mt-1.5 w-full rounded-md border border-ink/15 bg-cream p-3 text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+          className="mt-1.5 w-full rounded-[13px] border border-line bg-surface p-3.5 text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
         />
         {isEmergency && (
           <div
             role="alert"
-            className="mt-2 flex items-start gap-2 rounded-lg border border-coral/40 bg-coral/10 p-3 text-sm text-ink"
+            className="mt-2 flex items-start gap-2 rounded-[13px] border border-coral/40 bg-coral/10 p-3 text-sm text-ink"
           >
             <AlertTriangle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-coral" />
             <div>
@@ -91,7 +91,7 @@ export function DescriptionStep({
           </p>
         )}
         {image ? (
-          <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-ink/15 bg-mint/30 px-3 py-2 text-sm">
+          <div className="mt-2 flex items-center justify-between gap-2 rounded-[13px] border border-line bg-mint/50 px-3 py-2 text-sm">
             <span className="truncate text-ink">{image.fileName}</span>
             <button
               type="button"
@@ -106,7 +106,7 @@ export function DescriptionStep({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="mt-2 flex items-center gap-2 rounded-md border border-dashed border-ink/25 px-3 py-2 text-sm font-medium text-teal hover:bg-mint/20"
+            className="mt-2 flex items-center gap-2 rounded-[13px] border border-dashed border-ink/25 px-3 py-2 text-sm font-medium text-teal hover:bg-mint/20"
           >
             <Upload aria-hidden="true" className="h-4 w-4" />
             {t.photoLabel[language]}
@@ -116,7 +116,7 @@ export function DescriptionStep({
 
       <div
         aria-disabled="true"
-        className="flex items-center gap-2 rounded-md border border-ink/10 px-3 py-2 text-sm text-slate/70"
+        className="flex items-center gap-2 rounded-[13px] border border-line px-3 py-2 text-sm text-slate"
       >
         <Mic aria-hidden="true" className="h-4 w-4" />
         {t.voiceNoteLabel[language]}

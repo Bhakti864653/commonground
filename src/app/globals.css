@@ -1,54 +1,98 @@
 @import "tailwindcss";
 
 /*
- * CommonGround design tokens — "a living civic community" (docs/DESIGN_SYSTEM.md).
- * Warm ivory ground, deep teal + forest for the landscape and constructive actions, turquoise
- * for water/drainage, sun for things under review, coral only for urgent warnings. Color is
- * never the only signal for meaning — every status/verification/urgency indicator pairs a color
- * with text or an icon. Every text pairing below was checked at WCAG AA (4.5:1) or better in
- * both themes; turquoise is used for graphics only in light mode (3.7:1 on ivory).
+ * CommonGround design tokens — "community field notes": a soft, open, paper-toned layout with
+ * a deep-green sidebar, Georgia display type, lime highlights, and a green community map.
+ * Color is never the only signal for meaning — every status/verification indicator pairs a
+ * color with text. Every text pairing was checked at WCAG AA (4.5:1) or better in both themes.
  *
  * Light is the default. Dark applies only when the visitor picks it (src/lib/theme/theme.ts).
+ * The older token names (teal, mint, cream…) are kept so every screen shares one palette.
  */
 :root {
-  --ink: #13261f;
-  --cream: #fbf6ea;
-  --surface: #fffdf7;
-  --teal: #0e5e57;
-  --mint: #dcefe8;
-  --forest: #2e5b3b;
-  --turquoise: #1f8f84;
-  --yellow: #f2b92a;
-  /* Text that sits on a solid sun-yellow chip — dark in both themes. */
-  --on-yellow: #13261f;
+  --ink: #172b25;
+  --paper: #f8f8f1;
+  --cream: #f8f8f1; /* page color, and text on dark/teal fills */
+  --surface: #fffef9; /* panels, inputs */
+  --line: #d8e0d4;
+  --slate: #5f6d64; /* secondary text */
+  --caps: #51695c; /* small tracked labels */
+  --teal: #285745; /* primary actions */
+  --mint: #e0ebdb;
+  --forest: #35584a;
+  --lime: #ddf19a;
+  --lime-deep: #cdeb74;
+  --periwinkle: #d4dcf2;
+  --peach: #ffd1b9;
+  --sidebar: #193b30;
+  --sidebar-hover: #2a483a;
+  --sidebar-active: #35584a;
+  --sidebar-text: #ccdccb;
+  --map: #c9dfbb;
+  --map-road: #eef3dd;
+  --map-water: #a7c9d2;
+  --map-park: #a6c9a2;
+  --map-text: #3f5448;
+  --pin-review: #e8703f;
+  --pin-progress: #5467c9;
+  --pin-default: #172b25;
+  --status-review: #fff0d0;
+  --status-progress: #dfe5ff;
+  --status-resolved: #d9eecf;
+  --status-neutral: #e6e9de;
+  --note: #e8f2c9;
+  --yellow: #f2c55a;
+  --on-yellow: #172b25;
   --coral: #b04d38;
-  --blue: #d6e7ef;
-  --slate: #56665f;
-  /* Landscape-only materials (never used for text). */
-  --sand: #eadfc6;
-  --meadow: #cfe3c4;
+  --blue: #d4dcf2;
+  --turquoise: #5467c9;
+  --sand: #eef3dd;
+  --meadow: #c9dfbb;
 
-  --background: var(--cream);
+  --background: var(--paper);
   --foreground: var(--ink);
   color-scheme: light;
 }
 
-/* Night over the same town: forest-dark ground rather than a neutral near-black. */
 :root[data-theme="dark"] {
-  --ink: #e8efe9;
-  --cream: #0f1a16;
-  --surface: #16241f;
-  --teal: #5cc2b4;
-  --mint: #183a33;
+  --ink: #e9eee4;
+  --paper: #101b17;
+  --cream: #101b17;
+  --surface: #17251f;
+  --line: #2b3b33;
+  --slate: #a7b5ab;
+  --caps: #a9c2ae;
+  --teal: #9fd6b3;
+  --mint: #1f3129;
   --forest: #86b891;
-  --turquoise: #45c9bb;
+  --lime: #d8ee8c;
+  --lime-deep: #c6e46a;
+  --periwinkle: #27304a;
+  --peach: #4a3226;
+  --sidebar: #0b1512;
+  --sidebar-hover: #16241e;
+  --sidebar-active: #1f3129;
+  --sidebar-text: #c3d2c3;
+  --map: #1f3526;
+  --map-road: #2c4234;
+  --map-water: #2c5561;
+  --map-park: #28452f;
+  --map-text: #c9d8cb;
+  --pin-review: #f08a5d;
+  --pin-progress: #8b9bf0;
+  --pin-default: #e9eee4;
+  --status-review: #4a3d1c;
+  --status-progress: #2a3354;
+  --status-resolved: #233d2b;
+  --status-neutral: #28332d;
+  --note: #26351d;
   --yellow: #f0c75a;
-  --on-yellow: #13261f;
+  --on-yellow: #172b25;
   --coral: #ee8a74;
-  --blue: #1b3140;
-  --slate: #9db0a8;
-  --sand: #2c3a33;
-  --meadow: #1d3328;
+  --blue: #27304a;
+  --turquoise: #8b9bf0;
+  --sand: #2c4234;
+  --meadow: #1f3526;
   color-scheme: dark;
 }
 
@@ -56,56 +100,116 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-ink: var(--ink);
+  --color-paper: var(--paper);
   --color-cream: var(--cream);
   --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-slate: var(--slate);
+  --color-caps: var(--caps);
   --color-teal: var(--teal);
   --color-mint: var(--mint);
   --color-forest: var(--forest);
-  --color-turquoise: var(--turquoise);
+  --color-lime: var(--lime);
+  --color-lime-deep: var(--lime-deep);
+  --color-periwinkle: var(--periwinkle);
+  --color-peach: var(--peach);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-text: var(--sidebar-text);
+  --color-map: var(--map);
+  --color-map-text: var(--map-text);
+  --color-pin-review: var(--pin-review);
+  --color-pin-progress: var(--pin-progress);
+  --color-pin-default: var(--pin-default);
+  --color-status-review: var(--status-review);
+  --color-status-progress: var(--status-progress);
+  --color-status-resolved: var(--status-resolved);
+  --color-status-neutral: var(--status-neutral);
+  --color-note: var(--note);
   --color-yellow: var(--yellow);
   --color-on-yellow: var(--on-yellow);
   --color-coral: var(--coral);
   --color-blue: var(--blue);
-  --color-slate: var(--slate);
+  --color-turquoise: var(--turquoise);
   --color-sand: var(--sand);
   --color-meadow: var(--meadow);
-  --font-sans: var(--font-body);
-  --font-heading: var(--font-display);
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  line-height: 1.6;
-}
-
-/* Young Serif ships a single weight — hierarchy comes from size and spacing, not boldness. */
-h1,
-h2,
-h3 {
-  font-family: var(--font-heading);
-  font-weight: 400;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  text-wrap: balance;
-}
-
-p {
-  text-wrap: pretty;
+  --font-sans: var(--font-body), "Avenir Next", Arial, sans-serif;
+  --font-heading: Georgia, "Times New Roman", serif;
+  --radius-card: 28px;
 }
 
 /*
- * The one orchestrated motion moment: the civic journey path on the home page draws itself once.
- * Everything else moves only in answer to what a person does.
+ * Base element styles and shared classes live in cascade layers so Tailwind utilities can
+ * override them (unlayered CSS would silently win over every utility class).
  */
-@keyframes cg-draw {
-  from {
-    stroke-dashoffset: var(--cg-path-length, 1200);
+@layer base {
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.45;
   }
-  to {
-    stroke-dashoffset: 0;
+
+  /* Georgia display: regular weight, tight tracking — size and spacing carry the hierarchy. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    letter-spacing: -0.05em;
+    line-height: 1.02;
+  }
+}
+
+@layer components {
+  /* Small tracked labels above sections, as in the reference. */
+  .cg-caps {
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--caps);
+  }
+
+  .cg-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--caps);
+  }
+
+  .cg-eyebrow::before {
+    content: "";
+    width: 26px;
+    height: 2px;
+    background: currentColor;
+  }
+
+  /* The lime marker stroke under the headline's emphasized phrase. */
+  .cg-highlight {
+    position: relative;
+    z-index: 0;
+    font-style: italic;
+  }
+
+  .cg-highlight::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 5%;
+    height: 11%;
+    background: var(--lime);
+    border-radius: 50%;
+    opacity: 0.85;
+    transform: rotate(-1.5deg);
+    z-index: -1;
   }
 }
 
@@ -120,17 +224,11 @@ p {
   }
 }
 
-.cg-draw-path {
-  stroke-dasharray: var(--cg-path-length, 1200);
-  animation: cg-draw 1.8s cubic-bezier(0.45, 0, 0.2, 1) both;
-}
-
 .cg-arrive {
-  animation: cg-arrive 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: cg-arrive 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cg-draw-path,
   .cg-arrive {
     animation: none;
   }

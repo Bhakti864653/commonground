@@ -184,7 +184,9 @@ function seedDemoCases(store: CaseStoreState): void {
         status: seed.secondStatus,
         occurredAt: changedAt,
         actorType: "moderator",
-        note: "Cuadrilla de saneamiento notificada; recolección programada.",
+        // Describes only what CommonGround itself recorded — never an institution's action.
+        note: "A community moderator updated this case's status.",
+        noteEs: "Un moderador de la comunidad actualizó el estado de este caso.",
       });
       moderationActions.push({
         id: crypto.randomUUID(),

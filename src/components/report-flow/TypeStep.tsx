@@ -19,7 +19,7 @@ export function TypeStep({
 
   return (
     <fieldset>
-      <legend className="text-lg font-semibold text-ink">{t.heading[language]}</legend>
+      <legend className="font-heading text-[1.9rem] leading-tight tracking-[-0.05em] text-ink md:text-[2.2rem]">{t.heading[language]}</legend>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {options.map((opt) => (
           <button
@@ -27,8 +27,8 @@ export function TypeStep({
             type="button"
             onClick={() => onChange(opt.key)}
             aria-pressed={value === opt.key}
-            className={`rounded-lg border p-4 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${
-              value === opt.key ? "border-teal bg-mint/60" : "border-ink/15 hover:bg-mint/20"
+            className={`rounded-[15px] border p-[18px] text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${
+              value === opt.key ? "border-forest bg-lime/45" : "border-line bg-surface hover:bg-mint/60"
             }`}
           >
             <p className="font-semibold text-ink">{opt.title[language]}</p>

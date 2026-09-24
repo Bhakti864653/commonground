@@ -117,8 +117,8 @@ export function buildGuideTrail({
 export function GuideActionTrail({ steps, language }: { steps: TrailStep[]; language: Language }) {
   const t = EXPERIENCE.guide;
   return (
-    <section aria-labelledby="guide-trail-heading" className="rounded-[2rem] border border-ink/10 bg-surface p-6">
-      <h2 id="guide-trail-heading" className="text-2xl text-ink">
+    <section aria-labelledby="guide-trail-heading" className="border-t border-line px-2.5 pt-7 min-[1000px]:pl-9">
+      <h2 id="guide-trail-heading" className="text-[2rem] text-ink">
         {t.trailHeading[language]}
       </h2>
       <p className="mt-1 text-sm text-slate">{t.trailIntro[language]}</p>
