@@ -133,18 +133,21 @@ export default function ResourcesPage() {
         )}
       </section>
 
-      <section aria-labelledby="contacts-heading" className="flex flex-col gap-2">
-        <h2 id="contacts-heading" className="text-3xl text-ink">{t.contactsHeading[language]}</h2>
-        {other.length === 0 && emergency.length === 0 ? (
-          <p className="text-sm text-slate">{t.noContacts[language]}</p>
-        ) : other.length > 0 ? (
-          <ul>
-            {other.map((c) => (
-              <ContactCard key={c.id} contact={c} language={language} />
-            ))}
-          </ul>
-        ) : null}
-      </section>
+      {/* Hidden when every contact is an emergency line (already listed above). */}
+      {(other.length > 0 || emergency.length === 0) && (
+        <section aria-labelledby="contacts-heading" className="flex flex-col gap-2">
+          <h2 id="contacts-heading" className="text-3xl text-ink">{t.contactsHeading[language]}</h2>
+          {other.length === 0 ? (
+            <p className="text-sm text-slate">{t.noContacts[language]}</p>
+          ) : (
+            <ul>
+              {other.map((c) => (
+                <ContactCard key={c.id} contact={c} language={language} />
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       <section aria-labelledby="sources-heading" className="flex flex-col gap-2">
         <h2 id="sources-heading" className="text-3xl text-ink">{t.sourcesHeading[language]}</h2>

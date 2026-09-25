@@ -116,19 +116,6 @@ const santiagoVeraguasConfig: CommunityConfig = {
       sourceUrl: "https://www.sinaproc.gob.pa/",
       lastVerifiedAt: "2026-09-25",
     },
-    {
-      id: "municipio-santiago-whatsapp",
-      name: "Municipality of Santiago: complaints and suggestions, WhatsApp",
-      nameEs: "Municipio de Santiago: denuncias y sugerencias por WhatsApp",
-      labels: { pt: "Município de Santiago: denúncias e sugestões por WhatsApp", fr: "Municipalité de Santiago : plaintes et suggestions sur WhatsApp", zh: "圣地亚哥市政府：投诉与建议（WhatsApp）", hi: "सैंटियागो नगरपालिका: शिकायतें और सुझाव, WhatsApp", it: "Comune di Santiago: segnalazioni e suggerimenti su WhatsApp" },
-      phone: "+507 6935-2726",
-      channel: "whatsapp",
-      url: "https://santiago.municipios.gob.pa/",
-      isEmergencyService: false,
-      verified: true,
-      sourceUrl: "https://santiago.municipios.gob.pa/",
-      lastVerifiedAt: "2026-09-25",
-    },
   ],
   privacy: {
     anonymousByDefault: true,
@@ -153,7 +140,8 @@ const santiagoVeraguasConfig: CommunityConfig = {
   },
   enabledFeatures: {
     mapView: true,
-    threeDView: true,
+    // The 3D view was removed (docs/3D_EXPERIENCE.md); nothing reads this legacy flag.
+    threeDView: false,
     aiGuide: true,
     proposals: true,
     duplicateDetection: true,

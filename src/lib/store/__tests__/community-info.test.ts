@@ -43,6 +43,11 @@ describe("built-in pilot contacts and sources", () => {
     }
   });
 
+  it("lists only the three officially confirmed contacts, and no 3D view", () => {
+    expect(SANTIAGO_VERAGUAS.officialContacts.map((c) => c.phone)).toEqual(["911", "103", "+507 6998-4809"]);
+    expect(SANTIAGO_VERAGUAS.enabledFeatures.threeDView).toBe(false);
+  });
+
   it("the fictional demo has no real contacts", () => {
     expect(RIVERBEND_DEMO.officialContacts).toEqual([]);
   });

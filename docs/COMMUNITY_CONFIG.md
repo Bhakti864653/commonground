@@ -56,9 +56,9 @@ original spec (`ReportCategory`, `Source`, `OfficialContact`) are exported from 
 - `trustedSources` and `officialContacts` hold only entries checked against a real, official page
   (spec §23/§26: never invent official contacts or government actions). As of 2026-09-25: the
   national emergency line 911 and SINAPROC's 24-hour WhatsApp emergency line (both from
-  sinaproc.gob.pa), the fire department's 103 (bomberos.gob.pa), and the Municipality of
-  Santiago's WhatsApp line for complaints and suggestions (santiago.municipios.gob.pa), plus
-  those three sites as approved sources. They are shown on the public `/resources` page with
+  sinaproc.gob.pa) and the fire department's 103 (bomberos.gob.pa), plus the Municipality of
+  Santiago, SINAPROC, and Bomberos websites as approved sources. A municipal WhatsApp number was
+  left out because the municipality's site doesn't state clearly enough what that number is. They are shown on the public `/resources` page with
   their source and check date; moderators can add or remove entries at `/admin/sources`.
 - Moderator email is a placeholder (`moderator@commonground.example`) in committed source; the
   real value belongs in an environment variable at deploy time, matching how Concord's
