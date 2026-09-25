@@ -4,6 +4,7 @@ import {
   type AgentSuggestion,
   type Case,
   type ApproximateArea,
+  type RemovalReason,
   type ReportStatus,
   type UserConsent,
   type VerificationState,
@@ -326,9 +327,10 @@ export function getCaseByCaseNumber(publicCaseNumber: string): Case | undefined 
   return getStore().cases.find((c) => c.publicCaseNumber === publicCaseNumber && !c.deletedAt);
 }
 
+/** What residents (and the Guide) can browse — removed content drops out of every list. */
 export function listCasesForCommunity(communityId: string): Case[] {
   return getStore()
-    .cases.filter((c) => c.communityId === communityId && !c.deletedAt)
+    .cases.filter((c) => c.communityId === communityId && !c.deletedAt && !c.removal)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
@@ -361,7 +363,7 @@ export function flagInaccuracy(
   now: () => Date = () => new Date(),
 ): boolean {
   const found = getCaseByCaseNumber(publicCaseNumber);
-  if (!found) return false;
+  if (!found || found.removal) return false;
   found.inaccuracyFlags.push({
     id: crypto.randomUUID(),
     note: note?.trim() || undefined,
@@ -477,6 +479,39 @@ export function addAdminNote(
     note: note.trim(),
   });
   recordModerationAction(found, "add_note", actorId, undefined, now);
+  return true;
+}
+
+/**
+ * Moderator-only. Hides the content (description and photo) from every public view while
+ * keeping the case number, its history, and the public reason — never a hard delete, so the
+ * decision stays reviewable and reversible. The optional note is private (audit trail only).
+ */
+export function removeCaseContent(
+  publicCaseNumber: string,
+  reason: RemovalReason,
+  actorId: string,
+  privateNote?: string,
+  now: () => Date = () => new Date(),
+): boolean {
+  const found = getCaseByCaseNumber(publicCaseNumber);
+  if (!found || found.removal) return false;
+  found.removal = { reason, removedAt: now().toISOString() };
+  const note = privateNote?.trim();
+  recordModerationAction(found, "remove_content", actorId, note ? `${reason}: ${note}` : reason, now);
+  return true;
+}
+
+/** Undoes a removal made by mistake; recorded like every other moderator action. */
+export function restoreCaseContent(
+  publicCaseNumber: string,
+  actorId: string,
+  now: () => Date = () => new Date(),
+): boolean {
+  const found = getCaseByCaseNumber(publicCaseNumber);
+  if (!found || !found.removal) return false;
+  found.removal = undefined;
+  recordModerationAction(found, "restore_content", actorId, undefined, now);
   return true;
 }
 

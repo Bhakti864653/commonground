@@ -7,10 +7,13 @@ import {
   listAllCasesForAdmin,
   markDuplicate,
   markInaccuracyFlagReviewed,
+  removeCaseContent,
+  restoreCaseContent,
   setVerificationState,
 } from "@/lib/store/case-store";
 import { getCaseByCaseNumber } from "@/lib/store/case-store";
 import {
+  RemovalReasonSchema,
   toPublicCase,
   VerificationStateSchema,
   VerifiedSourceSchema,
@@ -108,4 +111,25 @@ export async function adminReviewInaccuracyFlag(
 ): Promise<boolean> {
   await requireAdmin();
   return markInaccuracyFlagReviewed(caseNumber, flagId);
+}
+
+/**
+ * Runtime-validated like every other admin action: the reason must be a known value and the
+ * private note is capped, since a server action can be called directly with anything.
+ */
+export async function adminRemoveContent(
+  caseNumber: string,
+  reason: string,
+  privateNote?: string,
+): Promise<boolean> {
+  await requireAdmin();
+  const parsedReason = RemovalReasonSchema.safeParse(reason);
+  if (!parsedReason.success) return false;
+  if (privateNote !== undefined && (typeof privateNote !== "string" || privateNote.length > 500)) return false;
+  return removeCaseContent(caseNumber, parsedReason.data, ACTOR_ID, privateNote);
+}
+
+export async function adminRestoreContent(caseNumber: string): Promise<boolean> {
+  await requireAdmin();
+  return restoreCaseContent(caseNumber, ACTOR_ID);
 }

@@ -50,10 +50,19 @@ language.
   area. Search and filtering run on the server (`searchCases`), with the filters validated at
   runtime; search ignores accents and matches the case number, description, and category/area
   names in Spanish and English. A case can also be opened directly by its case number.
+- **Public introduction** — `/` is a public landing page outside the app shell (no sidebar or
+  bottom nav): what CommonGround does, what the Guide can and can't do, privacy and trust, and
+  the pilot. There is no sign-in; accounts are described only as a future plan. The community
+  dashboard lives at `/home`.
+- **Contacts and sources** — `/resources` lists the active community's verified contacts
+  (emergency lines first, under a clear "CommonGround is not an emergency service" notice) and
+  approved sources, each with where and when it was checked. Unverified entries show as
+  "Por verificar".
 - **Admin moderation** — a passphrase-gated local prototype (`/admin`) for status changes,
   verification marking (officially verified requires a real http/https source), duplicate
-  marking, private notes, and reviewing the public inaccuracy-flag queue. Every action is
-  recorded and attributed.
+  marking, private notes, reviewing the public inaccuracy-flag queue, removing (and restoring)
+  content that breaks the guidelines, and managing each community's sources and contacts at
+  `/admin/sources`. Every action is recorded and attributed.
 - **Prototype community setup** — moderators can set up an additional community at
   `/admin/communities`: a name, 1–12 approximate areas, and categories chosen from a fixed list
   (an "Other" category is always included). Each community gets a unique case-number prefix, so
@@ -121,6 +130,7 @@ flowchart LR
   `PublicCase` (a structural `Omit` of every private field) is what any resident-facing code
   path is allowed to touch — private notes, moderation history, and Guide suggestions can't
   reach a public page even by accident, enforced at the type level, not just by convention.
+- `src/app/page.tsx` — the public introduction, deliberately outside the `(app)` group.
 - `src/app/(app)/` — the resident-facing shell (sidebar, top bar with the place selector and
   language/theme controls, phone bottom nav, footer). `src/app/admin/` is a sibling of that
   route group, not nested inside it, so it never inherits that shell.

@@ -19,7 +19,7 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-30 flex h-[65px] items-center justify-between gap-3 border-b border-line bg-paper/95 px-[18px] backdrop-blur md:h-[76px] md:px-[clamp(20px,4vw,65px)]">
       <div className="flex min-w-0 items-center gap-2.5">
-        <Link href="/" className="shrink-0 rounded-lg md:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal">
+        <Link href="/home" className="shrink-0 rounded-lg md:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal">
           <LogoMark tone="ink" className="h-8 w-8" />
           <span className="sr-only">CommonGround</span>
         </Link>

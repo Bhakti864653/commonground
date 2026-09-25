@@ -20,9 +20,17 @@ received a submission.
   [`ARCHITECTURE.md`](ARCHITECTURE.md#communities-created-at-runtime-prototype)).
 - View each case's moderation history.
 
-Not implemented: adding a community's trusted sources or official contacts, and removing
-content. The schema reserves `add_source` and `remove_content` action types for them, but there
-is no action or UI yet.
+- Remove a case's content when it breaks the community guidelines (personal information, public
+  accusations or harassment, spam, off-topic, other). The description and photo disappear from
+  every public page, the activity feed, search, and the Guide's tools; the case number, the
+  public reason, and the date stay visible so the removal itself is transparent. Nothing is
+  deleted, and a moderator can restore it. Both are recorded (`remove_content` /
+  `restore_content`), with an optional private note that only appears in the moderation history.
+- Add or remove a community's approved sources and official contacts at `/admin/sources`. Every
+  URL must be http/https; a contact can only be marked verified with a source URL and the date it
+  was checked (otherwise it shows publicly as "Por verificar"). Changes are listed in a change
+  history on that page. Like everything else in the prototype store, runtime changes are lost on
+  a restart or redeploy; the built-in entries always come back.
 
 ## Rules
 

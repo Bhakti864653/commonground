@@ -234,6 +234,23 @@
   }
 }
 
+/* The landing illustration's slow drift along its dashed paths. */
+@keyframes cg-flow {
+  to {
+    stroke-dashoffset: -44;
+  }
+}
+
+.cg-flow {
+  animation: cg-flow 3.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cg-flow {
+    animation: none;
+  }
+}
+
 /*
  * Chinese and Hindi: the Latin display settings (tight negative tracking, synthesized italics,
  * tracked uppercase labels) squash Han characters and break Devanagari's joined letterforms and

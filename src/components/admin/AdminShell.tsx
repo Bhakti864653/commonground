@@ -24,6 +24,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <Link href="/admin/communities" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
               Communities
             </Link>
+            <Link href="/admin/sources" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
+              Sources &amp; contacts
+            </Link>
           </nav>
           <ThemeToggle />
           <AdminLogoutButton />

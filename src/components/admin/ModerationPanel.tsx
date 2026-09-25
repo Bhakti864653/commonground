@@ -6,6 +6,8 @@ import {
   adminAddNote,
   adminChangeStatus,
   adminMarkDuplicate,
+  adminRemoveContent,
+  adminRestoreContent,
   adminReviewInaccuracyFlag,
   adminSetVerification,
 } from "@/lib/store/admin-actions";
@@ -14,11 +16,14 @@ import type { AgentTraceStep, SuggestionDecision } from "@/lib/guide/case-analys
 import { draftStatusChangeExplanation } from "@/lib/insights/status-explanation";
 import { AnalysisTraceView } from "./AnalysisTraceView";
 import {
+  REMOVAL_REASON_LABELS,
+  RemovalReasonSchema,
   ReportStatusSchema,
   STATUS_LABELS,
   VERIFICATION_LABELS,
   VerificationStateSchema,
   type Case,
+  type RemovalReason,
   type ReportStatus,
   type VerificationState,
 } from "@/lib/schema/report";
@@ -31,6 +36,7 @@ function describeSuggestedValue(kind: Case["agentSuggestions"][number]["kind"], 
 
 const STATUS_OPTIONS = ReportStatusSchema.options;
 const VERIFICATION_OPTIONS = VerificationStateSchema.options;
+const REMOVAL_REASONS = RemovalReasonSchema.options;
 
 export function ModerationPanel({
   caseData,
@@ -53,6 +59,9 @@ export function ModerationPanel({
   const [analysisTrace, setAnalysisTrace] = useState<AgentTraceStep[] | null>(null);
   const [analysisDecisions, setAnalysisDecisions] = useState<SuggestionDecision[]>([]);
   const [verifyEvidence, setVerifyEvidence] = useState<{ title: string; url: string } | null>(null);
+  const [removalReason, setRemovalReason] = useState<RemovalReason>("personal_information");
+  const [removalNote, setRemovalNote] = useState("");
+  const [confirmingRemoval, setConfirmingRemoval] = useState(false);
 
   async function run(key: string, fn: () => Promise<boolean>) {
     setPending(key);
@@ -82,6 +91,13 @@ export function ModerationPanel({
         {caseData.isDuplicateOf && (
           <p className="mt-2 text-xs font-medium text-coral">
             Marked as duplicate of {caseData.isDuplicateOf}
+          </p>
+        )}
+        {caseData.removal && (
+          <p className="mt-2 text-xs font-medium text-coral">
+            Content removed from public view ({REMOVAL_REASON_LABELS[caseData.removal.reason].en}) on{" "}
+            {new Date(caseData.removal.removedAt).toLocaleString()}. Residents see only the case number and
+            this reason.
           </p>
         )}
       </div>
@@ -382,6 +398,99 @@ export function ModerationPanel({
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      {/* Remove content */}
+      <section className="rounded-lg border border-coral/30 p-4">
+        <h2 className="text-sm font-semibold text-ink">
+          Remove content {caseData.removal && <span className="text-coral">(removed)</span>}
+        </h2>
+        {caseData.removal ? (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <p className="text-xs text-slate">
+              The description and any photo are hidden from every public page, the activity feed, and
+              the Guide. Restoring puts the case back exactly as it was.
+            </p>
+            <button
+              type="button"
+              disabled={pending === "restore"}
+              onClick={() => run("restore", () => adminRestoreContent(caseData.publicCaseNumber))}
+              className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink disabled:opacity-50"
+            >
+              Restore content
+            </button>
+          </div>
+        ) : (
+          <>
+            <p className="mt-1 text-xs text-slate">
+              For content that breaks the community guidelines (personal information, accusations,
+              spam). The case number and the reason stay public; the text and photo do not. Nothing
+              is deleted, so the decision can be reversed.
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <select
+                aria-label="Reason shown publicly"
+                value={removalReason}
+                onChange={(e) => setRemovalReason(e.target.value as RemovalReason)}
+                className="rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
+              >
+                {REMOVAL_REASONS.map((r) => (
+                  <option key={r} value={r}>
+                    {REMOVAL_REASON_LABELS[r].en}
+                  </option>
+                ))}
+              </select>
+              <input
+                value={removalNote}
+                onChange={(e) => setRemovalNote(e.target.value)}
+                maxLength={500}
+                aria-label="Private note for the moderation history (optional)"
+                placeholder="Private note for the history (optional)"
+                className="min-w-[14rem] flex-1 rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
+              />
+              {confirmingRemoval ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingRemoval(false)}
+                    className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending === "remove"}
+                    onClick={() =>
+                      run("remove", async () => {
+                        const ok = await adminRemoveContent(
+                          caseData.publicCaseNumber,
+                          removalReason,
+                          removalNote.trim() || undefined,
+                        );
+                        if (ok) {
+                          setRemovalNote("");
+                          setConfirmingRemoval(false);
+                        }
+                        return ok;
+                      })
+                    }
+                    className="rounded-md bg-coral px-3 py-1.5 text-sm font-medium text-cream disabled:opacity-50"
+                  >
+                    Confirm removal
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingRemoval(true)}
+                  className="rounded-md border border-coral/50 px-3 py-1.5 text-sm font-medium text-coral"
+                >
+                  Remove content
+                </button>
+              )}
+            </div>
+          </>
         )}
       </section>
 

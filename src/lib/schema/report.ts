@@ -153,6 +153,7 @@ export const ModerationActionSchema = z.object({
     "mark_unverified",
     "add_source",
     "remove_content",
+    "restore_content",
     "add_note",
   ]),
   occurredAt: z.string(),
@@ -202,6 +203,33 @@ export const VerifiedSourceSchema = z.object({
 });
 export type VerifiedSource = z.infer<typeof VerifiedSourceSchema>;
 
+/**
+ * Why a moderator took a case's content down. Public on purpose: a removed case still shows its
+ * number and this reason, so the removal itself is transparent even though the content isn't.
+ */
+export const RemovalReasonSchema = z.enum([
+  "personal_information",
+  "accusation_or_harassment",
+  "spam_or_advertising",
+  "off_topic",
+  "other_guidelines",
+]);
+export type RemovalReason = z.infer<typeof RemovalReasonSchema>;
+
+export const REMOVAL_REASON_LABELS: Record<RemovalReason, LocalizedText> = {
+  personal_information: { es: "Contenía información personal", en: "It contained personal information", pt: "Continha informações pessoais", fr: "Il contenait des informations personnelles", zh: "包含个人信息", hi: "इसमें निजी जानकारी थी", it: "Conteneva informazioni personali" },
+  accusation_or_harassment: { es: "Contenía acusaciones públicas o acoso", en: "It contained public accusations or harassment", pt: "Continha acusações públicas ou assédio", fr: "Il contenait des accusations publiques ou du harcèlement", zh: "包含公开指控或骚扰内容", hi: "इसमें सार्वजनिक आरोप या उत्पीड़न था", it: "Conteneva accuse pubbliche o molestie" },
+  spam_or_advertising: { es: "Era spam o publicidad", en: "It was spam or advertising", pt: "Era spam ou publicidade", fr: "C’était du spam ou de la publicité", zh: "属于垃圾信息或广告", hi: "यह स्पैम या विज्ञापन था", it: "Era spam o pubblicità" },
+  off_topic: { es: "No trataba sobre un asunto de la comunidad", en: "It wasn't about a community matter", pt: "Não tratava de um assunto da comunidade", fr: "Il ne concernait pas une question de la communauté", zh: "与社区事务无关", hi: "यह समुदाय से जुड़ा मामला नहीं था", it: "Non riguardava una questione della comunità" },
+  other_guidelines: { es: "No cumplía otras normas de la comunidad", en: "It broke other community guidelines", pt: "Violava outras regras da comunidade", fr: "Il enfreignait d’autres règles de la communauté", zh: "违反了其他社区准则", hi: "इसने समुदाय के अन्य नियम तोड़े", it: "Violava altre regole della comunità" },
+};
+
+export const ContentRemovalSchema = z.object({
+  reason: RemovalReasonSchema,
+  removedAt: z.string(),
+});
+export type ContentRemoval = z.infer<typeof ContentRemovalSchema>;
+
 const CaseBaseSchema = z.object({
   id: z.string(),
   publicCaseNumber: z.string(),
@@ -224,6 +252,8 @@ const CaseBaseSchema = z.object({
   agentSuggestions: z.array(AgentSuggestionSchema).default([]),
   isDuplicateOf: z.string().optional(),
   deletedAt: z.string().optional(),
+  /** Set when a moderator removes the content; the case number and reason stay public. */
+  removal: ContentRemovalSchema.optional(),
   /**
    * A random capability token, shown to the submitter exactly once (spec MVP goal #12,
    * "delete their submission") — never displayed on the public case view. Since this
@@ -265,5 +295,7 @@ export type PublicCase = Omit<
 export function toPublicCase(c: Case): PublicCase {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deliberately omitting these fields
   const { managementToken, adminNotes, moderationActions, agentSuggestions, inaccuracyFlags, ...rest } = c;
+  // Removed content never leaves the server again, even if a caller forgets to check `removal`.
+  if (rest.removal) return { ...rest, description: "", image: undefined };
   return rest;
 }

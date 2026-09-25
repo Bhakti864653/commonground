@@ -17,7 +17,7 @@ export function MobileNav() {
       className="fixed inset-x-0 bottom-0 z-30 rounded-t-[20px] bg-sidebar px-1 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-8px_30px_#12352622] md:hidden"
     >
       <ul className="flex justify-around">
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter((item) => !item.desktopOnly).map((item) => {
           const Icon = item.icon;
           const active = isNavItemActive(item, pathname);
           return (

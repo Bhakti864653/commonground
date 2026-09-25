@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import { UI_STRINGS } from "@/lib/i18n/dictionary";
 import { EXPERIENCE } from "@/lib/i18n/experience";
 import { FIELD } from "@/lib/i18n/field-notes";
+import { LANDING } from "@/lib/i18n/landing";
+import { INFO } from "@/lib/i18n/community-info";
 import { LANGUAGE_CODES, dateLocale, htmlLang, isLanguage } from "@/lib/i18n/languages";
-import { STATUS_LABELS, VERIFICATION_LABELS } from "@/lib/schema/report";
+import { REMOVAL_REASON_LABELS, STATUS_LABELS, VERIFICATION_LABELS } from "@/lib/schema/report";
 import { COMMUNITIES } from "@/data/communities";
 import { CATEGORY_PRESETS } from "@/data/communities/category-presets";
 import { consentTextOf, labelOf, noteOf } from "@/lib/i18n/labels";
@@ -27,6 +29,9 @@ collect(EXPERIENCE, "EXPERIENCE", entries);
 collect(FIELD, "FIELD", entries);
 collect(STATUS_LABELS, "STATUS_LABELS", entries);
 collect(VERIFICATION_LABELS, "VERIFICATION_LABELS", entries);
+collect(REMOVAL_REASON_LABELS, "REMOVAL_REASON_LABELS", entries);
+collect(LANDING, "LANDING", entries);
+collect(INFO, "INFO", entries);
 
 const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
 
@@ -67,6 +72,14 @@ describe("community data", () => {
         expect(consentTextOf(community.privacy, lang)).toBeTruthy();
       }
       expect(community.privacy.consentTexts?.zh && community.privacy.consentTexts?.hi && community.privacy.consentTexts?.it).toBeTruthy();
+    }
+  });
+
+  it("names every built-in official contact in every language", () => {
+    for (const community of COMMUNITIES) {
+      for (const contact of community.officialContacts) {
+        expect(contact.nameEs && contact.labels?.pt && contact.labels?.fr && contact.labels?.zh && contact.labels?.hi && contact.labels?.it, contact.id).toBeTruthy();
+      }
     }
   });
 

@@ -86,6 +86,9 @@ export default async function AdminPage() {
                           dup of {c.isDuplicateOf}
                         </span>
                       )}
+                      {c.removal && (
+                        <span className="ml-2 text-xs font-normal text-coral">content removed</span>
+                      )}
                     </p>
                     <p className="text-xs text-slate">
                       {community?.displayName} · {c.type} · {STATUS_LABELS[c.status].en} ·{" "}

@@ -2,7 +2,17 @@ import { z } from "zod";
 import { COMMUNITIES } from "@/data/communities";
 import { CATEGORY_PRESETS, CATEGORY_PRESET_IDS } from "@/data/communities/category-presets";
 import { casePrefix } from "@/lib/case-number/format-case-number";
-import { CommunityConfigSchema, MAP_DIRECTIONS, MapSettingsSchema, type CommunityConfig } from "@/lib/schema/community";
+import {
+  CommunityConfigSchema,
+  ContactConfigSchema,
+  HttpUrlSchema,
+  MAP_DIRECTIONS,
+  MapSettingsSchema,
+  SourceConfigSchema,
+  type CommunityConfig,
+  type ContactConfig,
+  type SourceConfig,
+} from "@/lib/schema/community";
 
 /**
  * Communities: the built-in configs (src/data/communities) plus any a moderator has set up at
@@ -10,16 +20,49 @@ import { CommunityConfigSchema, MAP_DIRECTIONS, MapSettingsSchema, type Communit
  * dev reloads but NOT a server restart, a redeploy, or (on Vercel) a different serverless
  * instance. A real database is the documented next step (ARCHITECTURE.md).
  */
-type CommunityStoreState = { created: CommunityConfig[] };
+/** Sources and contacts a moderator added or removed at runtime, per community. */
+type InfoOverrides = { sources: SourceConfig[]; contacts: ContactConfig[]; removedIds: string[] };
+
+export type CommunityInfoLogEntry = {
+  id: string;
+  communityId: string;
+  action: "add_source" | "remove_source" | "add_contact" | "remove_contact";
+  /** The entry's name — never anything private. */
+  detail: string;
+  actorId: string;
+  occurredAt: string;
+};
+
+type CommunityStoreState = {
+  created: CommunityConfig[];
+  overrides: Record<string, InfoOverrides>;
+  log: CommunityInfoLogEntry[];
+};
 
 function getStore(): CommunityStoreState {
-  const g = globalThis as typeof globalThis & { __commonGroundCommunityStore__?: CommunityStoreState };
-  if (!g.__commonGroundCommunityStore__) g.__commonGroundCommunityStore__ = { created: [] };
-  return g.__commonGroundCommunityStore__;
+  const g = globalThis as typeof globalThis & { __commonGroundCommunityStore__?: Partial<CommunityStoreState> };
+  const store = (g.__commonGroundCommunityStore__ ??= {});
+  // Filled in field by field so a store created by an older version of this file (dev HMR)
+  // still gets the newer fields.
+  store.created ??= [];
+  store.overrides ??= {};
+  store.log ??= [];
+  return store as CommunityStoreState;
+}
+
+function withOverrides(community: CommunityConfig): CommunityConfig {
+  const o = getStore().overrides[community.id];
+  if (!o) return community;
+  const removed = new Set(o.removedIds);
+  return {
+    ...community,
+    trustedSources: [...community.trustedSources.filter((s) => !removed.has(s.id)), ...o.sources],
+    officialContacts: [...community.officialContacts.filter((c) => !removed.has(c.id)), ...o.contacts],
+  };
 }
 
 export function listCommunities(): CommunityConfig[] {
-  return [...COMMUNITIES, ...getStore().created];
+  return [...COMMUNITIES, ...getStore().created].map(withOverrides);
 }
 
 export function getCommunity(id: string): CommunityConfig | undefined {
@@ -156,7 +199,120 @@ export function createCommunity(rawInput: unknown): CreateCommunityResult {
   return { ok: true, community };
 }
 
+const entryName = z.string().trim().min(2).max(120);
+/** A calendar date the entry was checked, never in the future. */
+const checkedDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine((v) => !Number.isNaN(Date.parse(v)) && Date.parse(v) <= Date.now() + 24 * 60 * 60 * 1000);
+
+export const NewSourceInputSchema = z.object({
+  name: entryName,
+  url: HttpUrlSchema,
+  trustLevel: SourceConfigSchema.shape.trustLevel,
+  lastVerifiedAt: checkedDate,
+});
+export type NewSourceInput = z.input<typeof NewSourceInputSchema>;
+
+/** An optional form field: a blank string means "not given". */
+function optionalField<T extends z.ZodType<string>>(schema: T) {
+  return z
+    .union([z.literal(""), schema])
+    .optional()
+    .transform((v) => (v ? v : undefined));
+}
+
+export const NewContactInputSchema = z
+  .object({
+    name: entryName,
+    nameEs: optionalField(entryName),
+    phone: optionalField(z.string().trim().regex(/^[+*0-9][0-9 ()*-]{1,24}$/)),
+    channel: z.enum(["phone", "whatsapp"]),
+    url: optionalField(HttpUrlSchema),
+    isEmergencyService: z.boolean(),
+    verified: z.boolean(),
+    sourceUrl: optionalField(HttpUrlSchema),
+    lastVerifiedAt: optionalField(checkedDate),
+  })
+  // A contact nobody can reach is useless, and "verified" is only ever claimed with a
+  // checkable source and date behind it.
+  .refine((c) => c.phone || c.url)
+  .refine((c) => !c.verified || (c.sourceUrl && c.lastVerifiedAt));
+export type NewContactInput = z.input<typeof NewContactInputSchema>;
+
+export type InfoChangeResult = { ok: true } | { ok: false; error: "invalid" | "unknown_community" | "not_found" };
+
+function overridesFor(communityId: string): InfoOverrides {
+  const store = getStore();
+  return (store.overrides[communityId] ??= { sources: [], contacts: [], removedIds: [] });
+}
+
+function entryId(name: string): string {
+  return `${slugify(name).slice(0, 40)}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
+function logInfoChange(
+  communityId: string,
+  action: CommunityInfoLogEntry["action"],
+  detail: string,
+  actorId: string,
+  now: Date,
+): void {
+  getStore().log.push({ id: crypto.randomUUID(), communityId, action, detail, actorId, occurredAt: now.toISOString() });
+}
+
+export function addTrustedSource(communityId: string, rawInput: unknown, actorId: string, now = new Date()): InfoChangeResult {
+  if (!getCommunity(communityId)) return { ok: false, error: "unknown_community" };
+  const parsed = NewSourceInputSchema.safeParse(rawInput);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  const source = SourceConfigSchema.parse({ id: entryId(parsed.data.name), ...parsed.data });
+  overridesFor(communityId).sources.push(source);
+  logInfoChange(communityId, "add_source", source.name, actorId, now);
+  return { ok: true };
+}
+
+export function addOfficialContact(communityId: string, rawInput: unknown, actorId: string, now = new Date()): InfoChangeResult {
+  if (!getCommunity(communityId)) return { ok: false, error: "unknown_community" };
+  const parsed = NewContactInputSchema.safeParse(rawInput);
+  if (!parsed.success) return { ok: false, error: "invalid" };
+  const contact = ContactConfigSchema.parse({ id: entryId(parsed.data.name), ...parsed.data });
+  overridesFor(communityId).contacts.push(contact);
+  logInfoChange(communityId, "add_contact", contact.name, actorId, now);
+  return { ok: true };
+}
+
+/** Removes a source or contact, whether built in or added at runtime. */
+export function removeCommunityInfoEntry(
+  communityId: string,
+  kind: "source" | "contact",
+  id: string,
+  actorId: string,
+  now = new Date(),
+): InfoChangeResult {
+  const community = getCommunity(communityId);
+  if (!community) return { ok: false, error: "unknown_community" };
+  const entry =
+    kind === "source"
+      ? community.trustedSources.find((s) => s.id === id)
+      : community.officialContacts.find((c) => c.id === id);
+  if (!entry) return { ok: false, error: "not_found" };
+  const o = overridesFor(communityId);
+  if (kind === "source") o.sources = o.sources.filter((s) => s.id !== id);
+  else o.contacts = o.contacts.filter((c) => c.id !== id);
+  o.removedIds.push(id);
+  logInfoChange(communityId, kind === "source" ? "remove_source" : "remove_contact", entry.name, actorId, now);
+  return { ok: true };
+}
+
+/** Newest first. */
+export function listCommunityInfoLog(): CommunityInfoLogEntry[] {
+  return [...getStore().log].reverse();
+}
+
 /** Test-only reset. */
 export function __resetCommunityStoreForTests(): void {
-  getStore().created = [];
+  const store = getStore();
+  store.created = [];
+  store.overrides = {};
+  store.log = [];
 }

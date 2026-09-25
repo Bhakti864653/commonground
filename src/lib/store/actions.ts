@@ -54,6 +54,19 @@ export async function listCommunitiesForResidents(): Promise<CommunityConfig[]> 
   return listCommunities().map((c) => ({ ...c, moderation: { ...c.moderation, moderatorEmails: [] } }));
 }
 
+export type CommunityInfo = Pick<CommunityConfig, "id" | "displayName" | "status" | "trustedSources" | "officialContacts">;
+
+/**
+ * Fresh from the server each time (a moderator may have just added or removed an entry), so the
+ * Contacts page never shows a stale copy from the client's community list.
+ */
+export async function getCommunityInfo(communityId: string): Promise<CommunityInfo | null> {
+  const community = typeof communityId === "string" ? getCommunity(communityId) : undefined;
+  if (!community) return null;
+  const { id, displayName, status, trustedSources, officialContacts } = community;
+  return { id, displayName, status, trustedSources, officialContacts };
+}
+
 /** Runtime-validated: a server action is a public endpoint callable with any JSON. */
 const SearchFiltersSchema = z.object({
   query: z.string().max(200),

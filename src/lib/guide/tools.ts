@@ -91,6 +91,9 @@ export async function executeTool(
       if (!found || found.communityId !== context.communityId) {
         return { error: "Case not found in this community" };
       }
+      if (found.removal) {
+        return { error: "A moderator removed this case's content for breaking community guidelines" };
+      }
       return { case: summarizeCase(found) };
     }
     default:

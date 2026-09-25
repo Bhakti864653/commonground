@@ -20,7 +20,7 @@ export function Sidebar() {
 
   return (
     <aside className="sticky top-0 hidden h-screen w-[76px] shrink-0 flex-col gap-8 bg-sidebar px-3 py-7 text-[#f8f8f1] md:flex min-[1100px]:w-[220px] min-[1100px]:gap-6 min-[1100px]:px-[22px] min-[1100px]:py-8">
-      <Link href="/" className="rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-lime">
+      <Link href="/home" className="rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-lime">
         <Wordmark language={language} className="hidden min-[1100px]:flex" />
         <span className="flex justify-center min-[1100px]:hidden">
           <LogoMark className="h-9 w-9" />

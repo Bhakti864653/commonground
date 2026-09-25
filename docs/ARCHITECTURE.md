@@ -59,17 +59,20 @@ Vitest for pure-function coverage.
 ```
 src/
   app/                      route segments (App Router)
+    page.tsx                public introduction at "/" — outside the (app) shell, no sign-in
     (app)/                  resident-facing shell (no login — everything is anonymous)
-      page.tsx              home: intro, community map, Guide + community pulse, latest cases
+      home/                 community dashboard: intro, map, Guide + community pulse, latest cases
       activity/             Explore: server-side search and filters over the case list
       report/new/           the 5-step guided report/proposal flow
       cases/[caseNumber]/   public case page: status, verification, history, flag/delete
       guide/                the CommonGround Guide chat
       guide/how-it-works/   step-by-step demonstration of how the Guide works
       how-it-works/         plain-language explanation of the process
+      resources/            verified contacts and approved sources for the active community
     admin/                  passphrase-gated moderation prototype, clearly labeled
       cases/[caseNumber]/   per-case moderation panel
       communities/          prototype community setup
+      sources/              add/remove a community's approved sources and official contacts
   components/
     layout/                 Sidebar, TopBar, PlaceSelector, LocaleSwitch, ThemeToggle,
                             MobileNav, Footer, Logo, AppShell

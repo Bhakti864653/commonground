@@ -3,6 +3,7 @@ import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 import { toPublicCase } from "@/lib/schema/report";
 import { CaseView } from "@/components/case/CaseView";
 import { CaseNotFound } from "@/components/case/CaseNotFound";
+import { CaseRemoved } from "@/components/case/CaseRemoved";
 
 export default async function CasePage({
   params,
@@ -20,6 +21,10 @@ export default async function CasePage({
 
   if (!foundCase || !community || !category) {
     return <CaseNotFound caseNumber={caseNumber} />;
+  }
+
+  if (foundCase.removal) {
+    return <CaseRemoved caseNumber={foundCase.publicCaseNumber} removal={foundCase.removal} />;
   }
 
   // Only ever hand the real management token to the client if the visitor's URL already

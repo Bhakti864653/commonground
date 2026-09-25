@@ -38,10 +38,27 @@ export const AreaConfigSchema = z.object({
 });
 export type AreaConfig = z.infer<typeof AreaConfigSchema>;
 
+/**
+ * http(s) only: `z.string().url()` alone accepts `javascript:` URIs, and these URLs are rendered
+ * as public links.
+ */
+export const HttpUrlSchema = z
+  .string()
+  .trim()
+  .max(2000)
+  .refine((value) => {
+    try {
+      const protocol = new URL(value).protocol;
+      return protocol === "http:" || protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, "Must be a valid http:// or https:// URL");
+
 export const SourceConfigSchema = z.object({
   id: z.string(),
   name: z.string(),
-  url: z.string().url(),
+  url: HttpUrlSchema,
   lastVerifiedAt: z.string(),
   trustLevel: z.enum(["official_verified", "community_trusted"]),
 });
@@ -56,11 +73,14 @@ export const ContactConfigSchema = z.object({
   id: z.string(),
   name: z.string(),
   nameEs: z.string().optional(),
+  labels: ExtraTranslationsSchema.optional(),
   phone: z.string().optional(),
-  url: z.string().url().optional(),
+  /** How the number is reached — a WhatsApp-only line gets a WhatsApp link, not a phone call. */
+  channel: z.enum(["phone", "whatsapp"]).default("phone"),
+  url: HttpUrlSchema.optional(),
   isEmergencyService: z.boolean().default(false),
   verified: z.boolean().default(false),
-  sourceUrl: z.string().url().optional(),
+  sourceUrl: HttpUrlSchema.optional(),
   lastVerifiedAt: z.string().optional(),
 });
 export type ContactConfig = z.infer<typeof ContactConfigSchema>;
