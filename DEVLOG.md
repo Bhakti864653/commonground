@@ -160,3 +160,30 @@ the same information a moderator has, rather than overriding its judgment. Live 
 `search_similar_cases`/`get_case_details` results, and still rejected an unsupported status
 suggestion in the same run (so it isn't just rubber-stamping). **Lesson:** before calling a
 model's reasoning "wrong," check what was actually in its context window.
+
+## Swapping the logo exposed a mark that was already on the wrong background
+
+**Problem:** replacing the leaf mark with the "shared roof" mark (`3fc8989`) looked like an
+SVG-only change to `LogoMark`. But `LogoMark`'s `tone` prop encodes an assumption about the
+background — `"lime"` (the default) is for the always-dark sidebar, `"ink"` for page
+backgrounds — and the Guide demonstration page (`AgentDemo.tsx`) was using the default on a
+light `bg-surface` panel. With the old mark that meant thin lime strokes on near-white, low
+contrast but nobody noticed. With the new mark's cream outlines it would have been invisible.
+
+Two smaller traps in the same change:
+
+- The sidebar tone can't use `var(--cream)` for its outlines: `--cream` is "page color", which
+  turns dark in the dark theme, while the sidebar stays dark in both. The outline is a fixed
+  `#f8f8f1`, the same reason the wordmark text is fixed.
+- The lime "shared" area in the first hand-drawn preview didn't actually match where the two
+  roofs overlap. The polygon had to be computed from the roof lines — they cross at
+  (20.5, 15) — giving `M14 20L20.5 15L26 20V34H14Z`, drawn *under* the outlines so the
+  strokes stay crisp.
+
+**Fix:** `AgentDemo` now passes `tone="ink"`; every `LogoMark` usage was checked against its
+actual background (sidebar, phone top bar, Guide chat, Guide demo) in light and dark themes
+before committing.
+
+**Lesson:** a default prop value is an assumption about context. When the thing it renders
+changes, grep for every call site that relies on the default, not just the ones that pass it
+explicitly.
