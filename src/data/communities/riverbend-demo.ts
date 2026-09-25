@@ -72,7 +72,8 @@ const riverbendConfig: CommunityConfig = {
   },
   enabledFeatures: {
     mapView: true,
-    threeDView: true,
+    // The 3D view was removed (docs/3D_EXPERIENCE.md); nothing reads this legacy flag.
+    threeDView: false,
     aiGuide: true,
     proposals: true,
     duplicateDetection: true,

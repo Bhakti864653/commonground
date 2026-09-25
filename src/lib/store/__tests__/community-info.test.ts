@@ -50,6 +50,7 @@ describe("built-in pilot contacts and sources", () => {
 
   it("the fictional demo has no real contacts", () => {
     expect(RIVERBEND_DEMO.officialContacts).toEqual([]);
+    expect(RIVERBEND_DEMO.enabledFeatures.threeDView).toBe(false);
   });
 });
 
