@@ -90,6 +90,52 @@ describe("community store", () => {
   });
 });
 
+describe("community street-map settings", () => {
+  beforeEach(() => __resetCommunityStoreForTests());
+
+  const center = { lat: 8.9824, lng: -79.5199 };
+
+  it("keeps a map center and each area's direction", () => {
+    const result = createCommunity({
+      ...valid,
+      map: { center, radiusKm: 3 },
+      areas: [
+        { labelEs: "Área norte", label: "Northern area", mapDirection: "north" },
+        { labelEs: "Mercado", label: "Market", mapDirection: undefined },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.community.map).toEqual({ center, radiusKm: 3 });
+    expect(result.community.areas.map((a) => a.mapDirection)).toEqual(["north", undefined]);
+  });
+
+  it("drops area directions when there is no map center to place them from", () => {
+    const result = createCommunity({ ...valid, areas: [{ labelEs: "Área norte", label: "Northern area", mapDirection: "north" }] });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.community.map).toBeUndefined();
+    expect(result.community.areas[0].mapDirection).toBeUndefined();
+  });
+
+  it("rejects two areas in the same direction", () => {
+    const result = createCommunity({
+      ...valid,
+      map: { center, radiusKm: 3 },
+      areas: [
+        { labelEs: "Norte uno", label: "North one", mapDirection: "north" },
+        { labelEs: "Norte dos", label: "North two", mapDirection: "north" },
+      ],
+    });
+    expect(result).toEqual({ ok: false, error: "invalid" });
+  });
+
+  it("rejects impossible coordinates and unknown directions", () => {
+    expect(createCommunity({ ...valid, map: { center: { lat: 120, lng: 0 }, radiusKm: 3 } }).ok).toBe(false);
+    expect(createCommunity({ ...valid, areas: [{ labelEs: "Arriba", label: "Up", mapDirection: "up" }] }).ok).toBe(false);
+  });
+});
+
 describe("slugify", () => {
   it("strips accents and punctuation", () => {
     expect(slugify("Ciudad de Panamá")).toBe("ciudad-de-panama");

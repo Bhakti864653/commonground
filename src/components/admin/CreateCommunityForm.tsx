@@ -5,8 +5,20 @@ import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import { CATEGORY_PRESETS, type CategoryPresetId } from "@/data/communities/category-presets";
 import { adminCreateCommunity } from "@/lib/store/admin-community-actions";
+import type { MapDirection } from "@/lib/schema/community";
 
-type AreaRow = { labelEs: string; label: string };
+type AreaRow = { labelEs: string; label: string; mapDirection: MapDirection | "" };
+
+const EMPTY_AREA: AreaRow = { labelEs: "", label: "", mapDirection: "" };
+
+const DIRECTION_OPTIONS: { value: MapDirection | ""; label: string }[] = [
+  { value: "", label: "Not on the street map" },
+  { value: "center", label: "Center" },
+  { value: "north", label: "North" },
+  { value: "south", label: "South" },
+  { value: "east", label: "East" },
+  { value: "west", label: "West" },
+];
 
 const input =
   "w-full rounded-[13px] border border-line bg-paper px-3 py-2 text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal";
@@ -21,7 +33,10 @@ export function CreateCommunityForm() {
   const [displayName, setDisplayName] = useState("");
   const [country, setCountry] = useState("Panamá");
   const [region, setRegion] = useState("");
-  const [areas, setAreas] = useState<AreaRow[]>([{ labelEs: "", label: "" }]);
+  const [areas, setAreas] = useState<AreaRow[]>([EMPTY_AREA]);
+  const [mapLat, setMapLat] = useState("");
+  const [mapLng, setMapLng] = useState("");
+  const [mapRadius, setMapRadius] = useState("2");
   const [categories, setCategories] = useState<Set<CategoryPresetId>>(new Set(["other"]));
   const [status, setStatus] = useState<{ kind: "idle" | "saving" } | { kind: "error" | "done"; message: string }>({ kind: "idle" });
 
@@ -42,12 +57,22 @@ export function CreateCommunityForm() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setStatus({ kind: "saving" });
+    const hasMap = mapLat.trim() !== "" || mapLng.trim() !== "";
     const result = await adminCreateCommunity({
       displayName,
       country,
       region,
-      areas: areas.filter((a) => a.labelEs.trim() || a.label.trim()),
+      areas: areas
+        .filter((a) => a.labelEs.trim() || a.label.trim())
+        .map((a) => ({ labelEs: a.labelEs, label: a.label, mapDirection: a.mapDirection || undefined })),
       categoryIds: [...categories],
+      // Number("") is 0, a real place, so a half-filled center is sent as NaN and rejected.
+      map: hasMap
+        ? {
+            center: { lat: mapLat.trim() ? Number(mapLat) : NaN, lng: mapLng.trim() ? Number(mapLng) : NaN },
+            radiusKm: Number(mapRadius),
+          }
+        : undefined,
     });
     if (!result.ok) {
       setStatus({
@@ -55,14 +80,17 @@ export function CreateCommunityForm() {
         message:
           result.error === "duplicate_name"
             ? "A community with that name already exists."
-            : "Check the form: a name (2–60 characters), a country, 1–12 areas with both a Spanish and an English name (40 characters max each), and at least one category.",
+            : "Check the form: a name (2–60 characters), a country, 1–12 areas with both a Spanish and an English name (40 characters max each), at least one category, and — if you gave a map center — a valid latitude and longitude, a radius of 0.3–30 km, and no two areas in the same direction.",
       });
       return;
     }
     setStatus({ kind: "done", message: `${result.community.displayName} is set up. Residents can now choose it in the place selector.` });
     setDisplayName("");
     setRegion("");
-    setAreas([{ labelEs: "", label: "" }]);
+    setAreas([EMPTY_AREA]);
+    setMapLat("");
+    setMapLng("");
+    setMapRadius("2");
     setCategories(new Set(["other"]));
     router.refresh();
   }
@@ -95,7 +123,7 @@ export function CreateCommunityForm() {
           <legend className="text-sm font-semibold text-ink">Approximate areas</legend>
           <p className="text-xs text-slate">Neighborhoods or sectors only — never streets, addresses, or landmarks precise enough to identify a home.</p>
           {areas.map((area, i) => (
-            <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+            <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 sm:grid-cols-[1fr_1fr_11rem_auto]">
               <input
                 className={input}
                 aria-label={`Area ${i + 1} name in Spanish`}
@@ -112,6 +140,18 @@ export function CreateCommunityForm() {
                 onChange={(e) => updateArea(i, { label: e.target.value })}
                 maxLength={40}
               />
+              <select
+                className={`${input} col-span-2 sm:col-span-1`}
+                aria-label={`Area ${i + 1} zone on the street map`}
+                value={area.mapDirection}
+                onChange={(e) => updateArea(i, { mapDirection: e.target.value as AreaRow["mapDirection"] })}
+              >
+                {DIRECTION_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
                 onClick={() => setAreas((rows) => rows.filter((_, j) => j !== i))}
@@ -125,13 +165,35 @@ export function CreateCommunityForm() {
           ))}
           <button
             type="button"
-            onClick={() => setAreas((rows) => [...rows, { labelEs: "", label: "" }])}
+            onClick={() => setAreas((rows) => [...rows, EMPTY_AREA])}
             disabled={areas.length >= 12}
             className="inline-flex w-max items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-semibold text-ink hover:bg-mint disabled:opacity-40"
           >
             <Plus aria-hidden="true" className="h-4 w-4" />
             Add area
           </button>
+        </fieldset>
+
+        <fieldset className="flex flex-col gap-2">
+          <legend className="text-sm font-semibold text-ink">Street map (optional)</legend>
+          <p className="text-xs text-slate">
+            The town&apos;s public center point, e.g. from openstreetmap.org — never a home or a resident&apos;s location.
+            Areas given a direction above appear as zones around it. Leave blank to keep the illustrated map.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <label className="flex flex-col gap-1.5 text-sm font-semibold text-ink">
+              Latitude
+              <input className={input} inputMode="decimal" placeholder="8.0990" value={mapLat} onChange={(e) => setMapLat(e.target.value)} />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm font-semibold text-ink">
+              Longitude
+              <input className={input} inputMode="decimal" placeholder="-80.9804" value={mapLng} onChange={(e) => setMapLng(e.target.value)} />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm font-semibold text-ink">
+              Radius (km)
+              <input className={input} inputMode="decimal" value={mapRadius} onChange={(e) => setMapRadius(e.target.value)} />
+            </label>
+          </div>
         </fieldset>
 
         <fieldset className="flex flex-col gap-2">

@@ -14,7 +14,7 @@ seals/official-looking symbols.
 ## Visual direction: "community field notes"
 
 A soft, open, paper-toned layout: a deep-green sidebar, generous whitespace, large Georgia
-headlines with a lime highlight, an illustrative green community map, and open (unboxed) sections
+headlines with a lime highlight, a green community map, and open (unboxed) sections
 rather than grids of identical cards. Light theme by default; an optional dark theme uses the
 same tokens with dark values.
 
@@ -79,10 +79,14 @@ A guided multi-step flow with visible progress ("Paso 2 de 5"), never one large 
 
 ## Community map
 
-An illustrative 2D SVG map, never a real geographic map. Pins are real cases placed only by
-approximate area; their numbers match the numbered case list. Every pin color is named in a
-legend and every pin has a text label. The same cases are always available as a list, and more
-pins never mean an area is worse or more dangerous.
+For a community with a configured center point, a real OpenStreetMap street map repainted in the
+map tokens (`--map`, `--map-road`, `--map-water`, `--map-park`, `--map-text`), so it matches the
+page in both themes. Each area is a soft, dashed circular zone in the same `--forest` tint
+regardless of its case count, with its name on a small label and its cases as numbered markers
+under it. Other communities (including the fictional demo) get an illustrative 2D SVG map in the
+same colors. On both, marker numbers match the numbered case list, every marker color is named
+in a legend, every marker has a text label, the same cases are always available as a list, and
+more markers never mean an area is worse or more dangerous.
 
 ## Explore and case lists
 

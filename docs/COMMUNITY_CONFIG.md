@@ -18,15 +18,24 @@ type CommunityConfig = {
   status: "pilot" | "active" | "demo";
   categories: CategoryConfig[];       // id, label (English), labelEs, icon, optional `labels` for
                                       // other languages (icon always paired with text)
-  areas: AreaConfig[];                // neighborhood | landmark | region; same label fields
+  areas: AreaConfig[];                // neighborhood | landmark | region; same label fields;
+                                      // optional mapDirection: center | north | south | east | west
   trustedSources: SourceConfig[];     // name, url, lastVerifiedAt, trustLevel
   officialContacts: ContactConfig[];  // verified: boolean — false renders as "Por verificar"
   privacy: PrivacyConfig;             // anonymousByDefault (always true), consent version, consent
                                       // text in English/Spanish + optional `consentTexts`
   moderation: ModerationConfig;       // requireReviewBeforePublish, moderatorEmails
   enabledFeatures: FeatureFlags;      // mapView, threeDView, aiGuide, proposals, duplicateDetection
+  map?: MapSettings;                  // { center: { lat, lng }, radiusKm } — the town's public
+                                      // center point; enables the real street map
 };
 ```
+
+`map` and `mapDirection` together decide the street map: each area with a direction becomes a
+zone around the center point. Leave `map` out for a fictional community (it must never appear
+on real streets) or when no reliable center point is known; the community then gets the
+illustrative map. The center must be a public reference point for the town (for example from
+OpenStreetMap), never a resident's or anyone's home.
 
 Missing translations fall back to English. `enabledFeatures.threeDView` is a legacy flag left in
 the schema: nothing reads it, and there is no 3D view.

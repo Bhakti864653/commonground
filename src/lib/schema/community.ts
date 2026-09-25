@@ -23,12 +23,18 @@ export type CategoryConfig = z.infer<typeof CategoryConfigSchema>;
 /** Alias matching the model name from the CommonGround spec §22. */
 export type ReportCategory = CategoryConfig;
 
+/** Where an area's zone sits on the street map, relative to the community's center point. */
+export const MAP_DIRECTIONS = ["center", "north", "south", "east", "west"] as const;
+export type MapDirection = (typeof MAP_DIRECTIONS)[number];
+
 export const AreaConfigSchema = z.object({
   id: z.string(),
   label: z.string(),
   labelEs: z.string(),
   kind: z.enum(["neighborhood", "landmark", "region"]),
   labels: ExtraTranslationsSchema.optional(),
+  /** Set by whoever configures the community; an area without one is not drawn on the street map. */
+  mapDirection: z.enum(MAP_DIRECTIONS).optional(),
 });
 export type AreaConfig = z.infer<typeof AreaConfigSchema>;
 
@@ -84,6 +90,21 @@ export const FeatureFlagsSchema = z.object({
 });
 export type FeatureFlags = z.infer<typeof FeatureFlagsSchema>;
 
+/**
+ * Where the community is on a real street map. `center` is the town's public center point (from
+ * OpenStreetMap), never a resident's location; `radiusKm` is roughly how far the configured
+ * areas reach from it. Communities without this (e.g. the fictional demo) keep the illustrative
+ * map, because a fictional place must never be drawn onto real streets.
+ */
+export const MapSettingsSchema = z.object({
+  center: z.object({
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+  }),
+  radiusKm: z.number().min(0.3).max(30),
+});
+export type MapSettings = z.infer<typeof MapSettingsSchema>;
+
 export const CommunityConfigSchema = z.object({
   id: z.string(),
   displayName: z.string(),
@@ -100,5 +121,6 @@ export const CommunityConfigSchema = z.object({
   privacy: PrivacyConfigSchema,
   moderation: ModerationConfigSchema,
   enabledFeatures: FeatureFlagsSchema,
+  map: MapSettingsSchema.optional(),
 });
 export type CommunityConfig = z.infer<typeof CommunityConfigSchema>;

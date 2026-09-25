@@ -187,3 +187,39 @@ before committing.
 **Lesson:** a default prop value is an assumption about context. When the thing it renders
 changes, grep for every call site that relies on the default, not just the ones that pass it
 explicitly.
+
+## The street map rendered at zero height, then its controls ignored their offsets
+
+**Problem:** the new MapLibre street map (`StreetMap.tsx`) mounted without errors — canvas
+created, five zone markers attached — but nothing appeared. The container had
+`className="absolute inset-0"` and measured 0px tall. MapLibre's stylesheet sets
+`.maplibregl-map { position: relative }`, and because that stylesheet is **unlayered** while
+Tailwind v4's utilities live in `@layer utilities`, the library's rule wins regardless of
+specificity. The container silently became `relative` with no content height. The same thing
+happened again minutes later: a rule moving the zoom buttons below the map heading was written
+inside `@layer components`, and MapLibre's unlayered `.maplibregl-ctrl-top-right { top: 0 }`
+beat it.
+
+**Fix:** positioning lives on a wrapper `div` MapLibre never touches (the map container itself
+is just `h-full w-full`), and overrides of MapLibre's own classes sit **outside** any
+`@layer`, with a comment saying why. This is the same cascade rule noted in earlier entries
+(base styles belong in `@layer base`), but pointing the other way: anything a third-party
+stylesheet sets unlayered can only be overridden unlayered.
+
+Two more problems in the same change:
+
+- **The attribution covered case markers.** MapLibre's compact attribution expands on wide
+  maps, and top-right (the only free corner — the field-note card owns bottom-right) put it
+  right over the northern zone's markers. It was replaced with a short, always-visible credit
+  line under the map heading, which also keeps the OpenStreetMap attribution permanently
+  visible rather than behind an "i" button.
+- **Admin-created communities would never have had zones.** The first version placed zones by
+  area id (`norte`, `sur`, …), which works for the hand-written pilot config but not for
+  communities from the admin form, whose area ids are slugs like `area-norte`. Every case in
+  them would have been listed as "not on the map". Zones now come only from an explicit
+  `mapDirection` on each area, set by whoever configures the community — nothing is guessed
+  from names.
+
+**Lesson:** when a library ships its own CSS, check whether it is layered before trying to
+override it with utilities; and when a feature keys off an identifier, check every path that
+creates that identifier, not just the one used in the demo data.

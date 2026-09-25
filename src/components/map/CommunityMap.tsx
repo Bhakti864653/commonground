@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { FIELD } from "@/lib/i18n/field-notes";
@@ -8,14 +9,17 @@ import { formatApproximateAreaLabel } from "@/lib/privacy/approximate-area";
 import { STATUS_LABELS, type PublicCase } from "@/lib/schema/report";
 import type { CommunityConfig } from "@/lib/schema/community";
 import { fill } from "@/lib/i18n/experience";
-import { STATUS_TONE } from "@/components/journey/Pills";
 import { mapAreaPosition, mapPinPosition } from "@/lib/map/positions";
 import { labelOf } from "@/lib/i18n/labels";
+import { CasePin } from "./CasePin";
+import { MapCredit, StreetMap, casesOffStreetMap } from "./StreetMap";
 
 /**
- * The reference's soft green community view. It is illustrative, not geographic: areas sit by
- * their compass names, and each pin is placed only by its approximate area plus a stable
- * offset — never by any real location. Pin numbers match the numbered case rows below.
+ * The community view. A community with map settings gets a real street map, where each
+ * compass area is a soft zone holding its cases' numbered markers. Any other community (such as
+ * the fictional demo), or a browser that can't draw the map, gets the illustrative map, where
+ * pins are placed only by approximate area plus a stable offset. Either way no case is ever
+ * placed at a real location, and pin numbers match the numbered case rows below.
  */
 export function CommunityMap({
   community,
@@ -34,82 +38,106 @@ export function CommunityMap({
   const selected = cases.find((c) => c.id === selectedId) ?? cases[0] ?? null;
   const selectedIndex = selected ? cases.indexOf(selected) : -1;
   const category = selected ? community.categories.find((c) => c.id === selected.categoryId) : undefined;
+  const [streetMapFailed, setStreetMapFailed] = useState(false);
+  const street = community.map && !streetMapFailed ? community.map : null;
+  const offMap = street ? casesOffStreetMap(cases, community) : [];
 
   return (
     // The field-note card overlays the map from tablet width up; on phones it sits below the
     // map instead, so it never covers pins a resident needs to tap.
     <div className="relative">
-      <div className="relative min-h-[465px] overflow-hidden rounded-[24px] bg-map md:min-h-[540px] md:rounded-[34px]">
-        <MapArt />
+      <div className="relative isolate min-h-[465px] overflow-hidden rounded-[24px] bg-map md:min-h-[540px] md:rounded-[34px] min-[1100px]:h-full">
+        {street ? (
+          <StreetMap
+            community={community}
+            settings={street}
+            cases={cases}
+            selectedId={selected?.id ?? null}
+            onSelect={onSelect}
+            onUnavailable={() => setStreetMapFailed(true)}
+            language={language}
+          />
+        ) : (
+          <MapArt />
+        )}
 
-        <div className="absolute inset-x-5 top-5 z-[2] flex items-start justify-between gap-3 md:inset-x-[30px] md:top-7">
+        {/* The heading floats over the map without blocking drags beneath it. */}
+        <div className="pointer-events-none absolute inset-x-5 top-5 z-[2] flex items-start justify-between gap-3 md:inset-x-[30px] md:top-7">
           <div>
             <p className="cg-caps text-map-text">{t.mapCaps[language]}</p>
             <h3 className="mb-0.5 mt-2 text-[2rem] tracking-[-0.05em] text-ink md:text-[2.6rem]">{community.displayName}</h3>
             <p className="text-[0.83rem] font-bold text-map-text">{t.mapSub[language]}</p>
+            {street && <MapCredit language={language} />}
           </div>
           <p className="hidden shrink-0 rounded-full bg-surface/90 px-4 py-[11px] text-[0.66rem] font-extrabold uppercase tracking-[0.09em] text-ink backdrop-blur min-[420px]:block">
             {fill(t.mapCount[language], { count: String(cases.length).padStart(2, "0") })}
           </p>
         </div>
 
-        {community.areas.map((area, i) => {
-          const [x, y] = mapAreaPosition(area.id, i, community.areas.length);
-          return (
-            <span
-              key={area.id}
-              aria-hidden="true"
-              style={{ left: `${x}%`, top: `${y}%` }}
-              className="absolute z-[1] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-[0.7rem] font-bold uppercase tracking-[0.16em] text-map-text/80"
-            >
-              {labelOf(area, language)}
-            </span>
-          );
-        })}
+        {!street &&
+          community.areas.map((area, i) => {
+            const [x, y] = mapAreaPosition(area.id, i, community.areas.length);
+            return (
+              <span
+                key={area.id}
+                aria-hidden="true"
+                style={{ left: `${x}%`, top: `${y}%` }}
+                className="absolute z-[1] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-[0.7rem] font-bold uppercase tracking-[0.16em] text-map-text/80"
+              >
+                {labelOf(area, language)}
+              </span>
+            );
+          })}
 
         {cases.length === 0 && (
-          <p className="absolute inset-x-6 top-1/2 z-[2] -translate-y-1/2 text-center font-heading text-2xl text-ink">{t.mapEmpty[language]}</p>
+          <p className="pointer-events-none absolute inset-x-6 top-1/2 z-[2] -translate-y-1/2 text-center font-heading text-2xl text-ink">{t.mapEmpty[language]}</p>
         )}
 
-        {cases.map((c, i) => {
-          const areaId = c.approximateArea.areaId ?? null;
-          const areaIndex = community.areas.findIndex((a) => a.id === areaId);
-          const orderInArea = cases.slice(0, i).filter((other) => (other.approximateArea.areaId ?? null) === areaId).length;
-          const [x, y] = mapPinPosition(areaId, areaIndex, community.areas.length, orderInArea);
-          const tone = STATUS_TONE[c.status];
-          const isSelected = selected?.id === c.id;
-          return (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => onSelect(c)}
-              aria-pressed={isSelected}
-              aria-label={`${String(i + 1).padStart(2, "0")}: ${c.publicCaseNumber}, ${formatApproximateAreaLabel(c.approximateArea, language)}, ${STATUS_LABELS[c.status][language]}`}
-              style={{ left: `${x}%`, top: `${y}%` }}
-              className={`absolute z-[3] flex h-[39px] w-[39px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white font-heading text-[0.9rem] text-white shadow-[0_7px_18px_#12352638] transition-transform hover:scale-[1.14] focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-ink md:h-[45px] md:w-[45px] md:text-base ${
-                tone === "review" ? "bg-pin-review" : tone === "progress" ? "bg-pin-progress" : "bg-[#172b25]"
-              } ${isSelected ? "scale-[1.14] ring-4 ring-lime" : ""}`}
-            >
-              {String(i + 1).padStart(2, "0")}
-            </button>
-          );
-        })}
+        {!street &&
+          cases.map((c, i) => {
+            const areaId = c.approximateArea.areaId ?? null;
+            const areaIndex = community.areas.findIndex((a) => a.id === areaId);
+            const orderInArea = cases.slice(0, i).filter((other) => (other.approximateArea.areaId ?? null) === areaId).length;
+            const [x, y] = mapPinPosition(areaId, areaIndex, community.areas.length, orderInArea);
+            return (
+              <CasePin
+                key={c.id}
+                c={c}
+                index={i}
+                selected={selected?.id === c.id}
+                onSelect={onSelect}
+                language={language}
+                style={{ left: `${x}%`, top: `${y}%` }}
+                className="absolute z-[3] -translate-x-1/2 -translate-y-1/2"
+              />
+            );
+          })}
 
         {/* Every pin color is named here — and each pin's own label spells out its status. */}
-        <p className="absolute bottom-2.5 left-2.5 z-[2] flex max-w-[calc(100%-1.25rem)] flex-wrap items-center gap-x-2 gap-y-1 rounded-[18px] bg-surface/90 px-[15px] py-2.5 text-[0.7rem] font-extrabold text-ink md:bottom-5 md:left-5 md:max-w-[55%]">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-pin-review" aria-hidden="true" />
-            {t.legendReview[language]}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-pin-progress" aria-hidden="true" />
-            {t.legendProgress[language]}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#172b25] ring-1 ring-ink/50" aria-hidden="true" />
-            {t.legendCase[language]}
-          </span>
-        </p>
+        <div className="absolute bottom-2.5 left-2.5 z-[2] flex max-w-[calc(100%-1.25rem)] flex-col gap-2 rounded-[18px] bg-surface/90 px-[15px] py-2.5 text-[0.7rem] font-extrabold text-ink md:bottom-5 md:left-5 md:max-w-[55%]">
+          {offMap.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1">{t.offMap[language]}</span>
+              {offMap.map(({ c, i }) => (
+                <CasePin key={c.id} c={c} index={i} selected={selected?.id === c.id} onSelect={onSelect} language={language} size="sm" />
+              ))}
+            </div>
+          )}
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-pin-review" aria-hidden="true" />
+              {t.legendReview[language]}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-pin-progress" aria-hidden="true" />
+              {t.legendProgress[language]}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#172b25] ring-1 ring-ink/50" aria-hidden="true" />
+              {t.legendCase[language]}
+            </span>
+          </p>
+        </div>
 
       </div>
       {selected && (

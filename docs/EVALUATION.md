@@ -14,8 +14,12 @@
   private fields (`public-case.test.ts`), status explanations, trends, duplicate clusters.
 - **Search:** server-side search and filters, including rejection of invalid input
   (`src/lib/explore/`, `src/lib/store/__tests__/search-and-communities.test.ts`).
-- **Community map:** pin placement stays within each case's approximate area and pins never
-  overlap (`src/lib/map/__tests__/positions.test.ts`).
+- **Community map:** illustrative pin placement stays within each case's approximate area and
+  pins never overlap (`positions.test.ts`); street-map zones sit in their configured direction,
+  never overlap, fit the initial view, and are never invented for an area without a direction;
+  the fictional demo has no real-map settings (`geo.test.ts`, both in `src/lib/map/__tests__/`).
+  Map settings from the admin form are validated, including duplicate directions
+  (`community-store.test.ts`).
 - **Moderation:** admin actions reject unauthenticated calls, verification sources must be real
   http/https URLs, admin pages guard themselves.
 - **Guide and agents:** emergency-phrase detection in all seven languages, the draft tool,

@@ -83,7 +83,8 @@ reports and understand what happens to them afterward?"
 
 - Guided multi-step report/proposal flow with a review step and privacy-preserving location.
 - Public case number + confirmation page (no guarantee-of-response language).
-- Activity views (a case list plus an illustrative 2D community map) — never social-media-shaped
+- Activity views (a case list plus a community map: a real street map with approximate-area
+  zones where a center point is configured, an illustrative map otherwise) — never social-media-shaped
   (no likes, followers, popularity rankings, outrage scores). The original spec also allowed an
   optional 3D "Community Pulse"; it was built and later removed, and is not part of the current
   product (see [`3D_EXPERIENCE.md`](3D_EXPERIENCE.md), a historical record).

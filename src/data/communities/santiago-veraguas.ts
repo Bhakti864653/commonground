@@ -12,6 +12,8 @@ const santiagoVeraguasConfig: CommunityConfig = {
   defaultLanguage: "es",
   supportedLanguages: ["es", "en", "pt", "fr", "zh", "hi", "it"],
   status: "pilot",
+  // The town's center point as published by OpenStreetMap (Nominatim, relation 11195657).
+  map: { center: { lat: 8.099, lng: -80.9804 }, radiusKm: 1.6 },
   categories: [
     {
       id: "flooding-drainage",
@@ -43,11 +45,11 @@ const santiagoVeraguasConfig: CommunityConfig = {
     },
   ],
   areas: [
-    { id: "centro", label: "Central area", labelEs: "Área central", kind: "neighborhood", labels: { pt: "Área central", fr: "Zone centrale", zh: "中心区", hi: "केंद्रीय इलाका", it: "Zona centrale" } },
-    { id: "norte", label: "Northern area", labelEs: "Área norte", kind: "neighborhood", labels: { pt: "Área norte", fr: "Zone nord", zh: "北区", hi: "उत्तरी इलाका", it: "Zona nord" } },
-    { id: "sur", label: "Southern area", labelEs: "Área sur", kind: "neighborhood", labels: { pt: "Área sul", fr: "Zone sud", zh: "南区", hi: "दक्षिणी इलाका", it: "Zona sud" } },
-    { id: "este", label: "Eastern area", labelEs: "Área este", kind: "neighborhood", labels: { pt: "Área leste", fr: "Zone est", zh: "东区", hi: "पूर्वी इलाका", it: "Zona est" } },
-    { id: "oeste", label: "Western area", labelEs: "Área oeste", kind: "neighborhood", labels: { pt: "Área oeste", fr: "Zone ouest", zh: "西区", hi: "पश्चिमी इलाका", it: "Zona ovest" } },
+    { id: "centro", label: "Central area", labelEs: "Área central", kind: "neighborhood", mapDirection: "center", labels: { pt: "Área central", fr: "Zone centrale", zh: "中心区", hi: "केंद्रीय इलाका", it: "Zona centrale" } },
+    { id: "norte", label: "Northern area", labelEs: "Área norte", kind: "neighborhood", mapDirection: "north", labels: { pt: "Área norte", fr: "Zone nord", zh: "北区", hi: "उत्तरी इलाका", it: "Zona nord" } },
+    { id: "sur", label: "Southern area", labelEs: "Área sur", kind: "neighborhood", mapDirection: "south", labels: { pt: "Área sul", fr: "Zone sud", zh: "南区", hi: "दक्षिणी इलाका", it: "Zona sud" } },
+    { id: "este", label: "Eastern area", labelEs: "Área este", kind: "neighborhood", mapDirection: "east", labels: { pt: "Área leste", fr: "Zone est", zh: "东区", hi: "पूर्वी इलाका", it: "Zona est" } },
+    { id: "oeste", label: "Western area", labelEs: "Área oeste", kind: "neighborhood", mapDirection: "west", labels: { pt: "Área oeste", fr: "Zone ouest", zh: "西区", hi: "पश्चिमी इलाका", it: "Zona ovest" } },
   ],
   // Empty at launch — every entry needs a real, checkable source before it ships (spec §23/§26).
   trustedSources: [],

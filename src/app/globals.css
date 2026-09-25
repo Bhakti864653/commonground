@@ -274,3 +274,16 @@
     letter-spacing: 0.02em;
   }
 }
+
+/*
+ * Street map controls sit below the map's floating heading. Unlayered on purpose: maplibre's
+ * own stylesheet is unlayered, so a rule inside @layer components would always lose to it.
+ */
+.cg-streetmap .maplibregl-ctrl-top-right {
+  top: 5.5rem;
+}
+@media (min-width: 768px) {
+  .cg-streetmap .maplibregl-ctrl-top-right {
+    top: 6.5rem;
+  }
+}

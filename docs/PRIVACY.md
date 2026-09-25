@@ -18,6 +18,16 @@ label, never rendered as pinpoint precision. The report flow's location step mus
 > "Selecciona el área general. No marques tu casa ni la dirección exacta de otra persona."
 > ("Select the general area. Do not mark your home or another person's exact address.")
 
+## The street map and its tile provider
+
+The home page street map loads its map tiles, fonts, and style directly from OpenFreeMap
+(`tiles.openfreemap.org`), a free, keyless OpenStreetMap tile service. Like any web request,
+that means the tile service sees the visitor's IP address and which part of the map is being
+viewed — the town, not any case. Nothing about cases, residents, or submissions is ever sent to
+it: zones are computed in the browser from the community's public center point, and case
+markers are ordinary page elements. Communities without a configured center point (and the
+fictional demo) use the illustrative map, which makes no third-party requests.
+
 ## Consent
 
 Every submission records a `UserConsent` (consent version, timestamp, language). Consent copy

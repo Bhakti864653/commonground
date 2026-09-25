@@ -17,10 +17,11 @@ features that were built and later removed), see [`../DEVLOG.md`](../DEVLOG.md).
 - **Testing:** Vitest + Testing Library (`jsdom` environment), colocated `__tests__/`
   directories next to the modules they cover. A separate live eval suite
   (`src/lib/guide/__evals__/`, `npm run eval:guide-safety`) exercises the real Guide.
-- **Community map:** a responsive 2D, illustrative SVG map (`src/components/map/`), not a
-  geographic map. There is no 3D or WebGL code or dependency. (An earlier React Three Fiber 3D
-  view was built and then removed in the 2026-09-24 "community field notes" redesign — see the
-  historical record in [`3D_EXPERIENCE.md`](3D_EXPERIENCE.md).)
+- **Community map:** a real street map (MapLibre GL, `maplibre-gl`, with OpenFreeMap's keyless
+  OpenStreetMap tiles) for communities with a configured center point, and a 2D illustrative SVG
+  map for the rest (`src/components/map/`). There is no 3D view. (An earlier React Three Fiber
+  3D view was built and then removed in the 2026-09-24 "community field notes" redesign — see
+  the historical record in [`3D_EXPERIENCE.md`](3D_EXPERIENCE.md).)
 - **Languages:** Spanish, English, Portuguese, French, Simplified Chinese, Hindi, and Italian
   (`src/lib/i18n/`). See [Internationalization](#internationalization) below.
 
@@ -72,7 +73,8 @@ src/
   components/
     layout/                 Sidebar, TopBar, PlaceSelector, LocaleSwitch, ThemeToggle,
                             MobileNav, Footer, Logo, AppShell
-    map/                    CommunityMap (illustrative 2D SVG map), UnconfiguredPlace notice
+    map/                    CommunityMap (street map or illustration), StreetMap, CasePin,
+                            UnconfiguredPlace notice
     journey/                CaseRow, StatusPill/VerificationPill, StageMeter
     report-flow/            the 5-step guided form (ReportWizard + steps)
     case/                   CaseView, inaccuracy flag, delete submission, case-number lookup
@@ -85,7 +87,7 @@ src/
     guide/                  Guide chat, tools, draft tool, emergency detection, multi-agent
                             case analysis, critique, suggestion validation, briefing
     explore/                filter-cases.ts (search/filter logic used by searchCases)
-    map/                    positions.ts (pin placement by approximate area)
+    map/                    geo.ts (street-map zones), positions.ts (illustrative pins)
     insights/               trends, duplicate clusters, status explanations
     i18n/                   languages, text tables, label helpers
     privacy/                approximate-area, consent, image-validation helpers
@@ -118,15 +120,29 @@ docs/                       this documentation set
 
 ## Community map and approximate locations
 
-The home page map is illustrative, not geographic. Areas whose ids are compass names (norte,
-sur, este, oeste, centro) are placed where a resident would expect; any other areas are spread
-evenly. Each pin is a real case, positioned only from its approximate area plus a fixed fan-out
-pattern among that area's cases (`src/lib/map/positions.ts`) — **never from a real location**.
-Exact addresses or coordinates are never stored from residents, and never displayed anywhere.
-Cases whose resident preferred not to give an area sit in their own corner. Pin colors (needs
-review / in progress / other) are always explained in a legend, and every pin has a text label.
-The same cases are always available as a plain list, and more pins never mean an area is worse
-or more dangerous.
+**Street map** (`StreetMap.tsx`, `src/lib/map/geo.ts`) — used when the community config has a
+`map` setting: the town's public center point (from OpenStreetMap, never a resident's location)
+and a radius. Each area with a configured `mapDirection` (center, north, south, east, west)
+becomes a soft circular zone at a fixed offset from the center; the zones never overlap, and
+all are drawn in the same color whatever their case count. A case is shown as a numbered marker
+*inside its area's zone label* — never at a point on a street, because no case has one. Cases
+with no area, or in an area without a direction, are listed as "Not on the map" beside the
+legend. The base map is recolored to the app's `--map*` tokens (so it follows light/dark
+theme), road-number shields are hidden, and one-finger drag / plain scroll are left to the page
+(MapLibre's cooperative gestures, with localized hints). If WebGL is unavailable the map falls
+back to the illustration. Attribution ("© OpenStreetMap · OpenFreeMap") is always visible under
+the map heading.
+
+**Illustrative map** (`MapArt` in `CommunityMap.tsx`, `src/lib/map/positions.ts`) — used for
+communities without a `map` setting, including the fictional `riverbend-demo`, which must never
+be drawn onto real streets. Areas whose ids are compass names (norte, sur, este, oeste, centro)
+are placed where a resident would expect; any other areas are spread evenly. Each pin is placed
+only from its approximate area plus a fixed fan-out pattern among that area's cases.
+
+On both, exact addresses or coordinates are never stored from residents and never displayed;
+marker colors (needs review / in progress / other) are always explained in a legend; every
+marker has a text label; the numbers match the numbered case list; and the same cases are
+always available as a plain list.
 
 ## Explore (search and filtering)
 
@@ -143,7 +159,9 @@ fields are ever returned.
 Moderators can set up a community at `/admin/communities` (`adminCreateCommunity`, admin-only).
 Input is validated at runtime: a 2–60 character name, a country, an optional region, 1–12
 approximate areas (Spanish and English names), and categories from the fixed presets in
-`src/data/communities/category-presets.ts` ("Other" is always included). Names that already exist
+`src/data/communities/category-presets.ts` ("Other" is always included). Optionally, a street-map
+center (valid latitude/longitude) and radius (0.3–30 km), plus a direction per area — no two
+areas may share a direction, and directions are dropped if no center is given. Names that already exist
 are rejected, ignoring case and accents. Each community gets an id and a case-number prefix
 (`casePrefix` in `src/lib/case-number/format-case-number.ts`) that no other community uses, so
 case numbers never collide. New communities start with **no** trusted sources or official
@@ -204,3 +222,5 @@ there is no background scheduling. Full detail: [`MODERATION.md`](MODERATION.md)
 - No background or scheduled jobs; the briefing and case analysis run only when a moderator asks.
 - No integration with any government or official system, and no forwarding of reports.
 - No configured trusted sources or official contacts for any community yet.
+- Street-map zones are symbolic circles at fixed offsets from the town center, not real
+  neighborhood boundaries; no community has boundary data.

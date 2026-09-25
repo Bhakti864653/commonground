@@ -99,9 +99,12 @@ exact coordinates or reporter identity. Admin notes are always private. See
 
 ## Community map requirements
 
-The home page community map is a 2D, illustrative SVG map (`src/components/map/`), not a
-geographic map and not 3D (the earlier 3D view was removed — see the historical record in
-[`docs/3D_EXPERIENCE.md`](docs/3D_EXPERIENCE.md)). It must: place cases only by approximate
-area, never by an exact location; never be the only way to reach a case (the list is always
-available); label every pin in text and explain every pin color; and never imply that more
-activity means a neighborhood is worse, more dangerous, or more urgent.
+The home page community map (`src/components/map/`) is a real OpenStreetMap street map for a
+community with a configured `map` center point, and a 2D illustrative SVG map for any other
+community — the fictional demo must never be drawn onto real streets. It is not 3D (the earlier
+3D view was removed — see [`docs/3D_EXPERIENCE.md`](docs/3D_EXPERIENCE.md)). It must: place cases
+only by approximate area — on the street map, inside a whole-area zone placed by the area's
+configured direction, never at a point on a street; never be the only way to reach a case (the
+list is always available); label every marker in text and explain every marker color; draw
+every zone identically, so it never implies that more activity means a neighborhood is worse,
+more dangerous, or more urgent; and always show the OpenStreetMap attribution.

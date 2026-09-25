@@ -38,10 +38,13 @@ language.
 - **Resident self-service** — anyone can flag a case as inaccurate for moderator review; a
   submitter can delete their own case via a one-time management link (there are no accounts at
   all, so this link is the only proof of ownership).
-- **Community map** — a responsive, illustrative 2D SVG map on the home page. It is not a real
-  geographic map: each pin is a real case, placed only by its approximate area (never an exact
-  location), and pin numbers match the numbered case list below it. It never implies that a
-  neighborhood is more dangerous or that more reports mean greater urgency, and every case on it
+- **Community map** — for a community with a configured center point (Santiago de Veraguas),
+  a real OpenStreetMap street map of the town (MapLibre GL, OpenFreeMap tiles, recolored to the
+  app's palette). Each configured area is a soft zone placed by the direction it was given
+  (center, north, south, east, west) and holds its cases' numbered markers — a case is never
+  placed at a point on a street. Communities without a center point, including the fictional
+  demo, keep an illustrative 2D SVG map. Either way, pin numbers match the numbered case list
+  below the map, every zone looks the same regardless of how many cases it holds, and every case
   is also reachable from the plain list.
 - **Explore** — search and filter the public case list by text, type, status, category, and
   area. Search and filtering run on the server (`searchCases`), with the filters validated at
@@ -77,7 +80,8 @@ language.
 
 Next.js 16 (App Router, Turbopack) · TypeScript · Tailwind CSS v4 · Zod (every data shape is a
 runtime-validated schema, the single source of truth) · Vitest · Groq (`groq-sdk`) for the
-Guide's real reasoning. The community map is plain SVG — there is no 3D or WebGL dependency.
+Guide's real reasoning. MapLibre GL (`maplibre-gl`) draws the street map from OpenFreeMap's
+keyless OpenStreetMap tiles; there is no 3D view.
 
 **Persistence (prototype phase):** in-memory stores (`src/lib/store/case-store.ts` for cases,
 `src/lib/store/community-store.ts` for runtime-created communities), `globalThis`-backed so they
@@ -120,10 +124,12 @@ flowchart LR
 - `src/app/(app)/` — the resident-facing shell (sidebar, top bar with the place selector and
   language/theme controls, phone bottom nav, footer). `src/app/admin/` is a sibling of that
   route group, not nested inside it, so it never inherits that shell.
-- `src/components/map/` — the illustrative 2D community map (`CommunityMap.tsx`) and the "not set
-  up yet" notice for places without a community. Pin positions come from
-  `src/lib/map/positions.ts`: area placement by compass name plus a fixed fan-out pattern so pins
-  never overlap — never from a real location.
+- `src/components/map/` — `CommunityMap.tsx` (chooses the street map or the illustration),
+  `StreetMap.tsx` (the MapLibre street map with area zones), `CasePin.tsx` (the shared numbered
+  marker), and the "not set up yet" notice for places without a community. Zone geometry comes
+  from `src/lib/map/geo.ts` (the community's public center point plus each area's configured
+  direction); illustrative pin positions come from `src/lib/map/positions.ts`. Neither ever
+  uses a real location from a resident.
 - `src/lib/guide/` — the Guide's tools (read-only, public-fields-only), the resident chat
   (`chat.ts`, plus `draft-submission.ts` for the draft-and-confirm tool), the multi-agent case
   analysis (`sub-agents.ts`'s three specialists + `critique.ts`'s reflection pass, orchestrated

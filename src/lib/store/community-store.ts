@@ -2,7 +2,7 @@ import { z } from "zod";
 import { COMMUNITIES } from "@/data/communities";
 import { CATEGORY_PRESETS, CATEGORY_PRESET_IDS } from "@/data/communities/category-presets";
 import { casePrefix } from "@/lib/case-number/format-case-number";
-import { CommunityConfigSchema, type CommunityConfig } from "@/lib/schema/community";
+import { CommunityConfigSchema, MAP_DIRECTIONS, MapSettingsSchema, type CommunityConfig } from "@/lib/schema/community";
 
 /**
  * Communities: the built-in configs (src/data/communities) plus any a moderator has set up at
@@ -39,8 +39,18 @@ export const NewCommunityInputSchema = z.object({
     .max(60)
     .optional()
     .transform((v) => (v ? v : undefined)),
-  areas: z.array(z.object({ labelEs: areaLabel, label: areaLabel })).min(1).max(12),
+  areas: z
+    .array(z.object({ labelEs: areaLabel, label: areaLabel, mapDirection: z.enum(MAP_DIRECTIONS).optional() }))
+    .min(1)
+    .max(12)
+    // Two areas in the same direction would draw the same zone twice.
+    .refine((areas) => {
+      const directions = areas.flatMap((a) => (a.mapDirection ? [a.mapDirection] : []));
+      return new Set(directions).size === directions.length;
+    }),
   categoryIds: z.array(z.enum(CATEGORY_PRESET_IDS)).min(1).max(CATEGORY_PRESET_IDS.length),
+  /** The town's public center point — never a resident's location. Optional: without it the community keeps the illustrative map. */
+  map: MapSettingsSchema.optional(),
 });
 export type NewCommunityInput = z.input<typeof NewCommunityInputSchema>;
 
@@ -110,7 +120,14 @@ export function createCommunity(rawInput: unknown): CreateCommunityResult {
     supportedLanguages: ["es", "en", "pt", "fr", "zh", "hi", "it"],
     status: "pilot",
     categories: CATEGORY_PRESETS.filter((c) => categoryIds.has(c.id)).map((c) => ({ ...c })),
-    areas: input.areas.map((area, i) => ({ id: areaIds[i], label: area.label, labelEs: area.labelEs, kind: "neighborhood" })),
+    areas: input.areas.map((area, i) => ({
+      id: areaIds[i],
+      label: area.label,
+      labelEs: area.labelEs,
+      kind: "neighborhood",
+      // Directions only mean something on a street map.
+      mapDirection: input.map ? area.mapDirection : undefined,
+    })),
     // No official sources or contacts until a moderator verifies real ones — never invented.
     trustedSources: [],
     officialContacts: [],
@@ -131,6 +148,7 @@ export function createCommunity(rawInput: unknown): CreateCommunityResult {
     },
     moderation: { requireReviewBeforePublish: true, moderatorEmails: [] },
     enabledFeatures: { mapView: true, threeDView: false, aiGuide: true, proposals: true, duplicateDetection: true },
+    map: input.map,
   };
 
   const community = CommunityConfigSchema.parse(candidate);
