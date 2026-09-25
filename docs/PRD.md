@@ -83,8 +83,10 @@ reports and understand what happens to them afterward?"
 
 - Guided multi-step report/proposal flow with a review step and privacy-preserving location.
 - Public case number + confirmation page (no guarantee-of-response language).
-- Activity dashboard (list default, optional 2D map, optional 3D "Community Pulse") — never
-  social-media-shaped (no likes, followers, popularity rankings, outrage scores).
+- Activity views (a case list plus an illustrative 2D community map) — never social-media-shaped
+  (no likes, followers, popularity rankings, outrage scores). The original spec also allowed an
+  optional 3D "Community Pulse"; it was built and later removed, and is not part of the current
+  product (see [`3D_EXPERIENCE.md`](3D_EXPERIENCE.md), a historical record).
 - Status system: Received → Under review → In discussion → Referred → In progress → Updated →
   Closed → Not verifiable, each with a plain-language explanation, date, actor/source type, and
   verification state. A separate "Observed → Organized → Reviewed → Connected → Updated" action

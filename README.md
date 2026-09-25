@@ -10,10 +10,20 @@ official emergency services, and never a guarantee that a problem will be solved
 
 ## Live pilot community
 
-**Santiago de Veraguas, Panamá** (Spanish-first, English available). A second, wholly fictional
-community (**Riverbend**) exists only to prove the platform's `CommunityConfig` schema
-generalizes to a different country/language/category set — it is always visibly labeled as
-demonstration data.
+**Santiago de Veraguas, Panamá** (Spanish-first). A second, wholly fictional community
+(**Riverbend**) exists only to prove the platform's `CommunityConfig` schema generalizes to a
+different country/language/category set — it is always visibly labeled as demonstration data.
+
+## Languages
+
+The interface is available in seven languages: **Spanish** (default for the pilot), **English**,
+**Portuguese** (Brazilian), **French**, **Simplified Chinese**, **Hindi**, and **Italian**. That
+covers every interface string, the built-in communities' area and category names, the consent
+text, emergency-phrase detection, and the Guide's replies. What residents write themselves (case
+descriptions) is never machine-translated. Areas a moderator creates at runtime have Spanish and
+English names only, and fall back to English in the other languages. A test
+(`src/lib/i18n/__tests__/completeness.test.ts`) fails if any interface string is missing a
+language.
 
 ## Features
 
@@ -28,12 +38,28 @@ demonstration data.
 - **Resident self-service** — anyone can flag a case as inaccurate for moderator review; a
   submitter can delete their own case via a one-time management link (there are no accounts at
   all, so this link is the only proof of ownership).
-- **Activity dashboard** — a list view (default) plus an optional abstract 3D "Community
-  Pulse" visualization (React Three Fiber) that never implies a neighborhood is more dangerous
-  or that more reports mean greater urgency, with a full list/keyboard/reduced-motion fallback.
+- **Community map** — a responsive, illustrative 2D SVG map on the home page. It is not a real
+  geographic map: each pin is a real case, placed only by its approximate area (never an exact
+  location), and pin numbers match the numbered case list below it. It never implies that a
+  neighborhood is more dangerous or that more reports mean greater urgency, and every case on it
+  is also reachable from the plain list.
+- **Explore** — search and filter the public case list by text, type, status, category, and
+  area. Search and filtering run on the server (`searchCases`), with the filters validated at
+  runtime; search ignores accents and matches the case number, description, and category/area
+  names in Spanish and English. A case can also be opened directly by its case number.
 - **Admin moderation** — a passphrase-gated local prototype (`/admin`) for status changes,
-  verification marking, duplicate marking, private notes, and reviewing the public
-  inaccuracy-flag queue. Every action is recorded and attributed.
+  verification marking (officially verified requires a real http/https source), duplicate
+  marking, private notes, and reviewing the public inaccuracy-flag queue. Every action is
+  recorded and attributed.
+- **Prototype community setup** — moderators can set up an additional community at
+  `/admin/communities`: a name, 1–12 approximate areas, and categories chosen from a fixed list
+  (an "Other" category is always included). Each community gets a unique case-number prefix, so
+  case numbers never collide across communities, and starts with no official sources or contacts
+  (none are ever invented). **Communities created this way are temporary**: like submitted cases,
+  they live in in-memory prototype storage and disappear on a server restart or redeploy — and on
+  a serverless host, a different instance may not have them — until a real database is added.
+  Places a visitor adds from the place selector (and the built-in "Panama City" entry) are just
+  labels saved in that browser; they show a "not set up yet" notice, never sample data.
 - **CommonGround Guide** — an agentic assistant (Groq) with two resident-facing capabilities
   (look up similar cases/explain the process, and draft-and-confirm a report or proposal
   conversationally — the resident always reviews and explicitly confirms before anything is
@@ -50,12 +76,15 @@ demonstration data.
 ## Stack
 
 Next.js 16 (App Router, Turbopack) · TypeScript · Tailwind CSS v4 · Zod (every data shape is a
-runtime-validated schema, the single source of truth) · Vitest · React Three Fiber/`three` ·
-Groq (`groq-sdk`) for the Guide's real reasoning.
+runtime-validated schema, the single source of truth) · Vitest · Groq (`groq-sdk`) for the
+Guide's real reasoning. The community map is plain SVG — there is no 3D or WebGL dependency.
 
-**Persistence (prototype phase):** an in-memory mock store (`src/lib/store/case-store.ts`,
-`globalThis`-backed so it survives dev-mode hot reload), not a real database yet — a documented
-later swap, per `docs/ARCHITECTURE.md`.
+**Persistence (prototype phase):** in-memory stores (`src/lib/store/case-store.ts` for cases,
+`src/lib/store/community-store.ts` for runtime-created communities), `globalThis`-backed so they
+survive dev-mode hot reload. There is no database yet: submitted cases and created communities
+are lost on a restart or redeploy, and on a serverless host (Vercel) they aren't shared between
+instances. A fixed set of clearly labeled demonstration cases is re-seeded whenever a store
+starts empty. A real database is the documented next step, per `docs/ARCHITECTURE.md`.
 
 ## Architecture notes
 
@@ -63,6 +92,8 @@ later swap, per `docs/ARCHITECTURE.md`.
 flowchart LR
   Resident -->|submit / browse / chat| AppShell["(app)/ resident shell"]
   AppShell --> Store["case-store.ts (mock, in-memory)"]
+  AppShell -->|Explore search| Search["searchCases (server)"]
+  Search --> Store
   AppShell --> Guide["Guide (resident chat)"]
   Guide -->|tool calls| Store
   Guide -->|reasoning| Groq[(Groq API)]
@@ -79,14 +110,20 @@ flowchart LR
   Admin --> Briefing["briefing agent (on-demand)"]
   Briefing -->|reasoning + tools| Groq
   Admin -->|approve suggestion| Store
+  Admin -->|set up community| Communities["community-store.ts (in-memory)"]
 ```
 
 - `src/lib/schema/` — every `Report`/`Proposal`/`CommunityConfig` shape as a Zod schema.
   `PublicCase` (a structural `Omit` of every private field) is what any resident-facing code
   path is allowed to touch — private notes, moderation history, and Guide suggestions can't
   reach a public page even by accident, enforced at the type level, not just by convention.
-- `src/app/(app)/` — the resident-facing shell (sidebar/bottom-nav/footer). `src/app/admin/`
-  is a sibling of that route group, not nested inside it, so it never inherits that shell.
+- `src/app/(app)/` — the resident-facing shell (sidebar, top bar with the place selector and
+  language/theme controls, phone bottom nav, footer). `src/app/admin/` is a sibling of that
+  route group, not nested inside it, so it never inherits that shell.
+- `src/components/map/` — the illustrative 2D community map (`CommunityMap.tsx`) and the "not set
+  up yet" notice for places without a community. Pin positions come from
+  `src/lib/map/positions.ts`: area placement by compass name plus a fixed fan-out pattern so pins
+  never overlap — never from a real location.
 - `src/lib/guide/` — the Guide's tools (read-only, public-fields-only), the resident chat
   (`chat.ts`, plus `draft-submission.ts` for the draft-and-confirm tool), the multi-agent case
   analysis (`sub-agents.ts`'s three specialists + `critique.ts`'s reflection pass, orchestrated
@@ -97,8 +134,9 @@ flowchart LR
   `src/lib/guide/__evals__/` holds the live safety eval suite (run separately from `npm test`,
   see Commands below).
 - Full behavioral/privacy/moderation rules live in `docs/` (`PRIVACY.md`, `MODERATION.md`,
-  `ARCHITECTURE.md`, `DESIGN_SYSTEM.md`, `3D_EXPERIENCE.md`) — read those before changing
-  anything safety- or privacy-adjacent.
+  `ARCHITECTURE.md`, `DESIGN_SYSTEM.md`, `COMMUNITY_CONFIG.md`) — read those before changing
+  anything safety- or privacy-adjacent. `docs/3D_EXPERIENCE.md` is a historical decision record
+  for a 3D view that was built and then removed; it does not describe a current feature.
 
 ## Local setup
 

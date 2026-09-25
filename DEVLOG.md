@@ -3,6 +3,11 @@
 Real problems hit while building CommonGround, and what actually fixed them — not a feature
 changelog (see commit history / `README.md` for that).
 
+> Entries are historical: each describes the code as it was at the time. Some mention features
+> that were later changed or removed — for example the 3D "Community Pulse" (React Three Fiber),
+> removed in the 2026-09-24 redesign. For the current application, see `README.md` and
+> `docs/ARCHITECTURE.md`.
+
 ## Private moderator notes were leaking into every public case page (Phase 8)
 
 **Problem:** the case-detail page (`/cases/[caseNumber]`) fetched the full `Case` object —

@@ -1,32 +1,39 @@
 # CommonGround — Testing & Evaluation Plan
 
-## Unit test coverage (by phase)
+## Automated test coverage (current)
 
-- **Phase 1 (done):** `CommunityConfig` schema validation for both configured communities;
-  category icon+label pairing; fictional-data labeling on the demo community.
-  (`src/lib/schema/__tests__/community-config.test.ts`, 5/5 passing.)
-- **Phase 3:** form validation, file/image validation, case-number generation (uniqueness,
-  format, never encodes personal info), privacy-preserving location display (never resolves to
-  an exact address), consent recording.
-- **Phase 4:** status transitions (valid transitions only, history always append-only), source
-  and verification-state labeling, "report inaccurate information" action.
-- **Phase 5:** duplicate detection accuracy, moderation-action recording, private-note isolation
-  (a public serializer must never include `AdminNote` fields — enforced by a type-level test,
-  not just a runtime check).
-- **Phase 6:** AI Guide refusal behavior (never invents a contact/official/deadline), source
-  attribution present on every factual answer, emergency-phrase detection (Spanish + English),
-  no forwarding/closing a case without explicit confirmation.
-- **Phase 7:** 3D fallback when WebGL is unavailable, reduced-motion behavior, empty-data state,
-  selecting a 3D item opens the correct HTML detail drawer.
-- **Phase 1 sanity check (already run):** configuring a second community
-  (`riverbend-demo`) without changing any core component — proven by the schema test suite
-  reading both communities through the same `CommunityConfigSchema`.
+`npm test` runs the Vitest suite (colocated `__tests__/` directories). It covers:
 
-## Accessibility checks (manual, every phase touching UI)
+- **Community configuration:** both built-in configs validate against `CommunityConfigSchema`;
+  every category pairs an icon with a text label; the demo community is labeled fictional;
+  runtime-created communities (validation, duplicate names, unique case-number prefixes, no
+  invented sources) — `src/lib/schema/__tests__/`,
+  `src/lib/store/__tests__/community-store.test.ts`.
+- **Cases and privacy:** case-number format and prefixes, approximate-area handling (never an
+  exact address), consent records, image validation, the public serializer never exposing
+  private fields (`public-case.test.ts`), status explanations, trends, duplicate clusters.
+- **Search:** server-side search and filters, including rejection of invalid input
+  (`src/lib/explore/`, `src/lib/store/__tests__/search-and-communities.test.ts`).
+- **Community map:** pin placement stays within each case's approximate area and pins never
+  overlap (`src/lib/map/__tests__/positions.test.ts`).
+- **Moderation:** admin actions reject unauthenticated calls, verification sources must be real
+  http/https URLs, admin pages guard themselves.
+- **Guide and agents:** emergency-phrase detection in all seven languages, the draft tool,
+  read-only tools, multi-agent case analysis with deterministic suggestion validation and the
+  critique pass, and the briefing — all with the model mocked, so no live API calls.
+- **Languages:** every interface string exists in all seven languages with matching
+  placeholders (`src/lib/i18n/__tests__/completeness.test.ts`).
+
+A separate live eval suite (`npm run eval:guide-safety`, `src/lib/guide/__evals__/`) runs
+adversarial scenarios against the real Guide (invented contacts, false claims of submission or
+closure, premature drafting, medical/legal refusals, emergencies, asking for an exact location).
+It needs a `GROQ_API_KEY`, makes real API calls, and is not part of `npm test` or CI.
+
+## Accessibility checks (manual, every change touching UI)
 
 Keyboard navigation, screen-reader labels, mobile layout (320/375/768/1440px), form errors,
-reduced motion, map/3D fallback, focus management after submission, empty states, slow-network
-behavior.
+reduced motion, the map's list alternative and text labels, focus management after submission,
+empty states, slow-network behavior.
 
 ## Primary pilot success metric
 

@@ -21,7 +21,8 @@ label, never rendered as pinpoint precision. The report flow's location step mus
 ## Consent
 
 Every submission records a `UserConsent` (consent version, timestamp, language). Consent copy
-(Spanish, shown at submission time):
+(Spanish original below; the same text is shown in the resident's chosen interface language —
+English, Portuguese, French, Simplified Chinese, Hindi, or Italian — at submission time):
 
 > "Tu información se utilizará para organizar y revisar esta contribución comunitaria. No
 > mostraremos públicamente tu identidad ni una ubicación exacta. Puedes solicitar la eliminación

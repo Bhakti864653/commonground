@@ -13,18 +13,23 @@ type CommunityConfig = {
   displayName: string;
   country: string;
   region?: string;
-  defaultLanguage: "es" | "en";
-  supportedLanguages: ("es" | "en")[];
+  defaultLanguage: Language;          // "es" | "en" | "pt" | "fr" | "zh" | "hi" | "it"
+  supportedLanguages: Language[];
   status: "pilot" | "active" | "demo";
-  categories: CategoryConfig[];       // each: id, label, labelEs, icon (icon always paired with text)
-  areas: AreaConfig[];                // neighborhood | landmark | region
+  categories: CategoryConfig[];       // id, label (English), labelEs, icon, optional `labels` for
+                                      // other languages (icon always paired with text)
+  areas: AreaConfig[];                // neighborhood | landmark | region; same label fields
   trustedSources: SourceConfig[];     // name, url, lastVerifiedAt, trustLevel
   officialContacts: ContactConfig[];  // verified: boolean — false renders as "Por verificar"
-  privacy: PrivacyConfig;             // anonymousByDefault (always true), consent text/version
+  privacy: PrivacyConfig;             // anonymousByDefault (always true), consent version, consent
+                                      // text in English/Spanish + optional `consentTexts`
   moderation: ModerationConfig;       // requireReviewBeforePublish, moderatorEmails
   enabledFeatures: FeatureFlags;      // mapView, threeDView, aiGuide, proposals, duplicateDetection
 };
 ```
+
+Missing translations fall back to English. `enabledFeatures.threeDView` is a legacy flag left in
+the schema: nothing reads it, and there is no 3D view.
 
 Full field-level types: `src/lib/schema/community.ts`. Model-name aliases required by the
 original spec (`ReportCategory`, `Source`, `OfficialContact`) are exported from the same file.
@@ -34,7 +39,8 @@ original spec (`ReportCategory`, `Source`, `OfficialContact`) are exported from 
 ### `santiago-veraguas` — pilot
 
 - Country: Panama · Region: Veraguas
-- Default language: Spanish · Secondary: English
+- Default language: Spanish; area and category names and consent text are provided in all seven
+  interface languages
 - Status: `pilot`
 - Categories: flooding/blocked drainage, garbage/sanitation, damaged roads/infrastructure,
   other
@@ -57,6 +63,10 @@ component. `status: "demo"` and the display name itself say "fictional demonstra
 
 ## Adding a new community
 
+There are two ways:
+
+**Built-in (defined in source code):**
+
 1. Add a new `CommunityConfig` object under `src/data/communities/`, validated through
    `CommunityConfigSchema.parse(...)` at module load (fails fast on a bad config).
 2. Add it to the `COMMUNITIES` array in `src/data/communities/index.ts`.
@@ -64,9 +74,19 @@ component. `status: "demo"` and the display name itself say "fictional demonstra
    accidentally hard-coded to a specific community and should be pulled into the config schema
    instead.
 
-## Test coverage (Phase 1)
+**At runtime (temporary prototype):** a moderator can set one up at `/admin/communities` with a
+name, country, optional region, 1–12 approximate areas (Spanish and English names), and
+categories from the presets in `src/data/communities/category-presets.ts` ("Other" is always
+included). It gets a unique id and case-number prefix, all seven interface languages, and no
+trusted sources or official contacts. It is stored in memory only, so it is lost on a restart or
+redeploy (and may be missing on another serverless instance) until a database is added. See
+[`ARCHITECTURE.md`](ARCHITECTURE.md#communities-created-at-runtime-prototype).
+
+## Test coverage
 
 `src/lib/schema/__tests__/community-config.test.ts` verifies: both configs validate against the
 schema, the two communities differ in every dimension that matters (language, categories,
 country) while sharing one schema, every category carries both an icon and a text label, and the
-demo community is visibly labeled as fictional.
+demo community is visibly labeled as fictional. `src/lib/store/__tests__/community-store.test.ts`
+covers runtime-created communities, and `src/lib/i18n/__tests__/completeness.test.ts` checks that
+every built-in area, category, and consent text exists in every language.

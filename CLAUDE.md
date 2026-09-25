@@ -53,9 +53,10 @@ privacy/safety constraint list and the emergency-phrase detection list.
 
 ## Architecture
 
-Next.js (App Router) + TypeScript + Tailwind CSS, local mock persistence for this prototype
-phase, Zod for runtime-validated typed models (`CommunityConfig`, `Report`, `Proposal`, status/
-verification enums, etc. — see `src/lib/schema/`). Full detail:
+Next.js (App Router) + TypeScript + Tailwind CSS, in-memory prototype persistence (no database
+yet — cases and runtime-created communities are temporary), Zod for runtime-validated typed
+models (`CommunityConfig`, `Report`, `Proposal`, status/verification enums, etc. — see
+`src/lib/schema/`). Full detail:
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Commands
@@ -85,7 +86,9 @@ success metric.
 Guided multi-step flows, not single giant forms — always show step progress ("Paso 2 de 5").
 Icons are never shown without a paired text label. Color is never the only signal for meaning
 (status, verification state, urgency) — always pair with text/icon. Spanish-first copy for the
-Santiago de Veraguas pilot, English available as the secondary language. Full design system:
+Santiago de Veraguas pilot; the interface is also available in English, Portuguese, French,
+Simplified Chinese, Hindi, and Italian, and every interface string must exist in all seven
+(`src/lib/i18n/__tests__/completeness.test.ts` enforces it). Full design system:
 [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md).
 
 ## Privacy constraints
@@ -94,10 +97,11 @@ Anonymous-by-default. Never require a name, phone number, or exact address. Neve
 exact coordinates or reporter identity. Admin notes are always private. See
 [`docs/PRIVACY.md`](docs/PRIVACY.md) and [`docs/MODERATION.md`](docs/MODERATION.md).
 
-## 3D fallback requirements
+## Community map requirements
 
-The optional "Community Pulse" 3D view (React Three Fiber, since this project is Next.js/React)
-is an enhancement, never the default or only way to view activity. It must: lazy-load, never
-block initial page load, provide a complete list/text alternative, support reduced-motion,
-degrade gracefully with no WebGL, and never imply that more activity means a neighborhood is
-worse, more dangerous, or more urgent. Full plan: [`docs/3D_EXPERIENCE.md`](docs/3D_EXPERIENCE.md).
+The home page community map is a 2D, illustrative SVG map (`src/components/map/`), not a
+geographic map and not 3D (the earlier 3D view was removed — see the historical record in
+[`docs/3D_EXPERIENCE.md`](docs/3D_EXPERIENCE.md)). It must: place cases only by approximate
+area, never by an exact location; never be the only way to reach a case (the list is always
+available); label every pin in text and explain every pin color; and never imply that more
+activity means a neighborhood is worse, more dangerous, or more urgent.
