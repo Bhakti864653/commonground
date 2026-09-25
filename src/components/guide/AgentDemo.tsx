@@ -242,7 +242,7 @@ export function AgentDemo() {
         </ol>
 
         <div className="mt-8 flex flex-wrap items-center gap-4 rounded-[2rem] bg-surface p-6">
-          <LogoMark className="h-10 w-10 shrink-0" />
+          <LogoMark tone="ink" className="h-10 w-10 shrink-0" />
           <p className="min-w-0 flex-1 text-sm text-slate">{t.neverShown[language]}</p>
           <Link
             href="/guide"

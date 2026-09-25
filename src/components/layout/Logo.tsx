@@ -3,23 +3,20 @@ import type { Language } from "@/lib/i18n/dictionary";
 import { FIELD } from "@/lib/i18n/field-notes";
 
 /**
- * A leaf-shaped parcel holding two overlapping circles — two neighbors' views meeting on
- * common ground. Stroked in lime on the dark sidebar; `tone="ink"` for light backgrounds.
+ * Two homes whose roofs overlap; the space they share is filled in lime — neighbors meeting on
+ * common ground. Cream outlines for the always-dark sidebar; `tone="ink"` for page backgrounds.
  */
 export function LogoMark({ className, tone = "lime" }: { className?: string; tone?: "lime" | "ink" }) {
-  const stroke = tone === "lime" ? "var(--lime)" : "var(--teal)";
+  const outline = tone === "lime" ? "#f8f8f1" : "var(--teal)";
+  const shared = tone === "lime" ? "var(--lime)" : "var(--lime-deep)";
   return (
     <svg viewBox="0 0 40 40" className={className} aria-hidden="true">
-      <g transform="rotate(-24 20 20)" fill="none" stroke={stroke} strokeWidth="3">
-        <clipPath id={`cg-leaf-${tone}`}>
-          <path d="M8 3H20A17 17 0 0 1 37 20A17 17 0 0 1 20 37A17 17 0 0 1 3 20V8A5 5 0 0 1 8 3Z" />
-        </clipPath>
-        <path d="M8 3H20A17 17 0 0 1 37 20A17 17 0 0 1 20 37A17 17 0 0 1 3 20V8A5 5 0 0 1 8 3Z" />
-        <g clipPath={`url(#cg-leaf-${tone})`}>
-          <circle cx="1" cy="27" r="16" />
-          <circle cx="39" cy="27" r="16" />
-        </g>
+      <path d="M14 20L20.5 15L26 20V34H14Z" fill={shared} />
+      <g fill="none" stroke={outline} strokeWidth="3" strokeLinejoin="round">
+        <path d="M4 34V20L15 10L26 20V34Z" />
+        <path d="M14 34V20L25 10L36 20V34Z" />
       </g>
+      <path d="M4 34H36" stroke={shared} strokeWidth="3" strokeLinecap="round" />
     </svg>
   );
 }
