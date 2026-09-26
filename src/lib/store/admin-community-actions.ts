@@ -8,6 +8,7 @@ import {
   listCommunities,
   listCommunityInfoLog,
   removeCommunityInfoEntry,
+  reverifyCommunityInfoEntry,
   type CommunityInfoLogEntry,
   type CreateCommunityResult,
   type InfoChangeResult,
@@ -53,6 +54,19 @@ export async function adminRemoveCommunityInfoEntry(
     return { ok: false, error: "invalid" };
   }
   return removeCommunityInfoEntry(communityId, kind, id, ACTOR_ID);
+}
+
+/** An explicit "I checked this today" — the only way an entry's check date moves forward. */
+export async function adminReverifyCommunityInfoEntry(
+  communityId: string,
+  kind: "source" | "contact",
+  id: string,
+): Promise<InfoChangeResult> {
+  await requireAdmin();
+  if (typeof communityId !== "string" || typeof id !== "string" || (kind !== "source" && kind !== "contact")) {
+    return { ok: false, error: "invalid" };
+  }
+  return reverifyCommunityInfoEntry(communityId, kind, id, ACTOR_ID);
 }
 
 export async function adminListCommunityInfoLog(): Promise<CommunityInfoLogEntry[]> {

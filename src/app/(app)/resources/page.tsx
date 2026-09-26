@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BadgeCheck, CircleHelp, ExternalLink, MessageCircle, Phone, Siren } from "lucide-react";
+import { ExternalLink, MessageCircle, Phone, Siren } from "lucide-react";
 import { useCommunity } from "@/lib/community/context";
 import { useLanguage } from "@/lib/i18n/context";
 import { INFO } from "@/lib/i18n/community-info";
@@ -10,14 +10,59 @@ import { dateLocale, type Language } from "@/lib/i18n/languages";
 import { labelOf } from "@/lib/i18n/labels";
 import { getCommunityInfo, type CommunityInfo } from "@/lib/store/actions";
 import type { ContactConfig } from "@/lib/schema/community";
+import { canShowAsOfficial, sourceFreshness, type Freshness } from "@/lib/sources/freshness";
+import { FreshnessBadge } from "@/components/sources/FreshnessBadge";
 
 const t = INFO.resources;
 
-function formatDate(isoDate: string, language: Language): string {
-  // A bare YYYY-MM-DD is a calendar date — read it at noon UTC so no timezone shifts the day.
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(isoDate) ? new Date(`${isoDate}T12:00:00Z`) : new Date(isoDate);
-  return date.toLocaleDateString(dateLocale(language), { dateStyle: "long" });
+function formatDate(date: Date, language: Language): string {
+  return date.toLocaleDateString(dateLocale(language), { dateStyle: "long", timeZone: "UTC" });
 }
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
+
+/** Where an entry came from and when it was checked — shown right beside the entry itself. */
+function Provenance({
+  entry,
+  sourceUrl,
+  language,
+}: {
+  entry: { verified: boolean; lastVerifiedAt?: string; verificationNote?: string };
+  sourceUrl?: string;
+  language: Language;
+}) {
+  const f = sourceFreshness(entry);
+  return (
+    <div className="flex flex-col gap-1 text-xs text-slate">
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <FreshnessBadge state={f.state} language={language} />
+        {f.checkedOn ? (
+          <span>{fill(t.lastChecked[language], { date: formatDate(f.checkedOn, language) })}</span>
+        ) : (
+          <span>{t.notChecked[language]}</span>
+        )}
+        {f.nextReviewDue && <span>· {fill(t.nextReview[language], { date: formatDate(f.nextReviewDue, language) })}</span>}
+      </p>
+      {sourceUrl && (
+        <p>
+          {t.whereFrom[language]}:{" "}
+          <a href={sourceUrl} target="_blank" rel="noreferrer" className="font-semibold text-ink underline underline-offset-2">
+            {hostOf(sourceUrl)}
+          </a>
+        </p>
+      )}
+      {entry.verificationNote && <p>{entry.verificationNote}</p>}
+    </div>
+  );
+}
+
+const LEGEND: Freshness[] = ["current", "review_due", "unverified"];
 
 /** Digits only (plus a leading +) for tel: and wa.me links. */
 function dialable(phone: string): string {
@@ -38,17 +83,6 @@ function ContactCard({ contact, language }: { contact: ContactConfig; language: 
           <span className="inline-flex items-center gap-1 rounded-full bg-peach px-2 py-0.5 text-[0.7rem] font-extrabold text-ink">
             <Siren aria-hidden="true" className="h-3 w-3" />
             {t.emergencyTag[language]}
-          </span>
-        )}
-        {contact.verified ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-status-resolved px-2 py-0.5 text-[0.7rem] font-extrabold text-ink">
-            <BadgeCheck aria-hidden="true" className="h-3 w-3" />
-            {t.verified[language]}
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 rounded-full bg-status-review px-2 py-0.5 text-[0.7rem] font-extrabold text-ink">
-            <CircleHelp aria-hidden="true" className="h-3 w-3" />
-            {t.toVerify[language]}
           </span>
         )}
       </div>
@@ -72,17 +106,7 @@ function ContactCard({ contact, language }: { contact: ContactConfig; language: 
           </a>
         )}
       </div>
-      {(contact.lastVerifiedAt || contact.sourceUrl) && (
-        <p className="text-xs text-slate">
-          {contact.lastVerifiedAt && fill(t.checkedOn[language], { date: formatDate(contact.lastVerifiedAt, language) })}
-          {contact.lastVerifiedAt && contact.sourceUrl && " · "}
-          {contact.sourceUrl && (
-            <a href={contact.sourceUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2">
-              {t.sourceLink[language]}: {new URL(contact.sourceUrl).hostname}
-            </a>
-          )}
-        </p>
-      )}
+      <Provenance entry={contact} sourceUrl={contact.sourceUrl} language={language} />
     </li>
   );
 }
@@ -162,14 +186,29 @@ export default function ResourcesPage() {
                   {s.name}
                   <ExternalLink aria-hidden="true" className="h-4 w-4 shrink-0" />
                 </a>
-                <p className="text-xs text-slate">
-                  {s.trustLevel === "official_verified" ? t.trustOfficial[language] : t.trustCommunity[language]} ·{" "}
-                  {new URL(s.url).hostname} · {fill(t.checkedOn[language], { date: formatDate(s.lastVerifiedAt, language) })}
+                {/* "Official source" only while the check is current — never for an unverified entry. */}
+                <p className="text-xs font-semibold text-ink/80">
+                  {canShowAsOfficial(s) ? t.trustOfficial[language] : t.trustCommunity[language]} · {hostOf(s.url)}
                 </p>
+                <Provenance entry={s} language={language} />
               </li>
             ))}
           </ul>
         )}
+      </section>
+
+      <section aria-labelledby="legend-heading" className="rounded-2xl border border-line bg-surface p-5">
+        <h2 id="legend-heading" className="text-xl text-ink">{t.legendTitle[language]}</h2>
+        <dl className="mt-3 flex flex-col gap-3 text-sm">
+          {LEGEND.map((state) => (
+            <div key={state} className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3">
+              <dt className="shrink-0 sm:w-40">
+                <FreshnessBadge state={state} language={language} />
+              </dt>
+              <dd className="text-slate">{t.freshness[state].explain[language]}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
     </div>
   );

@@ -14,7 +14,9 @@ export function getGroqClient(): Groq | null {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return null;
   if (!client) {
-    client = new Groq({ apiKey });
+    // The SDK's default timeout is 10 minutes — far longer than a serverless request lives. Fail
+    // fast instead, so the caller can show "unavailable" rather than hang.
+    client = new Groq({ apiKey, timeout: 30_000, maxRetries: 2 });
   }
   return client;
 }

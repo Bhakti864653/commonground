@@ -39,10 +39,14 @@ export async function deleteSubmission(
   caseNumber: string,
   managementToken: string,
 ): Promise<boolean> {
+  if (typeof caseNumber !== "string" || typeof managementToken !== "string") return false;
   return deleteCase(caseNumber, managementToken);
 }
 
+/** Public endpoint: the optional note is bounded so an anonymous caller can't store unlimited text. */
 export async function reportInaccuracy(caseNumber: string, note?: string): Promise<boolean> {
+  if (typeof caseNumber !== "string") return false;
+  if (note !== undefined && (typeof note !== "string" || note.length > 1000)) return false;
   return flagInaccuracy(caseNumber, note);
 }
 

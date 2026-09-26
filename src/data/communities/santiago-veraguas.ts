@@ -51,21 +51,43 @@ const santiagoVeraguasConfig: CommunityConfig = {
     { id: "este", label: "Eastern area", labelEs: "Área este", kind: "neighborhood", mapDirection: "east", labels: { pt: "Área leste", fr: "Zone est", zh: "东区", hi: "पूर्वी इलाका", it: "Zona est" } },
     { id: "oeste", label: "Western area", labelEs: "Área oeste", kind: "neighborhood", mapDirection: "west", labels: { pt: "Área oeste", fr: "Zone ouest", zh: "西区", hi: "पश्चिमी इलाका", it: "Zona ovest" } },
   ],
-  // Every entry below was checked against the linked official page on 2026-09-25 — nothing is
-  // added without a real, checkable source (spec §23/§26). Moderators can add more at
-  // /admin/sources.
+  // Every entry below was re-checked against its official page on 2026-09-25 in the
+  // source-verification pass documented in docs/MCP_RESEARCH_AUDIT.md — nothing is added without a
+  // real, checkable primary source (spec §23/§26). Moderators can add, remove, or re-verify
+  // entries at /admin/sources.
   trustedSources: [
     {
       id: "municipio-santiago",
       name: "Municipio de Santiago",
       url: "https://santiago.municipios.gob.pa/",
+      verified: true,
       lastVerifiedAt: "2026-09-25",
       trustLevel: "official_verified",
+      verificationNote: "The municipality's page on the national Municipios Digitales portal.",
+    },
+    {
+      id: "alcaldia-santiago",
+      name: "Alcaldía de Santiago",
+      url: "https://alcaldiadesantiago.gob.pa/",
+      verified: true,
+      lastVerifiedAt: "2026-09-25",
+      trustLevel: "official_verified",
+      verificationNote: "The mayor's office site for the district of Santiago, Veraguas; lists its office phone and address.",
+    },
+    {
+      id: "sume-911",
+      name: "SUME 9-1-1 — Sistema Único de Manejo de Emergencias",
+      url: "https://sume911.pa/",
+      verified: true,
+      lastVerifiedAt: "2026-09-25",
+      trustLevel: "official_verified",
+      verificationNote: "Operator of the 9-1-1 line; explains that non-medical emergencies are transferred to the right institution.",
     },
     {
       id: "sinaproc",
       name: "SINAPROC — Sistema Nacional de Protección Civil",
       url: "https://www.sinaproc.gob.pa/",
+      verified: true,
       lastVerifiedAt: "2026-09-25",
       trustLevel: "official_verified",
     },
@@ -73,6 +95,7 @@ const santiagoVeraguasConfig: CommunityConfig = {
       id: "bomberos-panama",
       name: "Benemérito Cuerpo de Bomberos de la República de Panamá",
       url: "https://www.bomberos.gob.pa/",
+      verified: true,
       lastVerifiedAt: "2026-09-25",
       trustLevel: "official_verified",
     },
@@ -85,10 +108,12 @@ const santiagoVeraguasConfig: CommunityConfig = {
       labels: { pt: "Linha nacional de emergência", fr: "Numéro national d’urgence", zh: "全国紧急电话", hi: "राष्ट्रीय आपातकालीन नंबर", it: "Numero nazionale di emergenza" },
       phone: "911",
       channel: "phone",
+      url: "https://sume911.pa/",
       isEmergencyService: true,
       verified: true,
-      sourceUrl: "https://www.sinaproc.gob.pa/",
+      sourceUrl: "https://sume911.pa/acerca-de/como-funciona",
       lastVerifiedAt: "2026-09-25",
+      verificationNote: "SUME 9-1-1: free from any phone; non-medical emergencies are transferred to police, fire, or civil protection.",
     },
     {
       id: "bomberos-103",
@@ -100,8 +125,9 @@ const santiagoVeraguasConfig: CommunityConfig = {
       url: "https://www.bomberos.gob.pa/",
       isEmergencyService: true,
       verified: true,
-      sourceUrl: "https://www.bomberos.gob.pa/",
+      sourceUrl: "https://www.bomberos.gob.pa/2025/08/05/vas-a-llamar-al-103-estas-son-las-recomendaciones-clave-para-una-atencion-rapida-y-efectiva/",
       lastVerifiedAt: "2026-09-25",
+      verificationNote: "Bomberos: 103 is its direct line, available 24 hours, for fires, rescues, and similar emergencies.",
     },
     {
       id: "sinaproc-whatsapp",
@@ -113,8 +139,23 @@ const santiagoVeraguasConfig: CommunityConfig = {
       url: "https://www.sinaproc.gob.pa/",
       isEmergencyService: true,
       verified: true,
-      sourceUrl: "https://www.sinaproc.gob.pa/",
+      sourceUrl: "https://www.sinaproc.gob.pa/directorio-telefonico/",
       lastVerifiedAt: "2026-09-25",
+      verificationNote: "SINAPROC: “WhatsApp 6998-4809 desde cualquier teléfono las 24 horas del día”.",
+    },
+    {
+      id: "alcaldia-santiago-oficina",
+      name: "Mayor's office of Santiago (Alcaldía), general office line",
+      nameEs: "Alcaldía de Santiago, teléfono de oficina",
+      labels: { pt: "Prefeitura de Santiago (Alcaldía), telefone do escritório", fr: "Mairie de Santiago (Alcaldía), ligne du bureau", zh: "圣地亚哥市长办公室（Alcaldía）办公电话", hi: "सैंटियागो महापौर कार्यालय (Alcaldía), कार्यालय फ़ोन", it: "Municipio di Santiago (Alcaldía), telefono dell’ufficio" },
+      phone: "935-2444",
+      channel: "phone",
+      url: "https://alcaldiadesantiago.gob.pa/",
+      isEmergencyService: false,
+      verified: true,
+      sourceUrl: "https://alcaldiadesantiago.gob.pa/",
+      lastVerifiedAt: "2026-09-25",
+      verificationNote: "Listed on the Alcaldía's official site as “Tel: 935-2444 / 935-2445”, with its office on Av. Héctor Alejandro Santacoloma. An office line, not for emergencies.",
     },
   ],
   privacy: {

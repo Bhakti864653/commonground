@@ -1,4 +1,4 @@
-import type Groq from "groq-sdk";
+import Groq from "groq-sdk";
 import { getGroqClient, GUIDE_MODEL } from "./groq-client";
 import { TOOL_DEFINITIONS, communityContextBlock, executeTool } from "./tools";
 import { detectEmergencyPhrase } from "./emergency";
@@ -125,12 +125,23 @@ export async function askGuide(
   ];
 
   for (let step = 0; step < MAX_TOOL_STEPS; step++) {
-    const completion = await client.chat.completions.create({
-      model: GUIDE_MODEL,
-      messages,
-      tools: step === MAX_TOOL_STEPS - 1 ? undefined : tools,
-      tool_choice: step === MAX_TOOL_STEPS - 1 ? undefined : "auto",
-    });
+    let completion: Groq.Chat.Completions.ChatCompletion;
+    try {
+      completion = await client.chat.completions.create({
+        model: GUIDE_MODEL,
+        messages,
+        tools: step === MAX_TOOL_STEPS - 1 ? undefined : tools,
+        tool_choice: step === MAX_TOOL_STEPS - 1 ? undefined : "auto",
+      });
+    } catch (error) {
+      // Rate limits, timeouts, and connection failures all arrive as Groq.APIError subclasses
+      // (groq-sdk docs); the resident gets the normal "unavailable" answer instead of a
+      // rejected request. Anything else is a real bug and still surfaces.
+      if (error instanceof Groq.APIError) {
+        return { emergency: false, answer: UNAVAILABLE_MESSAGE[language] };
+      }
+      throw error;
+    }
 
     const responseMessage = completion.choices[0]?.message;
     if (!responseMessage) break;

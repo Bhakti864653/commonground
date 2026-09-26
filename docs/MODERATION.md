@@ -28,8 +28,10 @@ received a submission.
   `restore_content`), with an optional private note that only appears in the moderation history.
 - Add or remove a community's approved sources and official contacts at `/admin/sources`. Every
   URL must be http/https; a contact can only be marked verified with a source URL and the date it
-  was checked (otherwise it shows publicly as "Por verificar"). Changes are listed in a change
-  history on that page. Like everything else in the prototype store, runtime changes are lost on
+  was checked (otherwise it shows publicly as unverified). Entries that are unverified or were
+  checked more than 180 days ago are listed first under "Needs review", and a two-step "Mark
+  re-checked today" action is the only way to move a check date forward. Changes, including
+  re-checks, are listed in a change history on that page. Like everything else in the prototype store, runtime changes are lost on
   a restart or redeploy; the built-in entries always come back.
 
 ## Rules

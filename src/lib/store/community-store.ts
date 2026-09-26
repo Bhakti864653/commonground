@@ -20,13 +20,21 @@ import {
  * dev reloads but NOT a server restart, a redeploy, or (on Vercel) a different serverless
  * instance. A real database is the documented next step (ARCHITECTURE.md).
  */
-/** Sources and contacts a moderator added or removed at runtime, per community. */
-type InfoOverrides = { sources: SourceConfig[]; contacts: ContactConfig[]; removedIds: string[] };
+/**
+ * Sources and contacts a moderator added, removed, or re-verified at runtime, per community.
+ * `reverified` maps an entry id to the date a reviewer explicitly re-checked it.
+ */
+type InfoOverrides = {
+  sources: SourceConfig[];
+  contacts: ContactConfig[];
+  removedIds: string[];
+  reverified: Record<string, string>;
+};
 
 export type CommunityInfoLogEntry = {
   id: string;
   communityId: string;
-  action: "add_source" | "remove_source" | "add_contact" | "remove_contact";
+  action: "add_source" | "remove_source" | "add_contact" | "remove_contact" | "reverify_source" | "reverify_contact";
   /** The entry's name — never anything private. */
   detail: string;
   actorId: string;
@@ -54,10 +62,14 @@ function withOverrides(community: CommunityConfig): CommunityConfig {
   const o = getStore().overrides[community.id];
   if (!o) return community;
   const removed = new Set(o.removedIds);
+  const reverified = o.reverified ?? {};
+  // A re-check is an explicit reviewer action: it records the date and marks the entry verified.
+  const apply = <T extends { id: string; verified: boolean; lastVerifiedAt?: string }>(entry: T): T =>
+    reverified[entry.id] ? { ...entry, verified: true, lastVerifiedAt: reverified[entry.id] } : entry;
   return {
     ...community,
-    trustedSources: [...community.trustedSources.filter((s) => !removed.has(s.id)), ...o.sources],
-    officialContacts: [...community.officialContacts.filter((c) => !removed.has(c.id)), ...o.contacts],
+    trustedSources: [...community.trustedSources.filter((s) => !removed.has(s.id)), ...o.sources].map(apply),
+    officialContacts: [...community.officialContacts.filter((c) => !removed.has(c.id)), ...o.contacts].map(apply),
   };
 }
 
@@ -206,12 +218,19 @@ const checkedDate = z
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .refine((v) => !Number.isNaN(Date.parse(v)) && Date.parse(v) <= Date.now() + 24 * 60 * 60 * 1000);
 
+const note = z.string().trim().max(300);
+
 export const NewSourceInputSchema = z.object({
   name: entryName,
   url: HttpUrlSchema,
   trustLevel: SourceConfigSchema.shape.trustLevel,
+  // A new source is recorded as checked on the date given — it is only added by someone who checked it.
   lastVerifiedAt: checkedDate,
-});
+  verificationNote: z
+    .union([z.literal(""), note])
+    .optional()
+    .transform((v) => (v ? v : undefined)),
+}).transform((input) => ({ ...input, verified: true }));
 export type NewSourceInput = z.input<typeof NewSourceInputSchema>;
 
 /** An optional form field: a blank string means "not given". */
@@ -233,6 +252,7 @@ export const NewContactInputSchema = z
     verified: z.boolean(),
     sourceUrl: optionalField(HttpUrlSchema),
     lastVerifiedAt: optionalField(checkedDate),
+    verificationNote: optionalField(note),
   })
   // A contact nobody can reach is useless, and "verified" is only ever claimed with a
   // checkable source and date behind it.
@@ -244,7 +264,9 @@ export type InfoChangeResult = { ok: true } | { ok: false; error: "invalid" | "u
 
 function overridesFor(communityId: string): InfoOverrides {
   const store = getStore();
-  return (store.overrides[communityId] ??= { sources: [], contacts: [], removedIds: [] });
+  const o = (store.overrides[communityId] ??= { sources: [], contacts: [], removedIds: [], reverified: {} });
+  o.reverified ??= {};
+  return o;
 }
 
 function entryId(name: string): string {
@@ -301,6 +323,31 @@ export function removeCommunityInfoEntry(
   else o.contacts = o.contacts.filter((c) => c.id !== id);
   o.removedIds.push(id);
   logInfoChange(communityId, kind === "source" ? "remove_source" : "remove_contact", entry.name, actorId, now);
+  return { ok: true };
+}
+
+/**
+ * A reviewer re-checked an entry against its source today. Only ever called from an explicit
+ * button — nothing marks information current on its own. A contact can only be re-verified if it
+ * has a source URL to check against.
+ */
+export function reverifyCommunityInfoEntry(
+  communityId: string,
+  kind: "source" | "contact",
+  id: string,
+  actorId: string,
+  now = new Date(),
+): InfoChangeResult {
+  const community = getCommunity(communityId);
+  if (!community) return { ok: false, error: "unknown_community" };
+  const entry =
+    kind === "source"
+      ? community.trustedSources.find((s) => s.id === id)
+      : community.officialContacts.find((c) => c.id === id);
+  if (!entry) return { ok: false, error: "not_found" };
+  if (kind === "contact" && !("sourceUrl" in entry && entry.sourceUrl)) return { ok: false, error: "invalid" };
+  overridesFor(communityId).reverified[id] = now.toISOString().slice(0, 10);
+  logInfoChange(communityId, kind === "source" ? "reverify_source" : "reverify_contact", entry.name, actorId, now);
   return { ok: true };
 }
 

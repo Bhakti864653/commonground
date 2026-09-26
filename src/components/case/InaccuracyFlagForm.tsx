@@ -37,6 +37,7 @@ export function InaccuracyFlagForm({ caseNumber }: { caseNumber: string }) {
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
+        maxLength={1000}
         aria-label={t.heading[language]}
         placeholder={t.notePlaceholder[language]}
         rows={2}

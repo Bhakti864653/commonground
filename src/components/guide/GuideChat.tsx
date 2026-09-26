@@ -41,17 +41,21 @@ export function GuideChat() {
     const history = turns.map(({ role, content }) => ({ role, content }));
     setTurns((prev) => [...prev, { role: "user", content: message }]);
     setPending(true);
-    const result = await askGuideAction(community.id, message, language, history);
-    setTurns((prev) => [
-      ...prev,
-      { role: "assistant", content: result.answer, emergency: result.emergency },
-    ]);
-    if (result.draft) {
-      setDraft(result.draft);
-      setConsented(false);
-      setDraftError(null);
+    try {
+      const result = await askGuideAction(community.id, message, language, history);
+      setTurns((prev) => [
+        ...prev,
+        { role: "assistant", content: result.answer, emergency: result.emergency },
+      ]);
+      if (result.draft) {
+        setDraft(result.draft);
+        setConsented(false);
+        setDraftError(null);
+      }
+    } finally {
+      // Even if the request fails outright, never leave the chat stuck on "thinking".
+      setPending(false);
     }
-    setPending(false);
   }
 
   async function confirmDraft() {

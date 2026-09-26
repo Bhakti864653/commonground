@@ -54,11 +54,16 @@ original spec (`ReportCategory`, `Source`, `OfficialContact`) are exported from 
 - Categories: flooding/blocked drainage, garbage/sanitation, damaged roads/infrastructure,
   other
 - `trustedSources` and `officialContacts` hold only entries checked against a real, official page
-  (spec §23/§26: never invent official contacts or government actions). As of 2026-09-25: the
-  national emergency line 911 and SINAPROC's 24-hour WhatsApp emergency line (both from
-  sinaproc.gob.pa) and the fire department's 103 (bomberos.gob.pa), plus the Municipality of
-  Santiago, SINAPROC, and Bomberos websites as approved sources. A municipal WhatsApp number was
-  left out because the municipality's site doesn't state clearly enough what that number is. They are shown on the public `/resources` page with
+  (spec §23/§26: never invent official contacts or government actions). As of the 2026-09-25
+  verification pass ([`MCP_RESEARCH_AUDIT.md`](MCP_RESEARCH_AUDIT.md)): 911 (sourced from SUME
+  9-1-1), the fire department's 103 (bomberos.gob.pa), SINAPROC's 24-hour WhatsApp emergency line
+  (sinaproc.gob.pa), and the Alcaldía de Santiago's office line 935-2444 (alcaldiadesantiago.gob.pa),
+  plus five approved source websites. A municipal WhatsApp number was left out because no
+  official page states what it is for.
+- Every contact and source carries `verified`, `lastVerifiedAt`, and an optional public
+  `verificationNote`. `src/lib/sources/freshness.ts` turns those into current / review due
+  (checked more than 180 days ago) / unverified; an entry without a valid check date is never
+  shown as verified. They are shown on the public `/resources` page with
   their source and check date; moderators can add or remove entries at `/admin/sources`.
 - Moderator email is a placeholder (`moderator@commonground.example`) in committed source; the
   real value belongs in an environment variable at deploy time, matching how Concord's

@@ -39,28 +39,30 @@ export const AreaConfigSchema = z.object({
 export type AreaConfig = z.infer<typeof AreaConfigSchema>;
 
 /**
- * http(s) only: `z.string().url()` alone accepts `javascript:` URIs, and these URLs are rendered
- * as public links.
+ * http(s) only: a bare URL check accepts `javascript:` URIs, and these URLs are rendered as public
+ * links. Zod 4's top-level `z.url()` with a `protocol` pattern is the documented way to restrict
+ * this (`z.string().url()` is deprecated in Zod 4).
  */
 export const HttpUrlSchema = z
-  .string()
+  .url({ protocol: /^https?$/, error: "Must be a valid http:// or https:// URL" })
   .trim()
-  .max(2000)
-  .refine((value) => {
-    try {
-      const protocol = new URL(value).protocol;
-      return protocol === "http:" || protocol === "https:";
-    } catch {
-      return false;
-    }
-  }, "Must be a valid http:// or https:// URL");
+  .max(2000);
 
+/** A short, public note on what exactly was checked, e.g. "103 listed as the 24-hour line". */
+const VerificationNoteSchema = z.string().trim().max(300).optional();
+
+/**
+ * `verified` defaults to false: an entry is only presented as checked when someone explicitly
+ * says so and gives the date (see src/lib/sources/freshness.ts).
+ */
 export const SourceConfigSchema = z.object({
   id: z.string(),
   name: z.string(),
   url: HttpUrlSchema,
-  lastVerifiedAt: z.string(),
+  verified: z.boolean().default(false),
+  lastVerifiedAt: z.string().optional(),
   trustLevel: z.enum(["official_verified", "community_trusted"]),
+  verificationNote: VerificationNoteSchema,
 });
 export type SourceConfig = z.infer<typeof SourceConfigSchema>;
 export type Source = SourceConfig;
@@ -82,6 +84,7 @@ export const ContactConfigSchema = z.object({
   verified: z.boolean().default(false),
   sourceUrl: HttpUrlSchema.optional(),
   lastVerifiedAt: z.string().optional(),
+  verificationNote: VerificationNoteSchema,
 });
 export type ContactConfig = z.infer<typeof ContactConfigSchema>;
 export type OfficialContact = ContactConfig;
@@ -97,7 +100,7 @@ export type PrivacyConfig = z.infer<typeof PrivacyConfigSchema>;
 
 export const ModerationConfigSchema = z.object({
   requireReviewBeforePublish: z.boolean().default(true),
-  moderatorEmails: z.array(z.string().email()).default([]),
+  moderatorEmails: z.array(z.email()).default([]),
 });
 export type ModerationConfig = z.infer<typeof ModerationConfigSchema>;
 

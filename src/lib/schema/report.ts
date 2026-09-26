@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { LANGUAGE_CODES, type LocalizedText } from "@/lib/i18n/languages";
-import { ExtraTranslationsSchema } from "./community";
+import { ExtraTranslationsSchema, HttpUrlSchema } from "./community";
 
 export const ReportTypeSchema = z.enum(["report", "proposal"]);
 export type ReportTypeValue = z.infer<typeof ReportTypeSchema>;
@@ -179,25 +179,13 @@ export type ImageMetadata = z.infer<typeof ImageMetadataSchema>;
  * "verified information" per the PRD, the same way a community's own trustedSources/
  * officialContacts are public.
  *
- * `url` is restricted to http:// or https:// — `z.string().url()` alone accepts any
+ * `url` is restricted to http:// or https:// (the shared `HttpUrlSchema`) — a bare URL check accepts any
  * syntactically valid URL, including a `javascript:` URI, which would execute if a moderator
  * (or a compromised admin session) ever clicked the rendered link in ModerationPanel.tsx.
  */
 export const VerifiedSourceSchema = z.object({
   title: z.string().trim().min(1).max(200),
-  url: z
-    .string()
-    .trim()
-    .min(1)
-    .max(2000)
-    .refine((value) => {
-      try {
-        const protocol = new URL(value).protocol;
-        return protocol === "http:" || protocol === "https:";
-      } catch {
-        return false;
-      }
-    }, "Must be a valid http:// or https:// URL"),
+  url: HttpUrlSchema,
   checkedAt: z.string(),
   moderatorActorId: z.string(),
 });

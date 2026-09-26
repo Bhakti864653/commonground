@@ -6,9 +6,12 @@ import {
   adminAddOfficialContact,
   adminAddTrustedSource,
   adminRemoveCommunityInfoEntry,
+  adminReverifyCommunityInfoEntry,
 } from "@/lib/store/admin-community-actions";
 import type { CommunityConfig } from "@/lib/schema/community";
 import type { InfoChangeResult } from "@/lib/store/community-store";
+import { sortForReview, sourceFreshness } from "@/lib/sources/freshness";
+import { FreshnessBadge } from "@/components/sources/FreshnessBadge";
 
 const input = "rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink";
 const today = () => new Date().toISOString().slice(0, 10);
@@ -17,10 +20,10 @@ const ERRORS: Record<Exclude<InfoChangeResult, { ok: true }>["error"], string> =
   invalid:
     "Not saved — check the fields. URLs must start with http:// or https://, and a verified contact needs a source URL and the date you checked it.",
   unknown_community: "Not saved — that community no longer exists (the prototype store may have restarted).",
-  not_found: "Already removed.",
+  not_found: "That entry no longer exists.",
 };
 
-const EMPTY_SOURCE = { name: "", url: "", trustLevel: "official_verified" as const, lastVerifiedAt: today() };
+const EMPTY_SOURCE = { name: "", url: "", trustLevel: "official_verified" as const, lastVerifiedAt: today(), verificationNote: "" };
 const EMPTY_CONTACT = {
   name: "",
   nameEs: "",
@@ -31,6 +34,7 @@ const EMPTY_CONTACT = {
   verified: true,
   sourceUrl: "",
   lastVerifiedAt: today(),
+  verificationNote: "",
 };
 
 /**
@@ -40,11 +44,22 @@ const EMPTY_CONTACT = {
  */
 export function CommunityInfoManager({ community }: { community: CommunityConfig }) {
   const router = useRouter();
-  const [source, setSource] = useState<{ name: string; url: string; trustLevel: "official_verified" | "community_trusted"; lastVerifiedAt: string }>(EMPTY_SOURCE);
+  const [source, setSource] = useState<{
+    name: string;
+    url: string;
+    trustLevel: "official_verified" | "community_trusted";
+    lastVerifiedAt: string;
+    verificationNote: string;
+  }>(EMPTY_SOURCE);
   const [contact, setContact] = useState(EMPTY_CONTACT);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [confirmingReverify, setConfirmingReverify] = useState<string | null>(null);
+
+  const contacts = sortForReview(community.officialContacts);
+  const sources = sortForReview(community.trustedSources);
+  const needsReview = [...contacts, ...sources].filter((e) => sourceFreshness(e).state !== "current");
 
   async function run(key: string, fn: () => Promise<InfoChangeResult>, onOk?: () => void) {
     setPending(key);
@@ -57,6 +72,43 @@ export function CommunityInfoManager({ community }: { community: CommunityConfig
     } else {
       setMessage(ERRORS[result.error]);
     }
+  }
+
+  /**
+   * Re-checking moves the check date to today, so it takes two clicks: nothing is ever marked
+   * current without a reviewer saying "I checked this against the source just now".
+   */
+  function reverifyButton(kind: "source" | "contact", id: string, canReverify: boolean) {
+    if (!canReverify) {
+      return <span className="text-xs text-slate">Add a source URL before it can be verified.</span>;
+    }
+    if (confirmingReverify !== id) {
+      return (
+        <button
+          type="button"
+          onClick={() => setConfirmingReverify(id)}
+          className="shrink-0 rounded-md border border-teal/40 px-2 py-1 text-xs font-medium text-teal"
+        >
+          Mark re-checked today
+        </button>
+      );
+    }
+    return (
+      <span className="flex flex-wrap items-center gap-1">
+        <span className="text-xs text-ink">Did you just check it against its source?</span>
+        <button type="button" onClick={() => setConfirmingReverify(null)} className="rounded-md border border-ink/15 px-2 py-1 text-xs font-medium text-ink">
+          Cancel
+        </button>
+        <button
+          type="button"
+          disabled={pending === `reverify-${id}`}
+          onClick={() => run(`reverify-${id}`, () => adminReverifyCommunityInfoEntry(community.id, kind, id), () => setConfirmingReverify(null))}
+          className="rounded-md bg-teal px-2 py-1 text-xs font-medium text-cream disabled:opacity-50"
+        >
+          Yes, I checked it
+        </button>
+      </span>
+    );
   }
 
   function removeButton(kind: "source" | "contact", id: string) {
@@ -100,6 +152,16 @@ export function CommunityInfoManager({ community }: { community: CommunityConfig
         </p>
       </div>
 
+      <p
+        className={`rounded-md p-2 text-sm ${needsReview.length > 0 ? "bg-status-review text-ink" : "bg-status-resolved text-ink"}`}
+      >
+        {needsReview.length > 0
+          ? `Needs review: ${needsReview.length} ${needsReview.length === 1 ? "entry is" : "entries are"} unverified or older than 6 months. They are listed first below.`
+          : contacts.length + sources.length === 0
+            ? "No contacts or sources yet."
+            : "All entries were checked within the last 6 months."}
+      </p>
+
       {message && (
         <p role="alert" className="rounded-md bg-coral/10 p-2 text-sm text-coral">
           {message}
@@ -110,17 +172,24 @@ export function CommunityInfoManager({ community }: { community: CommunityConfig
       <div className="flex flex-col gap-2">
         <h3 className="text-sm font-semibold text-ink">Official contacts ({community.officialContacts.length})</h3>
         <ul className="flex flex-col gap-1">
-          {community.officialContacts.map((c) => (
-            <li key={c.id} className="flex items-start justify-between gap-2 rounded-md border border-ink/10 p-2 text-sm">
-              <div className="min-w-0">
-                <p className="font-medium text-ink">{c.nameEs ?? c.name}</p>
-                <p className="break-words text-xs text-slate">
-                  {[c.phone && `${c.channel === "whatsapp" ? "WhatsApp" : "Phone"} ${c.phone}`, c.url, c.isEmergencyService && "emergency", c.verified ? `verified ${c.lastVerifiedAt ?? ""}` : "to be verified"]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
+          {contacts.map((c) => (
+            <li key={c.id} className="flex flex-col gap-2 rounded-md border border-ink/10 p-2 text-sm">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
+                    {c.nameEs ?? c.name}
+                    <FreshnessBadge state={sourceFreshness(c).state} language="en" />
+                  </p>
+                  <p className="break-words text-xs text-slate">
+                    {[c.phone && `${c.channel === "whatsapp" ? "WhatsApp" : "Phone"} ${c.phone}`, c.isEmergencyService && "emergency", `checked ${c.lastVerifiedAt ?? "never"}`, c.sourceUrl && `source ${c.sourceUrl}`]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                  {c.verificationNote && <p className="text-xs text-slate">{c.verificationNote}</p>}
+                </div>
+                {removeButton("contact", c.id)}
               </div>
-              {removeButton("contact", c.id)}
+              {reverifyButton("contact", c.id, !!c.sourceUrl)}
             </li>
           ))}
         </ul>
@@ -146,6 +215,7 @@ export function CommunityInfoManager({ community }: { community: CommunityConfig
               Checked on
               <input type="date" value={contact.lastVerifiedAt} max={today()} onChange={(e) => setContact({ ...contact, lastVerifiedAt: e.target.value })} className={input} />
             </label>
+            <input value={contact.verificationNote} maxLength={300} onChange={(e) => setContact({ ...contact, verificationNote: e.target.value })} aria-label="Verification note (optional, public)" placeholder="What exactly the source says (optional, public)" className={input} />
             <div className="flex flex-wrap items-center gap-3 text-xs text-ink">
               <label className="flex items-center gap-1.5">
                 <input type="checkbox" checked={contact.isEmergencyService} onChange={(e) => setContact({ ...contact, isEmergencyService: e.target.checked })} />
@@ -167,15 +237,22 @@ export function CommunityInfoManager({ community }: { community: CommunityConfig
       <div className="flex flex-col gap-2">
         <h3 className="text-sm font-semibold text-ink">Approved sources ({community.trustedSources.length})</h3>
         <ul className="flex flex-col gap-1">
-          {community.trustedSources.map((s) => (
-            <li key={s.id} className="flex items-start justify-between gap-2 rounded-md border border-ink/10 p-2 text-sm">
-              <div className="min-w-0">
-                <p className="font-medium text-ink">{s.name}</p>
-                <p className="break-words text-xs text-slate">
-                  {s.url} · {s.trustLevel === "official_verified" ? "official" : "community trusted"} · checked {s.lastVerifiedAt}
-                </p>
+          {sources.map((s) => (
+            <li key={s.id} className="flex flex-col gap-2 rounded-md border border-ink/10 p-2 text-sm">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
+                    {s.name}
+                    <FreshnessBadge state={sourceFreshness(s).state} language="en" />
+                  </p>
+                  <p className="break-words text-xs text-slate">
+                    {s.url} · {s.trustLevel === "official_verified" ? "official" : "community trusted"} · checked {s.lastVerifiedAt ?? "never"}
+                  </p>
+                  {s.verificationNote && <p className="text-xs text-slate">{s.verificationNote}</p>}
+                </div>
+                {removeButton("source", s.id)}
               </div>
-              {removeButton("source", s.id)}
+              {reverifyButton("source", s.id, true)}
             </li>
           ))}
         </ul>
@@ -198,6 +275,7 @@ export function CommunityInfoManager({ community }: { community: CommunityConfig
               Checked on
               <input type="date" required value={source.lastVerifiedAt} max={today()} onChange={(e) => setSource({ ...source, lastVerifiedAt: e.target.value })} className={input} />
             </label>
+            <input value={source.verificationNote} maxLength={300} onChange={(e) => setSource({ ...source, verificationNote: e.target.value })} aria-label="Verification note (optional, public)" placeholder="What you checked on the source (optional, public)" className={`${input} sm:col-span-2`} />
           </div>
           <button type="submit" disabled={pending === "source"} className="w-max rounded-md bg-teal px-3 py-1.5 text-sm font-medium text-cream disabled:opacity-50">
             Add source
