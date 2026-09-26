@@ -14,6 +14,7 @@ import {
   type InfoChangeResult,
 } from "@/lib/store/community-store";
 import type { CommunityConfig } from "@/lib/schema/community";
+import { listCommunityRequestSummaries, type CommunityRequestSummary } from "@/lib/store/community-request-store";
 
 const ACTOR_ID = "admin";
 
@@ -67,6 +68,11 @@ export async function adminReverifyCommunityInfoEntry(
     return { ok: false, error: "invalid" };
   }
   return reverifyCommunityInfoEntry(communityId, kind, id, ACTOR_ID);
+}
+
+export async function adminListCommunityRequests(): Promise<CommunityRequestSummary[]> {
+  await requireAdmin();
+  return listCommunityRequestSummaries();
 }
 
 export async function adminListCommunityInfoLog(): Promise<CommunityInfoLogEntry[]> {

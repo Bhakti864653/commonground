@@ -1,8 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { COMMUNITIES } from "@/data/communities";
-import { resolveInitialLanguage } from "./resolve-initial-language";
+import { pickBrowserLanguage, resolveInitialLanguage } from "./resolve-initial-language";
 import type { Language } from "./dictionary";
 import { htmlLang } from "./languages";
 
@@ -15,9 +15,24 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-/** In-memory only — see the matching note on CommunityProvider. */
+// The browser's language list doesn't change while the page is open, so there is nothing to
+// subscribe to; useSyncExternalStore is used only so the server render (null) and the first
+// client render agree, with the browser's language applied right after hydration.
+const subscribeNever = () => () => {};
+const readBrowserLanguage = () =>
+  pickBrowserLanguage(typeof navigator === "undefined" ? [] : (navigator.languages ?? [navigator.language]));
+const serverBrowserLanguage = () => null;
+
+/**
+ * In-memory only — see the matching note on CommunityProvider. A visitor starts in their own
+ * browser language when CommonGround speaks it (someone in Canada with an English or French
+ * browser doesn't land on a Spanish page), otherwise in the pilot community's default. Picking a
+ * language from the menu always wins.
+ */
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>(DEFAULT_LANGUAGE);
+  const [chosen, setChosen] = useState<Language | null>(null);
+  const browserLanguage = useSyncExternalStore(subscribeNever, readBrowserLanguage, serverBrowserLanguage);
+  const language = chosen ?? browserLanguage ?? DEFAULT_LANGUAGE;
 
   // Keep <html lang> in sync so screen readers pronounce the right language and CSS :lang()
   // rules (e.g. Chinese typography) apply.
@@ -25,7 +40,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = htmlLang(language);
   }, [language]);
 
-  const value = useMemo<LanguageContextValue>(() => ({ language, setLanguage }), [language]);
+  const value = useMemo<LanguageContextValue>(() => ({ language, setLanguage: setChosen }), [language]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }

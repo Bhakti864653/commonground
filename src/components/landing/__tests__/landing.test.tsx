@@ -44,7 +44,16 @@ const hrefOf = (name: string | RegExp, scope: HTMLElement = document.body) =>
     .getAllByRole("link", { name })
     .map((a) => a.getAttribute("href"));
 
-beforeEach(() => cleanup());
+// jsdom reports an English browser; most tests start from a Spanish one, like the pilot's residents.
+function setBrowserLanguages(languages: string[]) {
+  vi.spyOn(window.navigator, "languages", "get").mockReturnValue(languages);
+}
+
+beforeEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  setBrowserLanguages(["es-PA", "es"]);
+});
 
 describe("routes", () => {
   it("/ renders the public introduction, outside the app shell", async () => {
@@ -54,6 +63,23 @@ describe("routes", () => {
     expect(screen.getByRole("heading", { level: 1, name: UI_STRINGS.home.tagline.es })).toBeInTheDocument();
     // No sidebar/bottom-nav: the app shell's navigation landmark is absent.
     expect(screen.queryByRole("navigation", { name: FIELD.shell.navLabel.es })).not.toBeInTheDocument();
+  });
+
+  it("starts in the visitor's browser language when CommonGround speaks it", async () => {
+    setBrowserLanguages(["en-CA", "fr-CA"]);
+    await act(async () => {
+      render(<IntroductionPage />, { wrapper: Providers });
+    });
+    expect(screen.getByRole("heading", { level: 1, name: UI_STRINGS.home.tagline.en })).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe("en");
+  });
+
+  it("falls back to the pilot's Spanish for an unsupported browser language", async () => {
+    setBrowserLanguages(["de-DE"]);
+    await act(async () => {
+      render(<IntroductionPage />, { wrapper: Providers });
+    });
+    expect(screen.getByRole("heading", { level: 1, name: UI_STRINGS.home.tagline.es })).toBeInTheDocument();
   });
 
   it("the introduction page lives outside the (app) group, and /home holds the dashboard", () => {

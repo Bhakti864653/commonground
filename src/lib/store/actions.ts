@@ -12,6 +12,7 @@ import type { CommunityConfig } from "@/lib/schema/community";
 import { detectTrends, type Trend } from "@/lib/insights/trends";
 import { filterCases } from "@/lib/explore/filter-cases";
 import { getCommunity, listCommunities } from "@/lib/store/community-store";
+import { recordCommunityRequest } from "@/lib/store/community-request-store";
 import { z } from "zod";
 
 /**
@@ -69,6 +70,14 @@ export async function getCommunityInfo(communityId: string): Promise<CommunityIn
   if (!community) return null;
   const { id, displayName, status, trustedSources, officialContacts } = community;
   return { id, displayName, status, trustedSources, officialContacts };
+}
+
+/**
+ * "Ask for CommonGround here" from a place that isn't set up. Anonymous; validated inside the
+ * store (place name, optional note, language only — never contact details).
+ */
+export async function requestCommunity(input: unknown): Promise<boolean> {
+  return recordCommunityRequest(input);
 }
 
 /** Runtime-validated: a server action is a public endpoint callable with any JSON. */

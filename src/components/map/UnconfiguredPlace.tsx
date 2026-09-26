@@ -5,6 +5,7 @@ import { useLanguage } from "@/lib/i18n/context";
 import { FIELD } from "@/lib/i18n/field-notes";
 import { fill } from "@/lib/i18n/experience";
 import { usePlaces } from "@/lib/places/context";
+import { CommunityRequestForm } from "./CommunityRequestForm";
 
 /**
  * Shown instead of cases, forms, or the Guide when the picked place (Panama City, or one the
@@ -31,6 +32,8 @@ export function UnconfiguredPlace() {
       >
         {fill(t.backTo[language], { community: community.displayName })} <span aria-hidden="true">↗</span>
       </button>
+      {/* Keyed by place so switching places starts a fresh request instead of showing a stale "thanks". */}
+      <CommunityRequestForm key={activePlace.name.en} placeName={activePlace.name[language]} />
     </section>
   );
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { CaseRemoved } from "@/components/case/CaseRemoved";
 import { LanguageProvider } from "@/lib/i18n/context";
@@ -7,6 +7,8 @@ import { REMOVAL_REASON_LABELS } from "@/lib/schema/report";
 
 describe("removed case notice", () => {
   it("shows the case number and the public reason, with a way back to activity", () => {
+    // A Spanish-speaking browser, like the pilot's residents (jsdom defaults to English).
+    vi.spyOn(window.navigator, "languages", "get").mockReturnValue(["es-PA"]);
     render(
       <LanguageProvider>
         <CaseRemoved caseNumber="SV-2026-0009" removal={{ reason: "personal_information", removedAt: "2026-09-25T12:00:00Z" }} />

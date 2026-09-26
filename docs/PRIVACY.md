@@ -8,6 +8,14 @@ CommonGround never requires: a name, a phone number, an exact address, or exact 
 coordinates. It never publicly shows: exact coordinates, reporter identity, or private admin
 notes. It never logs private content unnecessarily, and never stores unnecessary personal data.
 
+"Ask for CommonGround in your community" requests (from the "not set up yet" screen) store only
+the place name, an optional note, the interface language, and the time — no name or contact
+details, so a requester can't be contacted back (the form says so and asks for no personal
+information). Only moderators see them, grouped by place.
+
+The starting language comes from the browser's own language preference, read on the device; it
+isn't sent anywhere or stored.
+
 ## Approximate location, always
 
 Every submission uses an `ApproximateArea` (`src/lib/schema/report.ts`): a neighborhood,

@@ -48,7 +48,9 @@ original spec (`ReportCategory`, `Source`, `OfficialContact`) are exported from 
 ### `santiago-veraguas` — pilot
 
 - Country: Panama · Region: Veraguas
-- Default language: Spanish; area and category names and consent text are provided in all seven
+- Default language: Spanish (a visitor whose browser prefers another of the seven interface
+  languages starts in that one instead; the language menu always overrides); area and category
+  names and consent text are provided in all seven
   interface languages
 - Status: `pilot`
 - Categories: flooding/blocked drainage, garbage/sanitation, damaged roads/infrastructure,

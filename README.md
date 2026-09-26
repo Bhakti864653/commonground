@@ -16,7 +16,8 @@ different country/language/category set — it is always visibly labeled as demo
 
 ## Languages
 
-The interface is available in seven languages: **Spanish** (default for the pilot), **English**,
+The interface is available in seven languages: **Spanish** (default for the pilot, unless the
+visitor's browser prefers another supported language, which is then used instead), **English**,
 **Portuguese** (Brazilian), **French**, **Simplified Chinese**, **Hindi**, and **Italian**. That
 covers every interface string, the built-in communities' area and category names, the consent
 text, emergency-phrase detection, and the Guide's replies. What residents write themselves (case
@@ -71,7 +72,10 @@ language.
   they live in in-memory prototype storage and disappear on a server restart or redeploy — and on
   a serverless host, a different instance may not have them — until a real database is added.
   Places a visitor adds from the place selector (and the built-in "Panama City" entry) are just
-  labels saved in that browser; they show a "not set up yet" notice, never sample data.
+  labels saved in that browser; they show a "not set up yet" notice, never sample data. From that
+  notice a visitor can ask for CommonGround in their place (an optional note, no name or contact
+  details); moderators see the requests grouped by place, most-requested first, at
+  `/admin/communities`.
 - **CommonGround Guide** — an agentic assistant (Groq) with two resident-facing capabilities
   (look up similar cases/explain the process, and draft-and-confirm a report or proposal
   conversationally — the resident always reviews and explicitly confirms before anything is
