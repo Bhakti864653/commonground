@@ -6,12 +6,13 @@ import { useLanguage } from "@/lib/i18n/context";
 import { INFO } from "@/lib/i18n/community-info";
 import { fill } from "@/lib/i18n/experience";
 import { requestCommunity } from "@/lib/store/actions";
+import type { PlaceParts } from "@/lib/places/places";
 
 /**
  * Turns the "not set up here yet" dead end into a way to register interest. Anonymous: only the
  * place name, an optional note, and the interface language are sent — never contact details.
  */
-export function CommunityRequestForm({ placeName }: { placeName: string }) {
+export function CommunityRequestForm({ placeName, parts }: { placeName: string; parts?: PlaceParts }) {
   const { language } = useLanguage();
   const t = INFO.request;
   const [note, setNote] = useState("");
@@ -33,7 +34,7 @@ export function CommunityRequestForm({ placeName }: { placeName: string }) {
         e.preventDefault();
         setStatus("sending");
         try {
-          const ok = await requestCommunity({ placeName, note, language });
+          const ok = await requestCommunity({ placeName, parts, note, language });
           setStatus(ok ? "sent" : "error");
         } catch {
           setStatus("error");

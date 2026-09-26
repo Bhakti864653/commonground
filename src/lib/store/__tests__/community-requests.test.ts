@@ -33,7 +33,7 @@ describe("community requests", () => {
 
   it("rejects invalid input", () => {
     expect(recordCommunityRequest({ placeName: "", language: "en" })).toBe(false);
-    expect(recordCommunityRequest({ placeName: "x".repeat(61), language: "en" })).toBe(false);
+    expect(recordCommunityRequest({ placeName: "x".repeat(251), language: "en" })).toBe(false);
     expect(recordCommunityRequest({ placeName: "Ottawa", language: "de" })).toBe(false);
     expect(recordCommunityRequest({ placeName: "Ottawa", language: "en", note: "x".repeat(501) })).toBe(false);
     expect(recordCommunityRequest("Ottawa")).toBe(false);
@@ -50,5 +50,26 @@ describe("community requests", () => {
   it("is reachable through the public action", async () => {
     expect(await requestCommunity({ placeName: "Vancouver", language: "en" })).toBe(true);
     expect(await requestCommunity({ placeName: 42, language: "en" })).toBe(false);
+  });
+});
+
+describe("community requests with place parts", () => {
+  beforeEach(() => __resetCommunityRequestsForTests());
+
+  it("builds the name from the parts and keeps them for moderators", () => {
+    expect(
+      recordCommunityRequest({
+        placeName: "ignored",
+        parts: { country: "Canada", region: "Ontario", city: "Toronto", neighborhood: "Kensington Market" },
+        language: "en",
+      }),
+    ).toBe(true);
+    const [summary] = listCommunityRequestSummaries();
+    expect(summary.placeName).toBe("Kensington Market, Toronto, Ontario, Canada");
+    expect(summary.parts?.city).toBe("Toronto");
+  });
+
+  it("rejects parts that are too vague (no city)", () => {
+    expect(recordCommunityRequest({ placeName: "Canada", parts: { country: "Canada" }, language: "en" })).toBe(false);
   });
 });

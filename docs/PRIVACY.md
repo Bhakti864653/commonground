@@ -13,6 +13,15 @@ the place name, an optional note, the interface language, and the time — no na
 details, so a requester can't be contacted back (the form says so and asks for no personal
 information). Only moderators see them, grouped by place.
 
+Adding a place: a visitor names it by country, state/province/region, city or town, and optional
+neighborhood. They can search (OpenStreetMap's Nominatim) or tap a small map to fill those fields.
+Both lookups run from CommonGround's server, so the visitor's IP address is not sent to Nominatim.
+Searches run only on an explicit click (Nominatim forbids autocomplete), are cached, and are
+spaced at least a second apart; a tapped point is rounded to about 100 m and looked up at
+neighborhood level before it leaves the server. Only the place names are kept, in the visitor's
+own browser (and in a request, if they send one); coordinates are never stored. The small map's
+tiles come from OpenFreeMap, the same as the community street map.
+
 The starting language comes from the browser's own language preference, read on the device; it
 isn't sent anywhere or stored.
 

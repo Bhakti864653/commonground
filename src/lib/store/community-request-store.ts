@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { LANGUAGE_CODES } from "@/lib/i18n/languages";
+import { formatPlaceLabel, normalizeParts, type PlaceParts } from "@/lib/places/places";
 
 /**
  * "Ask for CommonGround in your community": a visitor whose place isn't set up yet can say they'd
@@ -14,6 +15,8 @@ export const MAX_STORED_REQUESTS = 1000;
 export type CommunityRequest = {
   id: string;
   placeName: string;
+  /** Country / region / city / neighborhood, when the visitor gave them (older requests: name only). */
+  parts?: PlaceParts;
   /** Accent- and case-insensitive key, so "Montréal" and "montreal" count as one place. */
   placeKey: string;
   note?: string;
@@ -23,6 +26,7 @@ export type CommunityRequest = {
 
 export type CommunityRequestSummary = {
   placeName: string;
+  parts?: PlaceParts;
   count: number;
   latestAt: string;
   /** Up to the 5 most recent non-empty notes, newest first. */
@@ -47,7 +51,8 @@ export function placeKeyOf(name: string): string {
 
 /** Validated at runtime: this sits behind a public Server Function. */
 export const CommunityRequestInputSchema = z.object({
-  placeName: z.string().trim().min(1).max(60),
+  placeName: z.string().trim().min(1).max(250),
+  parts: z.unknown().optional(),
   note: z
     .string()
     .trim()
@@ -60,11 +65,21 @@ export const CommunityRequestInputSchema = z.object({
 export function recordCommunityRequest(rawInput: unknown, now: Date = new Date()): boolean {
   const parsed = CommunityRequestInputSchema.safeParse(rawInput);
   if (!parsed.success) return false;
+  // When parts are given they must be complete (country + city) and they define the name, so a
+  // request is always as specific as the form required.
+  let parts: PlaceParts | undefined;
+  if (parsed.data.parts !== undefined) {
+    const normalized = normalizeParts(parsed.data.parts);
+    if (!normalized.ok) return false;
+    parts = normalized.parts;
+  }
+  const placeName = parts ? formatPlaceLabel(parts) : parsed.data.placeName;
   const store = getStore();
   store.requests.push({
     id: crypto.randomUUID(),
-    placeName: parsed.data.placeName,
-    placeKey: placeKeyOf(parsed.data.placeName),
+    placeName,
+    parts,
+    placeKey: placeKeyOf(placeName),
     note: parsed.data.note,
     language: parsed.data.language,
     createdAt: now.toISOString(),
@@ -88,6 +103,7 @@ export function listCommunityRequestSummaries(): CommunityRequestSummary[] {
       const newestFirst = [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
       return {
         placeName: newestFirst[0].placeName,
+        parts: newestFirst.find((r) => r.parts)?.parts,
         count: list.length,
         latestAt: newestFirst[0].createdAt,
         notes: newestFirst.flatMap((r) => (r.note ? [r.note] : [])).slice(0, 5),

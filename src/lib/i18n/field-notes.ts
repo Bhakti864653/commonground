@@ -65,7 +65,9 @@ export const FIELD = {
     close: { es: "Cerrar", en: "Close", pt: "Fechar", fr: "Fermer", zh: "关闭", hi: "बंद करें", it: "Chiudi" },
     errors: {
       empty: { es: "Escribe un nombre.", en: "Enter a name.", pt: "Digite um nome.", fr: "Saisissez un nom.", zh: "请输入名称。", hi: "एक नाम लिखें।", it: "Inserisci un nome." },
-      too_long: { es: "Usa 60 caracteres o menos.", en: "Use 60 characters or fewer.", pt: "Use no máximo 60 caracteres.", fr: "Utilisez 60 caractères au maximum.", zh: "请使用 60 个字符以内。", hi: "60 या उससे कम अक्षर इस्तेमाल करें।", it: "Usa al massimo 60 caratteri." },
+      too_long: { es: "Cada campo admite hasta 60 caracteres.", en: "Each field can be up to 60 characters.", pt: "Cada campo aceita até 60 caracteres.", fr: "Chaque champ accepte 60 caractères au maximum.", zh: "每个字段最多 60 个字符。", hi: "हर फ़ील्ड में ज़्यादा से ज़्यादा 60 अक्षर हो सकते हैं।", it: "Ogni campo può contenere al massimo 60 caratteri." },
+      missing_country: { es: "Indica el país.", en: "Enter the country.", pt: "Informe o país.", fr: "Indiquez le pays.", zh: "请填写国家。", hi: "देश लिखें।", it: "Indica il paese." },
+      missing_city: { es: "Indica la ciudad o el pueblo: el país solo es demasiado general.", en: "Enter the city or town — a country alone is too general.", pt: "Informe a cidade: só o país é geral demais.", fr: "Indiquez la ville ou le village : le pays seul est trop général.", zh: "请填写城市或城镇——只写国家太笼统。", hi: "शहर या क़स्बा लिखें — सिर्फ़ देश बहुत सामान्य है।", it: "Indica la città o il paese: il solo stato è troppo generico." },
       duplicate: { es: "Ese lugar ya está en la lista.", en: "That place is already listed.", pt: "Esse lugar já está na lista.", fr: "Ce lieu figure déjà dans la liste.", zh: "该地点已在列表中。", hi: "यह जगह पहले से सूची में है।", it: "Questo luogo è già nell’elenco." },
       full: { es: "Ya tienes 20 lugares guardados.", en: "You already have 20 saved places.", pt: "Você já tem 20 lugares salvos.", fr: "Vous avez déjà 20 lieux enregistrés.", zh: "你已保存 20 个地点。", hi: "आपकी 20 जगहें पहले से सहेजी हुई हैं।", it: "Hai già 20 luoghi salvati." },
     },

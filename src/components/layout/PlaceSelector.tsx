@@ -6,7 +6,8 @@ import { useCommunity } from "@/lib/community/context";
 import { useLanguage } from "@/lib/i18n/context";
 import { FIELD } from "@/lib/i18n/field-notes";
 import { usePlaces } from "@/lib/places/context";
-import { BUILT_IN_PLACES, MAX_PLACE_NAME_LENGTH, addPlace } from "@/lib/places/places";
+import { BUILT_IN_PLACES, addPlace, type SavedPlace } from "@/lib/places/places";
+import { EMPTY_PLACE_FIELDS, PlacePicker, type PlaceFields } from "@/components/places/PlacePicker";
 
 const ADD = "__add__";
 
@@ -20,15 +21,18 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
   const { language } = useLanguage();
   const { activePlace, setActivePlace, savedPlaces, savePlaces } = usePlaces();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [name, setName] = useState("");
+  const [fields, setFields] = useState<PlaceFields>(EMPTY_PLACE_FIELDS);
   const [error, setError] = useState<string | null>(null);
+  // The place finder (and its map) only mounts while the dialog is open, so no map or tiles load
+  // on ordinary page views.
+  const [dialogOpen, setDialogOpen] = useState(false);
   const t = FIELD.place;
 
   // Once a moderator sets up a real community with the same name, the placeholder entry for
   // that place disappears — the real community replaces it.
   const communityNames = new Set(communities.map((c) => normalizeName(c.displayName)));
   const builtInPlaces = BUILT_IN_PLACES.filter((p) => ![p.es, p.en, p.pt, p.fr, p.zh, p.hi, p.it].some((n) => communityNames.has(normalizeName(n))));
-  const visibleSavedPlaces = savedPlaces.filter((p) => !communityNames.has(normalizeName(p)));
+  const visibleSavedPlaces = savedPlaces.filter((p) => !communityNames.has(normalizeName(p.label)));
 
   const value =
     activePlace.kind === "community"
@@ -39,8 +43,9 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
 
   function onChange(next: string) {
     if (next === ADD) {
-      setName("");
+      setFields(EMPTY_PLACE_FIELDS);
       setError(null);
+      setDialogOpen(true);
       dialogRef.current?.showModal();
       return;
     }
@@ -50,10 +55,16 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
       setActivePlace({ kind: "community" });
     } else if (kind === "b") {
       const place = BUILT_IN_PLACES.find((p) => p.key === id);
-      if (place) setActivePlace({ kind: "unconfigured", name: { es: place.es, en: place.en, pt: place.pt, fr: place.fr, zh: place.zh, hi: place.hi, it: place.it } });
+      if (place) setActivePlace({ kind: "unconfigured", name: { es: place.es, en: place.en, pt: place.pt, fr: place.fr, zh: place.zh, hi: place.hi, it: place.it }, parts: { ...place.parts } });
     } else {
-      setActivePlace({ kind: "unconfigured", name: { es: id, en: id, pt: id, fr: id, zh: id, hi: id, it: id } });
+      const saved = savedPlaces.find((p) => p.label === id);
+      activateSaved(saved ?? { label: id });
     }
+  }
+
+  function activateSaved(place: SavedPlace) {
+    const n = place.label;
+    setActivePlace({ kind: "unconfigured", name: { es: n, en: n, pt: n, fr: n, zh: n, hi: n, it: n }, parts: place.parts });
   }
 
   function onAdd(e: React.FormEvent) {
@@ -62,13 +73,13 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
       ...communities.map((c) => c.displayName),
       ...BUILT_IN_PLACES.flatMap((p) => [p.es, p.en, p.pt, p.fr, p.zh, p.hi, p.it]),
     ];
-    const result = addPlace(savedPlaces, name, existing);
+    const result = addPlace(savedPlaces, fields, existing);
     if (!result.ok) {
       setError(t.errors[result.reason][language]);
       return;
     }
     savePlaces(result.places);
-    setActivePlace({ kind: "unconfigured", name: { es: result.name, en: result.name, pt: result.name, fr: result.name, zh: result.name, hi: result.name, it: result.name } });
+    activateSaved(result.place);
     dialogRef.current?.close();
   }
 
@@ -100,8 +111,8 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
               </option>
             ))}
             {visibleSavedPlaces.map((p) => (
-              <option key={p} value={`u:${p}`}>
-                {p}
+              <option key={p.label} value={`u:${p.label}`}>
+                {p.label}
               </option>
             ))}
           </optgroup>
@@ -113,10 +124,11 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
       <dialog
         ref={dialogRef}
         aria-labelledby="place-dialog-title"
+        onClose={() => setDialogOpen(false)}
         onClick={(e) => {
           if (e.target === dialogRef.current) dialogRef.current.close();
         }}
-        className="m-auto w-[min(92vw,500px)] rounded-[30px] bg-surface p-[clamp(25px,4vw,42px)] text-ink shadow-[0_24px_90px_#142c2555] backdrop:bg-[#122c2380] backdrop:backdrop-blur-sm"
+        className="m-auto max-h-[92vh] w-[min(94vw,640px)] overflow-y-auto rounded-[30px] bg-surface p-[clamp(25px,4vw,42px)] text-ink shadow-[0_24px_90px_#142c2555] backdrop:bg-[#122c2380] backdrop:backdrop-blur-sm"
       >
         <form onSubmit={onAdd} className="relative">
           <button
@@ -132,22 +144,16 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
             {t.dialogTitle[language]}
           </h2>
           <p className="mb-6 text-slate">{t.dialogNote[language]}</p>
-          <label htmlFor="place-name" className="text-[0.83rem] font-extrabold">
-            {t.nameLabel[language]}
-          </label>
-          <input
-            id="place-name"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              setError(null);
-            }}
-            maxLength={MAX_PLACE_NAME_LENGTH}
-            required
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? "place-error" : undefined}
-            className="mt-2 w-full rounded-[13px] border border-line bg-paper px-3.5 py-3 text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal"
-          />
+          {dialogOpen && (
+            <PlacePicker
+              value={fields}
+              onChange={(next) => {
+                setFields(next);
+                setError(null);
+              }}
+              language={language}
+            />
+          )}
           {error && (
             <p id="place-error" role="alert" className="mt-2 text-sm font-semibold text-coral">
               {error}

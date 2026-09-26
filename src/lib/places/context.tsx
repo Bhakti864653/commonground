@@ -1,17 +1,20 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
-import { PLACES_STORAGE_KEY, parseStoredPlaces } from "./places";
+import { PLACES_STORAGE_KEY, parseStoredPlaces, type PlaceParts, type SavedPlace } from "./places";
 import type { LocalizedText } from "@/lib/i18n/languages";
 
 /** Either a configured community (see CommunityProvider) or a place with nothing set up yet. */
-export type ActivePlace = { kind: "community" } | { kind: "unconfigured"; name: LocalizedText };
+export type ActivePlace =
+  | { kind: "community" }
+  /** `parts` is known for built-in places and places added with country/region/city. */
+  | { kind: "unconfigured"; name: LocalizedText; parts?: PlaceParts };
 
 type PlacesContextValue = {
   activePlace: ActivePlace;
   setActivePlace: (place: ActivePlace) => void;
-  savedPlaces: string[];
-  savePlaces: (places: string[]) => void;
+  savedPlaces: SavedPlace[];
+  savePlaces: (places: SavedPlace[]) => void;
 };
 
 const PlacesContext = createContext<PlacesContextValue | null>(null);
@@ -43,9 +46,11 @@ export function PlacesProvider({ children }: { children: ReactNode }) {
   const raw = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const savedPlaces = useMemo(() => parseStoredPlaces(raw), [raw]);
 
-  const savePlaces = useCallback((places: string[]) => {
+  const savePlaces = useCallback((places: SavedPlace[]) => {
     try {
-      localStorage.setItem(PLACES_STORAGE_KEY, JSON.stringify(places));
+      // Places with parts are stored as { parts }; older name-only places stay plain strings.
+      const stored = places.map((p) => (p.parts ? { parts: p.parts } : p.label));
+      localStorage.setItem(PLACES_STORAGE_KEY, JSON.stringify(stored));
     } catch {
       // Storage blocked (private window): the place still works for this page view.
     }

@@ -51,7 +51,21 @@ export default async function AdminCommunitiesPage() {
             {requests.map((r) => (
               <li key={r.placeName} className="flex flex-col gap-1 px-5 py-4">
                 <span className="flex flex-wrap items-baseline justify-between gap-x-4">
-                  <span className="font-semibold text-ink">{r.placeName}</span>
+                  <span className="font-semibold text-ink">
+                    {r.placeName}
+                    {r.parts && (
+                      <span className="ml-2 text-xs font-normal text-slate">
+                        {[
+                          r.parts.neighborhood && `neighborhood: ${r.parts.neighborhood}`,
+                          `city: ${r.parts.city}`,
+                          r.parts.region && `region: ${r.parts.region}`,
+                          `country: ${r.parts.country}`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    )}
+                  </span>
                   <span className="text-sm text-slate">
                     {r.count} {r.count === 1 ? "request" : "requests"} · latest {new Date(r.latestAt).toLocaleDateString()}
                   </span>

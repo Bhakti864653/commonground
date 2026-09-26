@@ -33,7 +33,7 @@ export function UnconfiguredPlace() {
         {fill(t.backTo[language], { community: community.displayName })} <span aria-hidden="true">↗</span>
       </button>
       {/* Keyed by place so switching places starts a fresh request instead of showing a stale "thanks". */}
-      <CommunityRequestForm key={activePlace.name.en} placeName={activePlace.name[language]} />
+      <CommunityRequestForm key={activePlace.name.en} placeName={activePlace.name[language]} parts={activePlace.parts} />
     </section>
   );
 }

@@ -13,6 +13,8 @@ import { detectTrends, type Trend } from "@/lib/insights/trends";
 import { filterCases } from "@/lib/explore/filter-cases";
 import { getCommunity, listCommunities } from "@/lib/store/community-store";
 import { recordCommunityRequest } from "@/lib/store/community-request-store";
+import { placeAtPoint, searchPlaces, type GeocodeResult } from "@/lib/places/geocode";
+import { isLanguage } from "@/lib/i18n/languages";
 import { z } from "zod";
 
 /**
@@ -70,6 +72,22 @@ export async function getCommunityInfo(communityId: string): Promise<CommunityIn
   if (!community) return null;
   const { id, displayName, status, trustedSources, officialContacts } = community;
   return { id, displayName, status, trustedSources, officialContacts };
+}
+
+/**
+ * Place search for the "add a place" dialog. Only on an explicit Search click (Nominatim forbids
+ * autocomplete); the query goes out from this server, never from the visitor's browser.
+ */
+export async function searchPlacesAction(query: unknown, language: unknown): Promise<GeocodeResult> {
+  if (typeof query !== "string" || query.trim().length < 2 || query.length > 120) return { ok: false };
+  return searchPlaces(query, isLanguage(language) ? language : "en");
+}
+
+/** "Tap the map": the named place around a point. Coordinates are rounded and never stored. */
+export async function placeAtPointAction(lat: unknown, lng: unknown, language: unknown): Promise<GeocodeResult> {
+  if (typeof lat !== "number" || typeof lng !== "number" || !Number.isFinite(lat) || !Number.isFinite(lng)) return { ok: false };
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return { ok: false };
+  return placeAtPoint(lat, lng, isLanguage(language) ? language : "en");
 }
 
 /**
