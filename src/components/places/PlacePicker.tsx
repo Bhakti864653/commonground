@@ -105,6 +105,7 @@ export function PlacePicker({
               }
             }}
             maxLength={120}
+            autoComplete="off"
             placeholder={t.searchHint[language]}
             className={`${field} mt-0 min-w-0 flex-1`}
           />

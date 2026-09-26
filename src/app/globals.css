@@ -96,6 +96,17 @@
   color-scheme: dark;
 }
 
+/* Chrome/Safari paint autofilled fields a light yellow-white that ignores our theme (the "white
+   search box" in dark mode). Repaint them with the field's own colors via an inset shadow. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--paper) inset;
+  caret-color: var(--ink);
+  transition: background-color 9999s ease-out 0s;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
