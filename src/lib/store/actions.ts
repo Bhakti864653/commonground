@@ -11,7 +11,7 @@ import { ReportStatusSchema, toPublicCase, type PublicCase } from "@/lib/schema/
 import type { CommunityConfig } from "@/lib/schema/community";
 import { detectTrends, type Trend } from "@/lib/insights/trends";
 import { filterCases } from "@/lib/explore/filter-cases";
-import { getCommunity, listCommunities } from "@/lib/store/community-store";
+import { getCommunity, listCommunities, startCommunityForPlace } from "@/lib/store/community-store";
 import { recordCommunityRequest } from "@/lib/store/community-request-store";
 import { placeAtPoint, searchPlaces, type GeocodeResult } from "@/lib/places/geocode";
 import { isLanguage } from "@/lib/i18n/languages";
@@ -72,6 +72,20 @@ export async function getCommunityInfo(communityId: string): Promise<CommunityIn
   if (!community) return null;
   const { id, displayName, status, trustedSources, officialContacts } = community;
   return { id, displayName, status, trustedSources, officialContacts };
+}
+
+/**
+ * The community for a place a visitor added: an existing one if the place already has one,
+ * otherwise a new starter community (clearly marked as not reviewed). Parts are validated in the
+ * store; moderator emails are stripped like everywhere else residents see a community.
+ */
+export async function startCommunityForPlaceAction(
+  parts: unknown,
+): Promise<{ ok: true; community: CommunityConfig } | { ok: false; error: "invalid" | "full" }> {
+  const result = startCommunityForPlace(parts);
+  if (!result.ok) return result;
+  const c = result.community;
+  return { ok: true, community: { ...c, moderation: { ...c.moderation, moderatorEmails: [] } } };
 }
 
 /**

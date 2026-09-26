@@ -6,40 +6,54 @@ import { useCommunity } from "@/lib/community/context";
 import { useLanguage } from "@/lib/i18n/context";
 import { FIELD } from "@/lib/i18n/field-notes";
 import { usePlaces } from "@/lib/places/context";
-import { BUILT_IN_PLACES, addPlace, type SavedPlace } from "@/lib/places/places";
+import { BUILT_IN_PLACES, addPlace, formatPlaceLabel, type SavedPlace } from "@/lib/places/places";
+import { startCommunityForPlaceAction } from "@/lib/store/actions";
 import { EMPTY_PLACE_FIELDS, PlacePicker, type PlaceFields } from "@/components/places/PlacePicker";
 
 const ADD = "__add__";
 
 /**
  * The top-bar place picker. Configured CommonGround communities switch the whole app (the real
- * CommunityProvider). "Panama City" and any visitor-added places are listed too, but they have
- * nothing set up behind them, so choosing one shows an honest "not set up yet" state.
+ * CommunityProvider). Places — "Panama City" and any the visitor adds by country / region / city /
+ * neighborhood — open that place's community, starting a clearly-marked starter community if
+ * none exists yet. Older name-only places (no parts) still show the "not set up yet" state.
  */
 export function PlaceSelector({ compact = false }: { compact?: boolean }) {
-  const { community, communities, setCommunityId } = useCommunity();
+  const { community, communities, setCommunityId, selectCommunity } = useCommunity();
   const { language } = useLanguage();
   const { activePlace, setActivePlace, savedPlaces, savePlaces } = usePlaces();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [fields, setFields] = useState<PlaceFields>(EMPTY_PLACE_FIELDS);
   const [error, setError] = useState<string | null>(null);
+  const [opening, setOpening] = useState(false);
   // The place finder (and its map) only mounts while the dialog is open, so no map or tiles load
   // on ordinary page views.
   const [dialogOpen, setDialogOpen] = useState(false);
   const t = FIELD.place;
 
+  // Starter communities are reached through their place, not listed for everyone: the shared
+  // list only shows communities a moderator set up or reviewed.
+  const listedCommunities = communities.filter((c) => c.status !== "starter");
   // Once a moderator sets up a real community with the same name, the placeholder entry for
   // that place disappears — the real community replaces it.
-  const communityNames = new Set(communities.map((c) => normalizeName(c.displayName)));
+  const communityNames = new Set(listedCommunities.map((c) => normalizeName(c.displayName)));
   const builtInPlaces = BUILT_IN_PLACES.filter((p) => ![p.es, p.en, p.pt, p.fr, p.zh, p.hi, p.it].some((n) => communityNames.has(normalizeName(n))));
   const visibleSavedPlaces = savedPlaces.filter((p) => !communityNames.has(normalizeName(p.label)));
 
-  const value =
-    activePlace.kind === "community"
-      ? `c:${community.id}`
-      : BUILT_IN_PLACES.some((p) => p.en === activePlace.name.en)
-        ? `b:${BUILT_IN_PLACES.find((p) => p.en === activePlace.name.en)!.key}`
-        : `u:${activePlace.name.en}`;
+  // Which menu entry represents the current state. A starter community is shown as its place.
+  const starterLabel = activePlace.kind === "community" && community.status === "starter" ? normalizeName(community.displayName) : null;
+  const starterBuiltIn = starterLabel ? builtInPlaces.find((p) => normalizeName(formatPlaceLabel(p.parts)) === starterLabel) : undefined;
+  const starterSaved = starterLabel ? visibleSavedPlaces.find((p) => normalizeName(p.label) === starterLabel) : undefined;
+  const value = starterBuiltIn
+    ? `b:${starterBuiltIn.key}`
+    : starterSaved
+      ? `u:${starterSaved.label}`
+      : activePlace.kind === "community"
+        ? `c:${community.id}`
+        : BUILT_IN_PLACES.some((p) => p.en === activePlace.name.en)
+          ? `b:${BUILT_IN_PLACES.find((p) => p.en === activePlace.name.en)!.key}`
+          : `u:${activePlace.name.en}`;
+  const showActiveStarterOption = starterLabel !== null && !starterBuiltIn && !starterSaved;
 
   function onChange(next: string) {
     if (next === ADD) {
@@ -55,32 +69,60 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
       setActivePlace({ kind: "community" });
     } else if (kind === "b") {
       const place = BUILT_IN_PLACES.find((p) => p.key === id);
-      if (place) setActivePlace({ kind: "unconfigured", name: { es: place.es, en: place.en, pt: place.pt, fr: place.fr, zh: place.zh, hi: place.hi, it: place.it }, parts: { ...place.parts } });
+      if (place) openPlace({ label: place[language], parts: { ...place.parts } });
     } else {
       const saved = savedPlaces.find((p) => p.label === id);
-      activateSaved(saved ?? { label: id });
+      openPlace(saved ?? { label: id });
     }
   }
 
-  function activateSaved(place: SavedPlace) {
+  function showUnconfigured(place: SavedPlace) {
     const n = place.label;
     setActivePlace({ kind: "unconfigured", name: { es: n, en: n, pt: n, fr: n, zh: n, hi: n, it: n }, parts: place.parts });
   }
 
-  function onAdd(e: React.FormEvent) {
+  /** Opens the place's community (starting a starter one if needed); falls back to "not set up yet". */
+  async function openPlace(place: SavedPlace) {
+    if (!place.parts) {
+      showUnconfigured(place);
+      return;
+    }
+    setOpening(true);
+    try {
+      const result = await startCommunityForPlaceAction(place.parts);
+      if (result.ok) {
+        selectCommunity(result.community);
+        setActivePlace({ kind: "community" });
+      } else {
+        showUnconfigured(place);
+      }
+    } catch {
+      showUnconfigured(place);
+    } finally {
+      setOpening(false);
+    }
+  }
+
+  async function onAdd(e: React.FormEvent) {
     e.preventDefault();
-    const existing = [
-      ...communities.map((c) => c.displayName),
-      ...BUILT_IN_PLACES.flatMap((p) => [p.es, p.en, p.pt, p.fr, p.zh, p.hi, p.it]),
-    ];
-    const result = addPlace(savedPlaces, fields, existing);
+    const builtInNames = BUILT_IN_PLACES.flatMap((p) => [p.es, p.en, p.pt, p.fr, p.zh, p.hi, p.it]);
+    const result = addPlace(savedPlaces, fields, builtInNames);
     if (!result.ok) {
+      // Adding a place that's already saved just opens it.
+      if (result.reason === "duplicate") {
+        const already = savedPlaces.find((p) => p.parts && normalizeName(p.label) === normalizeName(formatPlaceLabel({ ...fields })));
+        if (already) {
+          dialogRef.current?.close();
+          await openPlace(already);
+          return;
+        }
+      }
       setError(t.errors[result.reason][language]);
       return;
     }
     savePlaces(result.places);
-    activateSaved(result.place);
     dialogRef.current?.close();
+    await openPlace(result.place);
   }
 
   return (
@@ -92,13 +134,15 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
         <select
           id="place-selector"
           value={value}
+          disabled={opening}
+          aria-busy={opening || undefined}
           onChange={(e) => onChange(e.target.value)}
           className={`w-full min-w-0 appearance-none truncate rounded-full border border-line bg-transparent py-2 pl-3.5 pr-8 text-[0.8rem] font-extrabold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${
             compact ? "max-w-[9.5rem]" : "max-w-[13rem]"
           }`}
         >
           <optgroup label={t.communitiesGroup[language]}>
-            {communities.map((c) => (
+            {listedCommunities.map((c) => (
               <option key={c.id} value={`c:${c.id}`}>
                 {c.displayName}
               </option>
@@ -115,6 +159,7 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
                 {p.label}
               </option>
             ))}
+            {showActiveStarterOption && <option value={`c:${community.id}`}>{community.displayName}</option>}
           </optgroup>
           <option value={ADD}>{t.add[language]}</option>
         </select>

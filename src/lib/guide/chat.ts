@@ -51,6 +51,8 @@ const UNAVAILABLE_MESSAGE = {
 function systemPrompt(communityId: string, language: Language): string {
   const community = getCommunityById(communityId);
   const isDemo = community?.status === "demo";
+  const isStarter = community?.status === "starter";
+  const hasContacts = (community?.officialContacts.length ?? 0) > 0;
   const areaNames = (community?.areas ?? [])
     .map((a) => labelOf(a, language))
     .join(", ");
@@ -87,10 +89,21 @@ or close a case yourself — drafting one is the most you can do, only the resid
 explicit confirmation of that draft (or a moderator, separately) actually creates or changes
 anything.
 
-This community currently has no verified official contacts or sources configured yet${
-    isDemo ? " (it's a fictional demonstration community)" : ""
-  } — if asked for one, say so honestly rather than inventing one. If you don't know something
-with real confidence, say so plainly instead of guessing.`;
+${
+    hasContacts
+      ? `Verified contacts and approved sources for this community are listed on CommonGround's Contacts page — point people there rather than reciting phone numbers from memory.`
+      : `This community currently has no verified official contacts or sources configured yet${
+          isDemo ? " (it's a fictional demonstration community)" : ""
+        } — if asked for one, say so honestly rather than inventing one.`
+  }${
+    isStarter
+      ? `
+This is a starter community: it was started automatically when a visitor added the place, and no
+local moderator reviews its reports yet. If it matters to the resident, say so plainly — never
+suggest that someone local will see or act on a report here.`
+      : ""
+  }
+If you don't know something with real confidence, say so plainly instead of guessing.`;
 }
 
 /**

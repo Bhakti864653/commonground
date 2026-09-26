@@ -135,8 +135,12 @@ export const CommunityConfigSchema = z.object({
   region: z.string().optional(),
   defaultLanguage: z.enum(LANGUAGE_CODES),
   supportedLanguages: z.array(z.enum(LANGUAGE_CODES)).min(1),
-  /** "demo" communities must be labeled as fictional everywhere they render (spec §3, §23). */
-  status: z.enum(["pilot", "active", "demo"]),
+  /**
+   * "demo" communities must be labeled as fictional everywhere they render (spec §3, §23).
+   * "starter" communities were started automatically when a visitor added a place: they accept
+   * reports, but no moderator has reviewed them yet, and that is shown on every page.
+   */
+  status: z.enum(["pilot", "active", "demo", "starter"]),
   categories: z.array(CategoryConfigSchema).min(1),
   areas: z.array(AreaConfigSchema),
   trustedSources: z.array(SourceConfigSchema),

@@ -12,6 +12,11 @@ type CommunityContextValue = {
   /** Built-in communities plus any a moderator has set up (loaded from the server). */
   communities: CommunityConfig[];
   setCommunityId: (id: string) => void;
+  /**
+   * Switch to a community the server just returned (e.g. a starter community for an added
+   * place), adding it to the list if this browser didn't have it yet.
+   */
+  selectCommunity: (community: CommunityConfig) => void;
   refreshCommunities: () => Promise<void>;
 };
 
@@ -56,6 +61,10 @@ export function CommunityProvider({ children }: { children: ReactNode }) {
       setCommunityId: (id: string) => {
         if (!find(id)) return;
         setCommunityIdState(id);
+      },
+      selectCommunity: (next: CommunityConfig) => {
+        setCommunities((list) => (list.some((c) => c.id === next.id) ? list.map((c) => (c.id === next.id ? next : c)) : [...list, next]));
+        setCommunityIdState(next.id);
       },
       refreshCommunities,
     };

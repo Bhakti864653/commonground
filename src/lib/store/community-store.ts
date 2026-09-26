@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { COMMUNITIES } from "@/data/communities";
+import { COMMUNITIES, SANTIAGO_VERAGUAS } from "@/data/communities";
+import { formatPlaceLabel, normalizeParts } from "@/lib/places/places";
 import { CATEGORY_PRESETS, CATEGORY_PRESET_IDS } from "@/data/communities/category-presets";
 import { casePrefix } from "@/lib/case-number/format-case-number";
 import {
@@ -209,6 +210,78 @@ export function createCommunity(rawInput: unknown): CreateCommunityResult {
   const community = CommunityConfigSchema.parse(candidate);
   getStore().created.push(community);
   return { ok: true, community };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Starter communities: started automatically when a visitor adds a place, so people can report
+// anywhere. General categories, broad compass areas, no contacts, no map point — and clearly
+// marked as not reviewed until a moderator adopts one.
+// ---------------------------------------------------------------------------------------------
+
+/** An anonymous endpoint creates these, so the total is capped. */
+export const MAX_STARTER_COMMUNITIES = 300;
+
+const STARTER_CATEGORY_IDS = new Set(["flooding-drainage", "garbage-sanitation", "road-infrastructure", "street-lighting", "other"]);
+
+/** The same five broad areas (and translations) as the pilot, which already cover all seven languages. */
+const STARTER_AREAS = SANTIAGO_VERAGUAS.areas.map((a) => ({ ...a }));
+
+export type StartCommunityResult =
+  | { ok: true; community: CommunityConfig; created: boolean }
+  | { ok: false; error: "invalid" | "full" };
+
+function starterKey(label: string): string {
+  return normalize(label).replace(/\s+/g, " ");
+}
+
+/**
+ * Returns the community for a place, starting one if none exists yet. A place that already has a
+ * community (configured or started by someone else) is reused, never duplicated.
+ */
+export function startCommunityForPlace(rawParts: unknown): StartCommunityResult {
+  const normalized = normalizeParts(rawParts);
+  if (!normalized.ok) return { ok: false, error: "invalid" };
+  const { parts } = normalized;
+  const label = formatPlaceLabel(parts);
+
+  const existing = listCommunities();
+  const key = starterKey(label);
+  const match = existing.find((c) => starterKey(c.displayName) === key);
+  if (match) return { ok: true, community: match, created: false };
+
+  const store = getStore();
+  if (store.created.filter((c) => c.status === "starter").length >= MAX_STARTER_COMMUNITIES) {
+    return { ok: false, error: "full" };
+  }
+
+  const candidate: CommunityConfig = {
+    id: uniqueCommunityId(label, existing),
+    displayName: label,
+    country: parts.country,
+    region: parts.region,
+    defaultLanguage: "es",
+    supportedLanguages: ["es", "en", "pt", "fr", "zh", "hi", "it"],
+    status: "starter",
+    categories: CATEGORY_PRESETS.filter((c) => STARTER_CATEGORY_IDS.has(c.id)).map((c) => ({ ...c })),
+    // Illustrative map only: no coordinates are ever stored for a visitor-added place.
+    areas: STARTER_AREAS.map((a) => ({ ...a, mapDirection: undefined })),
+    trustedSources: [],
+    officialContacts: [],
+    privacy: { ...SANTIAGO_VERAGUAS.privacy },
+    moderation: { requireReviewBeforePublish: true, moderatorEmails: [] },
+    enabledFeatures: { mapView: true, threeDView: false, aiGuide: true, proposals: true, duplicateDetection: true },
+  };
+  const community = CommunityConfigSchema.parse(candidate);
+  store.created.push(community);
+  return { ok: true, community, created: true };
+}
+
+/** A moderator has reviewed a starter community: it becomes a normal pilot community. */
+export function adoptStarterCommunity(id: string): boolean {
+  const found = getStore().created.find((c) => c.id === id && c.status === "starter");
+  if (!found) return false;
+  found.status = "pilot";
+  return true;
 }
 
 const entryName = z.string().trim().min(2).max(120);

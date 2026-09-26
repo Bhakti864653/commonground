@@ -16,6 +16,9 @@ received a submission.
 - Run AI case analysis (duplicate, status, and verification specialists plus a critique pass) and
   approve or reject each suggestion — nothing changes until a moderator approves.
 - Generate an on-demand community briefing (there is no scheduled or background job).
+- Review visitor-started ("starter") communities at `/admin/communities` and mark one reviewed,
+  which turns it into a normal pilot and removes its "not reviewed" notice. Until then every page
+  of a starter community tells residents that no local moderator reviews its reports.
 - Set up a prototype community at `/admin/communities` (temporary — see
   [`ARCHITECTURE.md`](ARCHITECTURE.md#communities-created-at-runtime-prototype)).
 - View each case's moderation history.

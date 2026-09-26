@@ -2,6 +2,7 @@ import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { adminListCommunities, adminListCommunityRequests } from "@/lib/store/admin-community-actions";
 import { casePrefix } from "@/lib/case-number/format-case-number";
 import { CreateCommunityForm } from "@/components/admin/CreateCommunityForm";
+import { AdoptStarterButton } from "@/components/admin/AdoptStarterButton";
 
 export default async function AdminCommunitiesPage() {
   // Same page-level guard as admin/page.tsx — the layout's check alone can't stop this page
@@ -16,7 +17,8 @@ export default async function AdminCommunitiesPage() {
         <p className="mt-2 max-w-2xl text-sm text-slate">
           Every community residents can choose in the place selector. A community you set up here gets its own
           areas, categories, and case-number prefix, and works everywhere: map, Explore, submissions, the Guide, and
-          moderation.
+          moderation. Communities &ldquo;started by a visitor&rdquo; were created automatically when someone added
+          a place; they accept reports but say they are not reviewed until you mark them reviewed.
         </p>
         <ul className="mt-5 divide-y divide-line rounded-[20px] bg-surface">
           {communities.map((c) => (
@@ -32,6 +34,13 @@ export default async function AdminCommunitiesPage() {
                 {c.areas.length} areas · {c.categories.length} categories · case numbers{" "}
                 <span className="font-mono text-ink">{casePrefix(c.id)}-YYYY-0001</span>
                 {c.status === "demo" ? " · fictional demo" : ""}
+                {c.status === "starter" && (
+                  <>
+                    {" · "}
+                    <span className="font-semibold text-coral">started by a visitor, not reviewed</span>{" "}
+                    <AdoptStarterButton id={c.id} />
+                  </>
+                )}
               </span>
             </li>
           ))}

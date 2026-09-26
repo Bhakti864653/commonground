@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/admin/auth";
 import {
   addOfficialContact,
   addTrustedSource,
+  adoptStarterCommunity,
   createCommunity,
   listCommunities,
   listCommunityInfoLog,
@@ -68,6 +69,13 @@ export async function adminReverifyCommunityInfoEntry(
     return { ok: false, error: "invalid" };
   }
   return reverifyCommunityInfoEntry(communityId, kind, id, ACTOR_ID);
+}
+
+/** A moderator reviewed a visitor-started community and takes it on as a normal pilot. */
+export async function adminAdoptStarterCommunity(id: string): Promise<boolean> {
+  await requireAdmin();
+  if (typeof id !== "string") return false;
+  return adoptStarterCommunity(id);
 }
 
 export async function adminListCommunityRequests(): Promise<CommunityRequestSummary[]> {

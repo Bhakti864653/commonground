@@ -143,6 +143,19 @@ export const INFO = {
     locating: { es: "Buscando esa zona…", en: "Finding that area…", pt: "Localizando essa área…", fr: "Recherche de cette zone…", zh: "正在查找该区域…", hi: "वह इलाका खोजा जा रहा है…", it: "Ricerca della zona…" },
     attribution: { es: "Mapa y búsqueda: © colaboradores de OpenStreetMap", en: "Map and search: © OpenStreetMap contributors", pt: "Mapa e busca: © colaboradores do OpenStreetMap", fr: "Carte et recherche : © contributeurs d’OpenStreetMap", zh: "地图与搜索：© OpenStreetMap 贡献者", hi: "नक्शा और खोज: © OpenStreetMap योगदानकर्ता", it: "Mappa e ricerca: © collaboratori di OpenStreetMap" },
   },
+  starter: {
+    badge: { es: "Sin revisar", en: "Not reviewed yet", pt: "Ainda não revisada", fr: "Pas encore examinée", zh: "尚未审核", hi: "अभी समीक्षा नहीं हुई", it: "Non ancora rivista" },
+    title: { es: "Comunidad iniciada por visitantes, todavía sin revisar", en: "Started by visitors — not reviewed yet", pt: "Iniciada por visitantes — ainda não revisada", fr: "Lancée par des visiteurs — pas encore examinée", zh: "由访客发起——尚未审核", hi: "आगंतुकों द्वारा शुरू की गई — अभी समीक्षा नहीं हुई", it: "Avviata dai visitatori — non ancora rivista" },
+    body: {
+      es: "CommonGround para {place} se inició automáticamente cuando alguien agregó este lugar. Puedes enviar reportes, pero todavía ningún moderador local los revisa y no hay contactos locales comprobados. En una emergencia, contacta a los servicios de emergencia locales.",
+      en: "CommonGround for {place} was started automatically when someone added this place. You can send reports, but no local moderator reviews them yet, and no local contacts have been checked. In an emergency, contact your local emergency services.",
+      pt: "O CommonGround para {place} foi iniciado automaticamente quando alguém adicionou este lugar. Você pode enviar relatos, mas ainda nenhum moderador local os revisa e nenhum contato local foi conferido. Em uma emergência, contate os serviços de emergência locais.",
+      fr: "CommonGround pour {place} a été lancé automatiquement quand quelqu’un a ajouté ce lieu. Vous pouvez envoyer des signalements, mais aucun modérateur local ne les examine encore et aucun contact local n’a été vérifié. En cas d’urgence, contactez les services d’urgence locaux.",
+      zh: "有人添加这个地点时，{place}的 CommonGround 已自动启动。你可以提交报告，但目前还没有本地版主审核，也没有经过核实的本地联系方式。遇到紧急情况，请联系当地的紧急服务。",
+      hi: "{place} के लिए CommonGround अपने-आप शुरू हुआ जब किसी ने यह जगह जोड़ी। आप रिपोर्ट भेज सकते हैं, लेकिन अभी कोई स्थानीय मॉडरेटर उनकी समीक्षा नहीं करता, और कोई स्थानीय संपर्क जाँचा नहीं गया है। आपात स्थिति में, स्थानीय आपातकालीन सेवाओं से संपर्क करें।",
+      it: "CommonGround per {place} è stato avviato automaticamente quando qualcuno ha aggiunto questo luogo. Puoi inviare segnalazioni, ma nessun moderatore locale le rivede ancora e nessun contatto locale è stato verificato. In caso di emergenza, contatta i servizi di emergenza locali.",
+    },
+  },
   request: {
     heading: { es: "¿Quieres CommonGround en {place}?", en: "Want CommonGround in {place}?", pt: "Quer o CommonGround em {place}?", fr: "Vous voulez CommonGround à {place} ?", zh: "希望{place}也能使用 CommonGround？", hi: "क्या आप {place} में CommonGround चाहते हैं?", it: "Vuoi CommonGround a {place}?" },
     body: {

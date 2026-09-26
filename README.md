@@ -75,7 +75,12 @@ language.
   labels saved in that browser; they show a "not set up yet" notice, never sample data. A place is
   added by country, state/province/region, city or town, and optional neighborhood (a country
   alone is too vague), found by an OpenStreetMap search or by tapping a small map; only the names
-  are kept, never coordinates. From that
+  are kept, never coordinates. Adding a place opens its community, starting a **starter
+  community** if none exists yet: general categories, the five broad compass areas, no contacts,
+  and a notice on every page that it was started by visitors and no local moderator reviews its
+  reports yet (a moderator can mark it reviewed at `/admin/communities`). The same place is never
+  started twice, and starter communities are capped. Older name-only places keep the "not set up
+  yet" state. From that
   notice a visitor can ask for CommonGround in their place (an optional note, no name or contact
   details); moderators see the requests grouped by place, most-requested first, at
   `/admin/communities`.
