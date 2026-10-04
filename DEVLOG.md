@@ -8,6 +8,22 @@ changelog (see commit history / `README.md` for that).
 > removed in the 2026-09-24 redesign. For the current application, see `README.md` and
 > `docs/ARCHITECTURE.md`.
 
+## A case with an unknown category could be created but never shown (2026-10-04)
+
+**Problem:** found while investigating where a referral pipeline would plug in. `submitCase` is a
+server action, so it can be called with any input, and `createCase` never checked that
+`categoryId` belonged to the community. A made-up category created a real case, but its public
+page looks the category up to render it, so the page showed "case not found" for a case that
+existed. Descriptions had no length limit either.
+
+**Fix:** `createCase` now rejects unknown categories and descriptions over 2,000 characters
+(`MAX_DESCRIPTION_LENGTH`), which the schema, the wizard's textarea, and Guide drafts share. This
+had to come first: the referral pipeline reads every submission, and routes by category.
+
+**Also designed around, not hit:** a referral message must contain the case number and must not
+contain a phone number, but `SV-2026-0005` is itself a phone-shaped run of digits. The validator
+removes the case number before looking for phone numbers; a test pins that down.
+
 ## Private moderator notes were leaking into every public case page (Phase 8)
 
 **Problem:** the case-detail page (`/cases/[caseNumber]`) fetched the full `Case` object —

@@ -96,6 +96,13 @@ language.
   AI-generated and on-demand (not a real scheduled job — this is a serverless prototype).
   Guide safety is covered by a live adversarial eval suite (`npm run eval:guide-safety`), not
   just unit tests.
+- **AI-prepared referrals (phase 1)** — after each submission, an AI pipeline (Groq) classifies
+  the case (category check, urgency), routes it to a verified non-emergency office from the
+  community's `referralRouting` map (no AI in the routing itself), and drafts a short, formal
+  Spanish message from public case fields only. A moderator edits and approves it, then delivers
+  it by hand by phone or WhatsApp; nothing is sent automatically, and emergency lines are never a
+  target. Each step appears on the public case timeline, labeled "CommonGround AI". Detail:
+  [`docs/MODERATION.md`](docs/MODERATION.md#referrals).
 
 ## Stack
 

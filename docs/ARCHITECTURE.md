@@ -207,7 +207,9 @@ it never shows the model's private reasoning.
 
 ## Admin moderation architecture
 
-A local prototype only (spec §21) — no external forwarding, no claim that any government
+A local prototype only (spec §21) — nothing is sent automatically (AI-prepared referrals are
+delivered by a moderator, by hand, after approval — see [`MODERATION.md`](MODERATION.md#referrals)),
+no claim that any government
 institution received anything. Status changes, duplicate marks, verification changes (officially
 verified requires a real http/https source), and private notes are recorded as
 `ModerationAction`s with actor + timestamp; reviewing a resident's inaccuracy flag marks that
@@ -223,7 +225,9 @@ there is no background scheduling. Full detail: [`MODERATION.md`](MODERATION.md)
 - No resident accounts; ownership of a submission is proven only by its one-time management link.
 - A single shared moderator access code, not a multi-moderator role system.
 - No background or scheduled jobs; the briefing and case analysis run only when a moderator asks.
-- No integration with any government or official system, and no forwarding of reports.
+- No integration with any government or official system, and no automatic forwarding of
+  reports. Referrals are delivered by a moderator by hand.
+- No follow-ups or scheduled reminders for referrals (no scheduler, no database yet).
 - No configured trusted sources or official contacts for any community yet.
 - Street-map zones are symbolic circles at fixed offsets from the town center, not real
   neighborhood boundaries; no community has boundary data.

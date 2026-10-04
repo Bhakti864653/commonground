@@ -88,6 +88,24 @@ give a legal conclusion; tell a user a dangerous situation is safe; automaticall
 forward a report; modify or close a case without explicit confirmation; reveal private user
 information.
 
+### Referrals
+
+After a case is submitted, the AI prepares a referral to a verified local office (see
+[`MODERATION.md`](MODERATION.md#referrals)). It is a draft for a human:
+
+- **Nothing is sent automatically.** A moderator must approve the referral and then delivers it
+  personally (by phone or WhatsApp to the office's verified contact). Approving does not contact
+  anyone.
+- **No personal data.** The model sees only public case fields: case number, category,
+  approximate area, and description. Residents never give names, phone numbers, or addresses,
+  and the model is told to leave out any that appear in a description. Messages containing an
+  email, link, or phone number are rejected automatically, and a moderator reads every message.
+- **Never to emergency services.** Emergency lines can't be referral targets, and a report that
+  matches an emergency phrase gets no referral.
+- **Transparent.** The public timeline shows each step the AI and the moderator took, marked
+  "CommonGround AI" for automatic steps. The message, urgency, and reasoning are private to
+  moderators, and only the office's name appears publicly.
+
 ### Voice input
 
 The resident chat has an optional **Speak** button. A clip of up to 1 minute is sent once to

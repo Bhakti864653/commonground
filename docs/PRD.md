@@ -100,6 +100,10 @@ reports and understand what happens to them afterward?"
   contract: [`PRIVACY.md`](PRIVACY.md) §AI Guide.
 - Local admin moderation prototype: status changes, duplicate marking, verification, private
   notes, moderation history. Detail: [`MODERATION.md`](MODERATION.md).
+- AI-prepared referrals (phase 1): after submission, the AI classifies the case, routes it to a
+  verified non-emergency office from the community's routing map, and drafts a formal Spanish
+  message with no personal data. A moderator approves it and delivers it by hand; every step
+  is shown on the public timeline. Detail: [`MODERATION.md`](MODERATION.md#referrals).
 - Information/emergency page: explicit non-emergency-service disclaimer, verified contacts only,
   source + last-verified date on every contact, "Por verificar" when unconfirmed.
 
@@ -111,7 +115,8 @@ plan: [`EVALUATION.md`](EVALUATION.md).
 
 ## Non-goals (for this MVP)
 
-- No real external forwarding to any government/agency system.
+- No automatic forwarding to, and no integration with, any government/agency system. A referral
+  reaches an office only when a moderator approves it and delivers it personally.
 - No authentication system beyond what a later phase explicitly needs.
 - No paid APIs, no real secrets, no real government data without an approved, checkable source.
 - No public reporter identity, ranking, or popularity mechanic of any kind.

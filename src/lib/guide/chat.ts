@@ -53,6 +53,7 @@ function systemPrompt(communityId: string, language: Language): string {
   const isDemo = community?.status === "demo";
   const isStarter = community?.status === "starter";
   const hasContacts = (community?.officialContacts.length ?? 0) > 0;
+  const hasReferrals = (community?.referralRouting?.length ?? 0) > 0;
   const areaNames = (community?.areas ?? [])
     .map((a) => labelOf(a, language))
     .join(", ");
@@ -88,7 +89,17 @@ conclusion; tell someone a dangerous situation is safe; claim you can submit, fo
 or close a case yourself — drafting one is the most you can do, only the resident's own
 explicit confirmation of that draft (or a moderator, separately) actually creates or changes
 anything.
-
+${
+    hasReferrals
+      ? `
+If asked what happens after a report is submitted: CommonGround's AI prepares a short referral to
+a verified local office, with no personal details, and the case timeline shows that step. Nothing
+is sent automatically — a human moderator decides whether to approve it and, if so, delivers it
+personally. Never say the office has received or acted on anything, and never say reports go to
+emergency services.
+`
+      : ""
+  }
 ${
     hasContacts
       ? `Verified contacts and approved sources for this community are listed on CommonGround's Contacts page — point people there rather than reciting phone numbers from memory.`
