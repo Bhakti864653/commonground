@@ -16,6 +16,8 @@ import { recordCommunityRequest } from "@/lib/store/community-request-store";
 import { placeAtPoint, searchPlaces, type GeocodeResult } from "@/lib/places/geocode";
 import { isLanguage } from "@/lib/i18n/languages";
 import { z } from "zod";
+import { after } from "next/server";
+import { runReferralPipeline } from "@/lib/guide/referral/pipeline";
 
 /**
  * Only `publicCaseNumber` + `managementToken` — the wizard needs the token to build the
@@ -26,6 +28,16 @@ export async function submitCase(
   input: NewCaseInput,
 ): Promise<{ publicCaseNumber: string; managementToken: string }> {
   const created = createCase(input);
+  // The referral pipeline (several Groq calls) runs after the response, so the resident gets
+  // their case number immediately. It never throws by design; the catch only guards against a
+  // bug, which must not surface as a failed submission after the fact.
+  after(async () => {
+    try {
+      await runReferralPipeline(created.publicCaseNumber);
+    } catch (error) {
+      console.error(`[referral-agent] ${created.publicCaseNumber}: pipeline crashed`, error);
+    }
+  });
   return { publicCaseNumber: created.publicCaseNumber, managementToken: created.managementToken };
 }
 
