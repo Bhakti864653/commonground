@@ -40,6 +40,8 @@ export default async function CasePage({
       communityDisplayName={community.displayName}
       isNew={isNewParam === "1"}
       managementToken={validManagementToken}
+      // Names only (already public on /resources) — for naming the office in referral entries.
+      offices={community.officialContacts.map(({ id, name, nameEs, labels }) => ({ id, name, nameEs, labels }))}
     />
   );
 }

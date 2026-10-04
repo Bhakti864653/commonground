@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, ExternalLink, Link2, MapPin } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ExternalLink, Link2, MapPin, Sparkles } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/context";
 import { UI_STRINGS } from "@/lib/i18n/dictionary";
 import { EXPERIENCE, fill } from "@/lib/i18n/experience";
 import { FIELD } from "@/lib/i18n/field-notes";
 import { formatApproximateAreaLabel } from "@/lib/privacy/approximate-area";
 import { STATUS_LABELS, VERIFICATION_LABELS, type PublicCase } from "@/lib/schema/report";
-import type { CategoryConfig } from "@/lib/schema/community";
+import type { CategoryConfig, OfficialContact } from "@/lib/schema/community";
 import { StatusPill, VerificationPill } from "@/components/journey/Pills";
 import { StageMeter } from "@/components/journey/StageMeter";
 import { InaccuracyFlagForm } from "./InaccuracyFlagForm";
@@ -17,18 +17,23 @@ import { DeleteSubmission } from "./DeleteSubmission";
 import { dateLocale } from "@/lib/i18n/languages";
 import { labelOf, noteOf } from "@/lib/i18n/labels";
 
+/** Just enough of an official contact to name it in a timeline entry, in the reader's language. */
+export type TimelineOffice = Pick<OfficialContact, "id" | "name" | "nameEs" | "labels">;
+
 export function CaseView({
   caseData,
   category,
   communityDisplayName,
   isNew,
   managementToken,
+  offices = [],
 }: {
   caseData: PublicCase;
   category: CategoryConfig;
   communityDisplayName: string;
   isNew: boolean;
   managementToken: string | null;
+  offices?: TimelineOffice[];
 }) {
   const { language } = useLanguage();
   const t = UI_STRINGS.caseDetail;
@@ -56,6 +61,10 @@ export function CaseView({
   }
 
   const events = [...caseData.statusHistory].reverse();
+  const officeName = (contactId?: string) => {
+    const office = offices.find((o) => o.id === contactId);
+    return office ? labelOf({ label: office.name, labelEs: office.nameEs, labels: office.labels }, language) : f.officeFallback[language];
+  };
 
   return (
     <div>
@@ -107,17 +116,37 @@ export function CaseView({
           <ol className="ml-2 mt-7 border-l-2 border-[#b9cbb9] pl-[25px]">
             {events.map((event, i) => {
               const note = noteOf(event, language);
+              const kind = event.kind ?? "status";
+              const isAgent = event.actorType === "agent";
+              // Non-status entries have fixed text per kind; only the office name is filled in.
+              const title =
+                kind === "status"
+                  ? STATUS_LABELS[event.status][language]
+                  : fill(f.eventKinds[kind][language], { office: officeName(event.contactId) });
               return (
                 <li key={event.id} className="relative pb-[29px] last:pb-2">
-                  <span aria-hidden="true" className="absolute -left-[33px] top-1 h-[13px] w-[13px] rounded-full border-[3px] border-surface bg-ink" />
+                  <span
+                    aria-hidden="true"
+                    className={`absolute -left-[33px] top-1 h-[13px] w-[13px] rounded-full border-[3px] border-surface ${isAgent ? "bg-teal" : "bg-ink"}`}
+                  />
                   <p className="text-[0.78rem] font-extrabold text-slate">
                     {i === 0 ? f.latest[language] : f.earlier[language]} · <time dateTime={event.occurredAt}>{dateFormat(event.occurredAt)}</time>
                   </p>
-                  <h3 className="my-1.5 font-sans text-base font-bold tracking-normal text-ink">{STATUS_LABELS[event.status][language]}</h3>
+                  <h3 className="my-1.5 font-sans text-base font-bold tracking-normal text-ink">{title}</h3>
                   {note && <p className="text-[0.92rem] text-ink/85">{note}</p>}
-                  <p className="mt-1 text-[0.85rem] text-slate">
-                    {event.actorType === "moderator" ? f.byModerator[language] : event.actorType === "verified_source" ? f.bySource[language] : f.bySystem[language]}
-                  </p>
+                  {isAgent ? (
+                    <div className="mt-1 flex flex-col gap-1">
+                      <span className="inline-flex w-max items-center gap-1.5 rounded-full bg-mint px-2.5 py-1 text-[0.78rem] font-extrabold text-ink">
+                        <Sparkles aria-hidden="true" className="h-3.5 w-3.5 text-teal" />
+                        {f.byAgent[language]}
+                      </span>
+                      <p className="text-[0.82rem] text-slate">{f.agentNote[language]}</p>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-[0.85rem] text-slate">
+                      {event.actorType === "moderator" ? f.byModerator[language] : event.actorType === "verified_source" ? f.bySource[language] : f.bySystem[language]}
+                    </p>
+                  )}
                 </li>
               );
             })}
