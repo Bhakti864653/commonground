@@ -17,6 +17,7 @@ import {
 import { buildApproximateArea } from "@/lib/privacy/approximate-area";
 import { buildConsentRecord } from "@/lib/privacy/consent";
 import { SANTIAGO_VERAGUAS, RIVERBEND_DEMO } from "@/data/communities";
+import { MAX_DESCRIPTION_LENGTH } from "@/lib/schema/report";
 
 function baseInput(overrides: Partial<NewCaseInput> = {}): NewCaseInput {
   return {
@@ -112,6 +113,21 @@ describe("createCase", () => {
     const b = createCase(baseInput());
     expect(a.managementToken).toBeTruthy();
     expect(a.managementToken).not.toBe(b.managementToken);
+  });
+
+  it("rejects a category the community doesn't have, and stores nothing", () => {
+    expect(() => createCase(baseInput({ categoryId: "not-a-category" }))).toThrow(/Unknown category/);
+    // Riverbend's categories aren't Santiago's: a valid id from another community is still rejected.
+    const foreign = RIVERBEND_DEMO.categories.find((c) => !SANTIAGO_VERAGUAS.categories.some((s) => s.id === c.id));
+    if (foreign) expect(() => createCase(baseInput({ categoryId: foreign.id }))).toThrow(/Unknown category/);
+    expect(listCasesForCommunity(SANTIAGO_VERAGUAS.id)).toHaveLength(0);
+  });
+
+  it("accepts a description up to the maximum length and rejects anything longer", () => {
+    expect(createCase(baseInput({ description: "a".repeat(MAX_DESCRIPTION_LENGTH) })).description).toHaveLength(
+      MAX_DESCRIPTION_LENGTH,
+    );
+    expect(() => createCase(baseInput({ description: "a".repeat(MAX_DESCRIPTION_LENGTH + 1) }))).toThrow(/at most/);
   });
 });
 

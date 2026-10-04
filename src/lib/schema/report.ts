@@ -218,12 +218,18 @@ export const ContentRemovalSchema = z.object({
 });
 export type ContentRemoval = z.infer<typeof ContentRemovalSchema>;
 
+/**
+ * The longest description a case can carry — enough for a detailed report, and the same cap the
+ * Guide chat puts on a single message, so a Guide-drafted submission always fits.
+ */
+export const MAX_DESCRIPTION_LENGTH = 2000;
+
 const CaseBaseSchema = z.object({
   id: z.string(),
   publicCaseNumber: z.string(),
   communityId: z.string(),
   categoryId: z.string(),
-  description: z.string().min(1),
+  description: z.string().min(1).max(MAX_DESCRIPTION_LENGTH),
   approximateArea: ApproximateAreaSchema,
   createdAt: z.string(),
   status: ReportStatusSchema,

@@ -5,6 +5,7 @@ import { AlertTriangle, Mic, Upload, X } from "lucide-react";
 import { UI_STRINGS, type Language } from "@/lib/i18n/dictionary";
 import { validateImageMetadata } from "@/lib/privacy/image-validation";
 import { detectEmergencyPhrase } from "@/lib/guide/emergency";
+import { MAX_DESCRIPTION_LENGTH } from "@/lib/schema/report";
 import type { ImagePick } from "./types";
 
 /**
@@ -47,6 +48,7 @@ export function DescriptionStep({
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder={t.descriptionPlaceholder[language]}
           rows={5}
+          maxLength={MAX_DESCRIPTION_LENGTH}
           className="mt-1.5 w-full rounded-[13px] border border-line bg-surface p-3.5 text-sm text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
         />
         {isEmergency && (

@@ -1,6 +1,7 @@
 import type Groq from "groq-sdk";
 import { z } from "zod";
 import type { CommunityConfig } from "@/lib/schema/community";
+import { MAX_DESCRIPTION_LENGTH } from "@/lib/schema/report";
 
 export type GuideDraftSubmission = {
   type: "report" | "proposal";
@@ -60,7 +61,7 @@ export function buildDraftSubmissionTool(
 const RawDraftArgsSchema = z.object({
   type: z.enum(["report", "proposal"]),
   categoryId: z.string(),
-  description: z.string().min(1),
+  description: z.string().min(1).max(MAX_DESCRIPTION_LENGTH),
   areaId: z.string(),
 });
 

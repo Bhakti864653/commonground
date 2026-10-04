@@ -1,6 +1,7 @@
 import { formatCaseNumber } from "@/lib/case-number/format-case-number";
 import {
   CaseSchema,
+  MAX_DESCRIPTION_LENGTH,
   type AgentSuggestion,
   type Case,
   type ApproximateArea,
@@ -269,6 +270,15 @@ export function createCase(input: NewCaseInput, now: () => Date = () => new Date
   const community = getCommunityById(input.communityId);
   if (!community) {
     throw new Error(`Unknown community: ${input.communityId}`);
+  }
+
+  // A server action can be called with any category id; one the community doesn't have would
+  // create a case whose public page can never render (it looks the category up to show it).
+  if (!community.categories.some((c) => c.id === input.categoryId)) {
+    throw new Error(`Unknown category for ${input.communityId}: ${input.categoryId}`);
+  }
+  if (typeof input.description !== "string" || input.description.length > MAX_DESCRIPTION_LENGTH) {
+    throw new Error(`Description must be at most ${MAX_DESCRIPTION_LENGTH} characters`);
   }
 
   // Defense in depth — the wizard already checks this client-side, but a server action can be
