@@ -88,6 +88,17 @@ give a legal conclusion; tell a user a dangerous situation is safe; automaticall
 forward a report; modify or close a case without explicit confirmation; reveal private user
 information.
 
+### Voice input
+
+The resident chat has an optional **Speak** button. A clip of up to 1 minute is sent once to
+Groq Whisper (`whisper-large-v3-turbo`) to be transcribed — the same provider that already
+receives typed chat messages — and is not stored by CommonGround. The text goes into the message
+box for the resident to review and edit; speaking never sends a message by itself, so emergency
+detection still runs on the text the resident actually sends. While recording, a live preview of
+the words is shown only where the browser can recognize speech **on the device**
+(`processLocally`); CommonGround never falls back to a browser's cloud speech service. Server
+logs record only Groq's error status, never audio or text.
+
 ### Emergency detection
 
 Trigger phrases (Spanish and English equivalents) include: "me estoy ahogando," "hay peligro

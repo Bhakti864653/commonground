@@ -16,6 +16,7 @@ import { LogoMark } from "@/components/layout/Logo";
 import { DraftReviewCard } from "./DraftReviewCard";
 import { GuideActionTrail, buildGuideTrail } from "./GuideActionTrail";
 import { GuideSidePanel } from "./GuideSidePanel";
+import { VoiceInputButton } from "./VoiceInputButton";
 import { labelOf } from "@/lib/i18n/labels";
 
 type Turn = { role: "user" | "assistant"; content: string; emergency?: boolean };
@@ -193,7 +194,7 @@ export function GuideChat() {
             e.preventDefault();
             send();
           }}
-          className="flex gap-2.5"
+          className="flex flex-wrap gap-2.5"
         >
           <input
             value={input}
@@ -201,6 +202,11 @@ export function GuideChat() {
             aria-label={t.heading[language]}
             placeholder={t.placeholder[language]}
             className="min-w-0 flex-1 rounded-full border border-line bg-surface px-4 py-3 text-ink placeholder:text-slate focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal"
+          />
+          <VoiceInputButton
+            language={language}
+            disabled={pending}
+            onTranscript={(text) => setInput((prev) => (prev.trim() ? `${prev.trimEnd()} ${text}` : text))}
           />
           <button
             type="submit"
