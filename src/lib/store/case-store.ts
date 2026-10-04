@@ -2,8 +2,11 @@ import { formatCaseNumber } from "@/lib/case-number/format-case-number";
 import {
   CaseSchema,
   MAX_DESCRIPTION_LENGTH,
+  ReferralDraftSchema,
   type AgentSuggestion,
   type Case,
+  type ReferralDraft,
+  type TimelineEventKind,
   type ApproximateArea,
   type RemovalReason,
   type ReportStatus,
@@ -587,6 +590,57 @@ export function setAgentSuggestionStatus(
   suggestion.status = status;
   suggestion.reviewedAt = now().toISOString();
   return true;
+}
+
+/**
+ * Appends a public timeline entry that isn't a status change (a referral-pipeline step). The
+ * entry carries only its kind, actor, and optional office id — its text is fixed per kind and
+ * rendered by the case page, so nothing private can be written here.
+ */
+export function addTimelineEvent(
+  publicCaseNumber: string,
+  event: { kind: Exclude<TimelineEventKind, "status">; actorType: "agent" | "moderator"; contactId?: string },
+  now: () => Date = () => new Date(),
+): boolean {
+  const found = getCaseByCaseNumber(publicCaseNumber);
+  if (!found) return false;
+  found.statusHistory.push({
+    id: crypto.randomUUID(),
+    status: found.status,
+    occurredAt: now().toISOString(),
+    actorType: event.actorType,
+    kind: event.kind,
+    contactId: event.contactId,
+  });
+  return true;
+}
+
+/**
+ * Stores the referral pipeline's draft as a pending suggestion. A newer draft replaces an older
+ * pending one, the same rule `addAgentSuggestions` applies to the other kinds.
+ */
+export function addReferralSuggestion(
+  publicCaseNumber: string,
+  referral: ReferralDraft,
+  reasoning: string,
+  now: () => Date = () => new Date(),
+): AgentSuggestion | null {
+  const found = getCaseByCaseNumber(publicCaseNumber);
+  if (!found) return null;
+  const parsed = ReferralDraftSchema.safeParse(referral);
+  if (!parsed.success) return null;
+  found.agentSuggestions = found.agentSuggestions.filter((s) => s.status !== "pending" || s.kind !== "referral");
+  const suggestion: AgentSuggestion = {
+    id: crypto.randomUUID(),
+    kind: "referral",
+    suggestedValue: parsed.data.contactId,
+    reasoning,
+    createdAt: now().toISOString(),
+    status: "pending",
+    referral: parsed.data,
+  };
+  found.agentSuggestions.push(suggestion);
+  return suggestion;
 }
 
 /** Test-only: the store is a `globalThis` singleton, so tests need a way back to empty. */

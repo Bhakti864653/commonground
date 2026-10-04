@@ -81,11 +81,32 @@ export const ApproximateAreaSchema = z.object({
 });
 export type ApproximateArea = z.infer<typeof ApproximateAreaSchema>;
 
+/**
+ * What a public timeline entry records. "status" (also what an entry with no `kind` means — every
+ * entry before 2026-10 was one) is a status change; the rest are referral-pipeline steps that
+ * don't change the status, so residents can see what the AI and moderators did. Every kind is
+ * public-safe by construction: the text is fixed per kind, and the only extra data is the
+ * office's contact id — never the AI's reasoning, urgency, or drafted message.
+ */
+export const TimelineEventKindSchema = z.enum([
+  "status",
+  "ai_reviewed",
+  "referral_prepared",
+  "awaiting_approval",
+  "referral_approved",
+  "referral_declined",
+]);
+export type TimelineEventKind = z.infer<typeof TimelineEventKindSchema>;
+
 export const ReportStatusEventSchema = z.object({
   id: z.string(),
+  /** For a "status" entry, the new status; for any other kind, the case's status at that moment. */
   status: ReportStatusSchema,
   occurredAt: z.string(),
-  actorType: z.enum(["system", "moderator", "verified_source"]),
+  actorType: z.enum(["system", "moderator", "verified_source", "agent"]),
+  kind: TimelineEventKindSchema.optional(),
+  /** The office (an `officialContacts` id) a referral entry is about. */
+  contactId: z.string().optional(),
   note: z.string().optional(),
   noteEs: z.string().optional(),
   notes: ExtraTranslationsSchema.optional(),
@@ -130,15 +151,38 @@ export type InaccuracyFlag = z.infer<typeof InaccuracyFlagSchema>;
  * functions a human using the panel directly would call). This is the whole mechanism behind
  * "agentic reasoning, human-approved actions."
  */
+export const ReferralUrgencySchema = z.enum(["low", "medium", "high"]);
+export type ReferralUrgency = z.infer<typeof ReferralUrgencySchema>;
+
+/** Longest referral message — short enough to send as one WhatsApp message or read on a call. */
+export const MAX_REFERRAL_MESSAGE_LENGTH = 1200;
+
+/** Private to moderators, like every agent suggestion — none of this reaches a public page. */
+export const ReferralDraftSchema = z.object({
+  contactId: z.string(),
+  urgency: ReferralUrgencySchema,
+  /** Spanish, addressed to the office, built only from public case fields. */
+  message: z.string().min(1).max(MAX_REFERRAL_MESSAGE_LENGTH),
+  /** The classifier's view of the resident's chosen category. */
+  categoryAssessment: z.enum(["confirmed", "questioned"]),
+  /** Set only when the category was questioned: the category the classifier thinks fits better. */
+  suggestedCategoryId: z.string().optional(),
+});
+export type ReferralDraft = z.infer<typeof ReferralDraftSchema>;
+
 export const AgentSuggestionSchema = z.object({
   id: z.string(),
-  kind: z.enum(["duplicate", "status", "verification"]),
-  /** A case number (duplicate), a ReportStatus value (status), or a VerificationState value. */
+  kind: z.enum(["duplicate", "status", "verification", "referral"]),
+  /**
+   * A case number (duplicate), a ReportStatus value (status), a VerificationState value, or an
+   * official contact id (referral — the full draft is in `referral`).
+   */
   suggestedValue: z.string(),
   reasoning: z.string(),
   createdAt: z.string(),
   status: z.enum(["pending", "approved", "rejected"]).default("pending"),
   reviewedAt: z.string().optional(),
+  referral: ReferralDraftSchema.optional(),
 });
 export type AgentSuggestion = z.infer<typeof AgentSuggestionSchema>;
 
@@ -155,6 +199,8 @@ export const ModerationActionSchema = z.object({
     "remove_content",
     "restore_content",
     "add_note",
+    "approve_referral",
+    "reject_referral",
   ]),
   occurredAt: z.string(),
   detail: z.string().optional(),
