@@ -128,6 +128,19 @@ export const MapSettingsSchema = z.object({
 });
 export type MapSettings = z.infer<typeof MapSettingsSchema>;
 
+/**
+ * Which verified official contact a category's referrals go to. A route is a claim about who is
+ * responsible, so it needs the same care as the contact itself: `verificationNote` says why this
+ * office handles this category, and only a configured, non-emergency contact can be a target
+ * (everyday complaints must never be routed to an emergency line).
+ */
+export const ReferralRouteSchema = z.object({
+  categoryId: z.string(),
+  contactId: z.string(),
+  verificationNote: z.string().min(1),
+});
+export type ReferralRoute = z.infer<typeof ReferralRouteSchema>;
+
 export const CommunityConfigSchema = z.object({
   id: z.string(),
   displayName: z.string(),
@@ -149,5 +162,25 @@ export const CommunityConfigSchema = z.object({
   moderation: ModerationConfigSchema,
   enabledFeatures: FeatureFlagsSchema,
   map: MapSettingsSchema.optional(),
+  /** Category → office routing for AI-prepared referrals. Absent means no referrals are prepared. */
+  referralRouting: z.array(ReferralRouteSchema).optional(),
+}).superRefine((config, ctx) => {
+  const seen = new Set<string>();
+  for (const [i, route] of (config.referralRouting ?? []).entries()) {
+    const path = ["referralRouting", i];
+    if (!config.categories.some((c) => c.id === route.categoryId)) {
+      ctx.addIssue({ code: "custom", path, message: `Unknown category: ${route.categoryId}` });
+    }
+    if (seen.has(route.categoryId)) {
+      ctx.addIssue({ code: "custom", path, message: `Category routed twice: ${route.categoryId}` });
+    }
+    seen.add(route.categoryId);
+    const contact = config.officialContacts.find((c) => c.id === route.contactId);
+    if (!contact) {
+      ctx.addIssue({ code: "custom", path, message: `Unknown contact: ${route.contactId}` });
+    } else if (contact.isEmergencyService) {
+      ctx.addIssue({ code: "custom", path, message: `Emergency contacts can't receive referrals: ${route.contactId}` });
+    }
+  }
 });
 export type CommunityConfig = z.infer<typeof CommunityConfigSchema>;
