@@ -15,6 +15,8 @@ import { runCaseAnalysis, reviewAgentSuggestion } from "@/lib/guide/admin-action
 import type { AgentTraceStep, SuggestionDecision } from "@/lib/guide/case-analysis";
 import { draftStatusChangeExplanation } from "@/lib/insights/status-explanation";
 import { AnalysisTraceView } from "./AnalysisTraceView";
+import { ReferralCard } from "./ReferralCard";
+import type { OfficialContact } from "@/lib/schema/community";
 import {
   REMOVAL_REASON_LABELS,
   RemovalReasonSchema,
@@ -42,10 +44,12 @@ export function ModerationPanel({
   caseData,
   communityDisplayName,
   categoryLabel,
+  contacts = [],
 }: {
   caseData: Case;
   communityDisplayName: string;
   categoryLabel: string;
+  contacts?: OfficialContact[];
 }) {
   const router = useRouter();
   const [selectedStatus, setSelectedStatus] = useState<ReportStatus>(caseData.status);
@@ -80,6 +84,12 @@ export function ModerationPanel({
   }
 
   const openFlags = caseData.inaccuracyFlags.filter((f) => !f.reviewedAt);
+  // Referrals get their own card (editable message, delivery details); the generic list below
+  // only shows the analysis suggestions.
+  const referrals = caseData.agentSuggestions.filter(
+    (s): s is typeof s & { referral: NonNullable<typeof s.referral> } => s.kind === "referral" && !!s.referral,
+  );
+  const analysisSuggestions = caseData.agentSuggestions.filter((s) => s.kind !== "referral");
 
   return (
     <div className="flex flex-col gap-6">
@@ -102,6 +112,32 @@ export function ModerationPanel({
         )}
       </div>
 
+      {/* AI-prepared referrals */}
+      {referrals.length > 0 && (
+        <section className="rounded-lg border border-teal/30 bg-mint/20 p-4">
+          <h2 className="text-sm font-semibold text-ink">Referral</h2>
+          <p className="mt-1 text-xs text-slate">
+            Prepared automatically when the case was submitted: the office comes from the community’s verified
+            routing, the message only from public case details. Residents see that a referral is waiting for
+            approval, never the message or the reasoning.
+          </p>
+          <div className="mt-3 flex flex-col gap-3">
+            {referrals
+              .slice()
+              .reverse()
+              .map((s) => (
+                <ReferralCard
+                  key={s.id}
+                  caseNumber={caseData.publicCaseNumber}
+                  suggestion={s}
+                  contact={contacts.find((c) => c.id === s.referral.contactId)}
+                  onChanged={() => router.refresh()}
+                />
+              ))}
+          </div>
+        </section>
+      )}
+
       {/* Guide suggestions */}
       <section className="rounded-lg border border-teal/30 bg-mint/20 p-4">
         <div className="flex items-center justify-between gap-2">
@@ -120,9 +156,9 @@ export function ModerationPanel({
           critique agent reviews their combined output — nothing changes until you approve one.
         </p>
         {analysisTrace && <AnalysisTraceView trace={analysisTrace} decisions={analysisDecisions} />}
-        {caseData.agentSuggestions.length > 0 && (
+        {analysisSuggestions.length > 0 && (
           <ul className="mt-3 flex flex-col gap-2">
-            {caseData.agentSuggestions
+            {analysisSuggestions
               .slice()
               .reverse()
               .map((s) => (

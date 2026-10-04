@@ -643,6 +643,75 @@ export function addReferralSuggestion(
   return suggestion;
 }
 
+function pendingReferral(found: Case | undefined, suggestionId: string) {
+  const suggestion = found?.agentSuggestions.find((s) => s.id === suggestionId);
+  if (!found || found.removal || !suggestion || suggestion.kind !== "referral" || suggestion.status !== "pending" || !suggestion.referral) {
+    return null;
+  }
+  return { found, suggestion, referral: suggestion.referral };
+}
+
+/**
+ * A moderator approved a referral (with the message as they finally edited it). The case moves to
+ * "referred" with one public entry naming the office, and the audit trail records who approved
+ * it. Approval is a decision to deliver it by hand — nothing here contacts the office. The
+ * caller validates `message` (referral/validate.ts) before calling this.
+ */
+export function approveReferral(
+  publicCaseNumber: string,
+  suggestionId: string,
+  message: string,
+  actorId: string,
+  now: () => Date = () => new Date(),
+): boolean {
+  const target = pendingReferral(getCaseByCaseNumber(publicCaseNumber), suggestionId);
+  if (!target) return false;
+  const { found, suggestion, referral } = target;
+  const nowIso = now().toISOString();
+  referral.message = message;
+  suggestion.status = "approved";
+  suggestion.reviewedAt = nowIso;
+  found.status = "referred";
+  found.statusHistory.push({
+    id: crypto.randomUUID(),
+    status: "referred",
+    occurredAt: nowIso,
+    actorType: "moderator",
+    kind: "referral_approved",
+    contactId: referral.contactId,
+  });
+  recordModerationAction(found, "approve_referral", actorId, referral.contactId, now);
+  return true;
+}
+
+/**
+ * A moderator decided not to send a referral. The public timeline says so (without a reason), so
+ * the earlier "waiting for approval" entry isn't left hanging; the status doesn't change.
+ */
+export function rejectReferral(
+  publicCaseNumber: string,
+  suggestionId: string,
+  actorId: string,
+  now: () => Date = () => new Date(),
+): boolean {
+  const target = pendingReferral(getCaseByCaseNumber(publicCaseNumber), suggestionId);
+  if (!target) return false;
+  const { found, suggestion, referral } = target;
+  const nowIso = now().toISOString();
+  suggestion.status = "rejected";
+  suggestion.reviewedAt = nowIso;
+  found.statusHistory.push({
+    id: crypto.randomUUID(),
+    status: found.status,
+    occurredAt: nowIso,
+    actorType: "moderator",
+    kind: "referral_declined",
+    contactId: referral.contactId,
+  });
+  recordModerationAction(found, "reject_referral", actorId, referral.contactId, now);
+  return true;
+}
+
 /** Test-only: the store is a `globalThis` singleton, so tests need a way back to empty. */
 export function __resetCaseStoreForTests(): void {
   const g = globalThis as typeof globalThis & { __commonGroundCaseStore__?: CaseStoreState };

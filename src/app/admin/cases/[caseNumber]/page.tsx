@@ -25,6 +25,7 @@ export default async function AdminCasePage({
       caseData={foundCase}
       communityDisplayName={community?.displayName ?? foundCase.communityId}
       categoryLabel={category ? category.label : foundCase.categoryId}
+      contacts={community?.officialContacts ?? []}
     />
   );
 }
