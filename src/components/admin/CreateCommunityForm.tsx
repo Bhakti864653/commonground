@@ -28,7 +28,7 @@ const input =
  * form only keeps the obvious limits in view. Areas must be approximate — neighborhoods or
  * sectors, never streets or addresses.
  */
-export function CreateCommunityForm() {
+export function CreateCommunityForm({ persistent }: { persistent: boolean }) {
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [country, setCountry] = useState("Panamá");
@@ -99,8 +99,9 @@ export function CreateCommunityForm() {
     <section className="rounded-[24px] bg-surface p-6">
       <h2 className="text-2xl text-ink">Set up a community</h2>
       <p className="mt-2 text-sm text-slate">
-        Prototype storage: like submissions, a community set up here lives in server memory. It can disappear after a
-        restart or redeploy (and on Vercel, a different server instance may not have it) until a database is added.
+        {persistent
+          ? "Saved in the database, like submissions: it stays after a restart or redeploy, on every server."
+          : "This server has no database (DATABASE_URL isn't set), so a community set up here lives in server memory: it disappears after a restart or redeploy, and another server instance won't have it."}
       </p>
 
       <form onSubmit={submit} className="mt-5 flex flex-col gap-5">

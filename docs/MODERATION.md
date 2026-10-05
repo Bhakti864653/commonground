@@ -22,7 +22,7 @@ never claims a government institution received or acted on a submission.
 - Review visitor-started ("starter") communities at `/admin/communities` and mark one reviewed,
   which turns it into a normal pilot and removes its "not reviewed" notice. Until then every page
   of a starter community tells residents that no local moderator reviews its reports.
-- Set up a prototype community at `/admin/communities` (temporary — see
+- Set up a community at `/admin/communities` (see
   [`ARCHITECTURE.md`](ARCHITECTURE.md#communities-created-at-runtime-prototype)).
 - View each case's moderation history.
 
@@ -37,8 +37,8 @@ never claims a government institution received or acted on a submission.
   was checked (otherwise it shows publicly as unverified). Entries that are unverified or were
   checked more than 180 days ago are listed first under "Needs review", and a two-step "Mark
   re-checked today" action is the only way to move a check date forward. Changes, including
-  re-checks, are listed in a change history on that page. Like everything else in the prototype store, runtime changes are lost on
-  a restart or redeploy; the built-in entries always come back.
+  re-checks, are listed in a change history on that page. Changes are saved in the database (or only in memory when no `DATABASE_URL` is configured,
+  as the page itself says); the built-in entries always stay in the code.
 
 ## Rules
 

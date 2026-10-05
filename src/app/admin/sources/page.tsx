@@ -1,6 +1,7 @@
 import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { adminListCommunities, adminListCommunityInfoLog } from "@/lib/store/admin-community-actions";
 import { CommunityInfoManager } from "@/components/admin/CommunityInfoManager";
+import { usesDatabase } from "@/lib/db/storage-mode";
 
 export default async function AdminSourcesPage() {
   // Same page-level guard as admin/page.tsx — the layout's check alone doesn't stop this page
@@ -15,9 +16,11 @@ export default async function AdminSourcesPage() {
       <div>
         <h1 className="text-xl font-semibold text-ink">Sources and contacts</h1>
         <p className="mt-1 text-sm text-slate">
-          What residents see on the public Contacts page. Changes made here live in the same
-          temporary prototype store as cases: they are lost on a restart or redeploy, while the
-          built-in entries (checked 2026-09-25) always come back.
+          What residents see on the public Contacts page. The built-in entries (checked 2026-09-25)
+          live in the code; your changes are{" "}
+          {usesDatabase()
+            ? "saved in the database, so they stay after a restart or redeploy."
+            : "kept only in server memory on this server (no DATABASE_URL): they are lost on a restart or redeploy, while the built-in entries always come back."}
         </p>
       </div>
 

@@ -1,5 +1,7 @@
 import type { CommunityRepository } from "./community-repository";
 import { memoryCommunityRepository } from "./memory-community-repository";
+import { createSqlCommunityRepository } from "./sql-community-store";
+import { getSqlClient } from "@/lib/db/pool";
 import { __resetCommunityStoreForTests as resetMemoryCommunities } from "./memory-community-store";
 import { __resetCommunityRequestsForTests as resetMemoryRequests } from "./memory-community-request-store";
 
@@ -8,12 +10,17 @@ export type { CommunityRequest, CommunityRequestSummary } from "./community-requ
 export { MAX_STORED_REQUESTS, placeKeyOf } from "./community-request-logic";
 export type { CommunityRepository } from "./community-repository";
 
+let sqlRepository: CommunityRepository | null = null;
+
 /**
- * Where communities are stored. Only the in-memory store exists so far; the Postgres one is
- * chosen here when DATABASE_URL is configured (never under tests).
+ * Where communities are stored: Postgres (Neon) when DATABASE_URL is set, otherwise in memory.
+ * Tests always get the in-memory store, so no test can ever write to a real database.
  */
 export function getCommunityRepository(): CommunityRepository {
-  return memoryCommunityRepository;
+  const url = process.env.DATABASE_URL;
+  if (!url || process.env.VITEST) return memoryCommunityRepository;
+  sqlRepository ??= createSqlCommunityRepository(getSqlClient(url));
+  return sqlRepository;
 }
 
 // The app's community API: the same names as before, now async. Callers import from here.

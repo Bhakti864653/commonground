@@ -1,12 +1,14 @@
 # CommonGround database (Postgres on Neon)
 
-When `DATABASE_URL` is set, the app stores cases in Postgres; without it, it falls back to the
-in-memory prototype store (that's what tests always use). Production runs on a free
+When `DATABASE_URL` is set, the app stores cases and runtime-created communities in Postgres;
+without it, it falls back to in-memory prototype stores (that's what tests always use). The two
+built-in communities live in code, not in the database. Production runs on a free
 [Neon](https://neon.com) project.
 
 | File | What it does |
 |---|---|
-| `migrations/0001_init.sql` | Creates the tables, the `create_case` function that hands out case numbers, and the privacy lock-down (Row Level Security on; no access for any role but the owner). |
+| `migrations/0001_init.sql` | Cases: the tables, the `create_case` function that hands out case numbers, and the privacy lock-down (Row Level Security on; no access for any role but the owner). |
+| `migrations/0002_communities.sql` | Communities created at runtime, moderators' source/contact changes and their log, and visitors' place requests; same lock-down. |
 | `seed.sql` | Adds the 8 demonstration cases once. **Generated** from `src/lib/store/demo-seed.ts` — don't edit it by hand. |
 | `../scripts/db.mjs` | Applies the files above (`npm run db:migrate`, `npm run db:seed`, `npm run db:status`). |
 
@@ -40,8 +42,9 @@ For Vercel, add the same `DATABASE_URL` under **Project → Settings → Environ
   (a real Postgres inside the test process) and checks numbering, seeding, and privacy, that
   the SQL's allowed values match the app's Zod schemas, and that `seed.sql` is exactly what its
   generator produces.
-- `src/lib/store/__tests__/case-repository-contract.test.ts` runs the same behaviour tests
-  against the in-memory store and the Postgres store, so they can't drift apart.
+- `case-repository-contract.test.ts` and `community-repository-contract.test.ts` (same folder)
+  run the same behaviour tests against the in-memory stores and the Postgres stores, so they
+  can't drift apart.
 
 After changing the demonstration cases, regenerate `seed.sql`:
 

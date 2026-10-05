@@ -5,7 +5,6 @@ import { CATEGORY_PRESETS, CATEGORY_PRESET_IDS } from "@/data/communities/catego
 import { casePrefix } from "@/lib/case-number/format-case-number";
 import {
   CommunityConfigSchema,
-  ContactConfigSchema,
   HttpUrlSchema,
   MAP_DIRECTIONS,
   MapSettingsSchema,
@@ -193,7 +192,8 @@ export type StartCommunityResult =
   | { ok: true; community: CommunityConfig; created: boolean }
   | { ok: false; error: "invalid" | "full" };
 
-function starterKey(label: string): string {
+/** The key two names count as "the same place" by: accents, case, and extra spaces ignored. */
+export function communityNameKey(label: string): string {
   return normalize(label).replace(/\s+/g, " ");
 }
 
@@ -211,8 +211,8 @@ export function buildStarterCommunity(
   const { parts } = normalized;
   const label = formatPlaceLabel(parts);
 
-  const key = starterKey(label);
-  const match = existing.find((c) => starterKey(c.displayName) === key);
+  const key = communityNameKey(label);
+  const match = existing.find((c) => communityNameKey(c.displayName) === key);
   if (match) return { ok: true, community: match, created: false };
 
   if (starterCount >= MAX_STARTER_COMMUNITIES) {

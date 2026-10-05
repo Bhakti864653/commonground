@@ -95,19 +95,20 @@ There are two ways:
    accidentally hard-coded to a specific community and should be pulled into the config schema
    instead.
 
-**Starter communities (temporary prototype):** when a visitor adds a place (country + city, with
+**Starter communities:** when a visitor adds a place (country + city, with
 optional region and neighborhood), a `status: "starter"` community is started for it unless the
 place already has one: general categories (flooding, garbage, roads, street lighting, other), the
 five compass areas without map directions (illustrative map only — no coordinates are stored), no
 contacts or sources, and a "not reviewed yet" notice on every page. At most 300 exist at once. A
 moderator's "Mark reviewed" turns one into a `pilot`.
 
-**At runtime (temporary prototype):** a moderator can set one up at `/admin/communities` with a
+**At runtime:** a moderator can set one up at `/admin/communities` with a
 name, country, optional region, 1–12 approximate areas (Spanish and English names), and
 categories from the presets in `src/data/communities/category-presets.ts` ("Other" is always
 included). It gets a unique id and case-number prefix, all seven interface languages, and no
-trusted sources or official contacts. It is stored in memory only, so it is lost on a restart or
-redeploy (and may be missing on another serverless instance) until a database is added. See
+trusted sources or official contacts. Runtime-created communities (including starter ones) are
+stored in the database (`db/migrations/0002_communities.sql`), or in memory when no
+`DATABASE_URL` is configured. See
 [`ARCHITECTURE.md`](ARCHITECTURE.md#communities-created-at-runtime-prototype).
 
 ## Test coverage

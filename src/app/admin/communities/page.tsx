@@ -2,6 +2,7 @@ import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { adminListCommunities, adminListCommunityRequests } from "@/lib/store/admin-community-actions";
 import { casePrefix } from "@/lib/case-number/format-case-number";
 import { CreateCommunityForm } from "@/components/admin/CreateCommunityForm";
+import { usesDatabase } from "@/lib/db/storage-mode";
 import { AdoptStarterButton } from "@/components/admin/AdoptStarterButton";
 
 export default async function AdminCommunitiesPage() {
@@ -50,8 +51,8 @@ export default async function AdminCommunitiesPage() {
         <h2 className="text-2xl text-ink">Requests from visitors</h2>
         <p className="mt-2 max-w-2xl text-sm text-slate">
           Places people asked for from the &ldquo;not set up yet&rdquo; screen, most-requested first. Requests are
-          anonymous (no contact details are collected), so nobody can be replied to. Temporary prototype storage, like
-          cases.
+          anonymous (no contact details are collected), so nobody can be replied to.{" "}
+          {usesDatabase() ? "Saved in the database, like cases." : "Kept only in server memory on this server (no DATABASE_URL), so they can disappear."}
         </p>
         {requests.length === 0 ? (
           <p className="mt-4 text-sm text-slate">No requests yet.</p>
@@ -93,7 +94,7 @@ export default async function AdminCommunitiesPage() {
           </ul>
         )}
       </section>
-      <CreateCommunityForm />
+      <CreateCommunityForm persistent={usesDatabase()} />
     </div>
   );
 }

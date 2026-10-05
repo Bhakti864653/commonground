@@ -68,9 +68,8 @@ language.
   `/admin/communities`: a name, 1–12 approximate areas, and categories chosen from a fixed list
   (an "Other" category is always included). Each community gets a unique case-number prefix, so
   case numbers never collide across communities, and starts with no official sources or contacts
-  (none are ever invented). **Communities created this way are temporary**: like submitted cases,
-  they live in in-memory prototype storage and disappear on a server restart or redeploy — and on
-  a serverless host, a different instance may not have them — until a real database is added.
+  (none are ever invented). Like submitted cases, communities created this way are saved in the database
+  (in memory only when no `DATABASE_URL` is configured).
   Places a visitor adds from the place selector (and the built-in "Panama City" entry) are just
   labels saved in that browser; they show a "not set up yet" notice, never sample data. A place is
   added by country, state/province/region, city or town, and optional neighborhood (a country
@@ -114,9 +113,10 @@ keyless OpenStreetMap tiles; there is no 3D view.
 **Persistence:** cases are stored in Postgres (a free Neon project) when `DATABASE_URL` is set,
 and otherwise in an in-memory prototype store — both behind the same async API in
 `src/lib/store/case-store.ts`, and tested against the same behaviour suite. Database setup:
-[`db/README.md`](db/README.md) (`npm run db:migrate`, `npm run db:seed`). Runtime-created
-communities and place requests are still in memory only (lost on a restart or redeploy, and not
-shared between serverless instances).
+[`db/README.md`](db/README.md) (`npm run db:migrate`, `npm run db:seed`). Communities created at
+runtime (by moderators or visitors), moderators' source/contact changes, and place requests are
+stored the same way, behind `src/lib/store/community-store.ts`; the two built-in communities
+stay in code.
 
 ## Architecture notes
 
@@ -142,7 +142,7 @@ flowchart LR
   Admin --> Briefing["briefing agent (on-demand)"]
   Briefing -->|reasoning + tools| Groq
   Admin -->|approve suggestion| Store
-  Admin -->|set up community| Communities["community-store.ts (in-memory)"]
+  Admin -->|set up community| Communities["community-store.ts (Postgres, or in-memory)"]
 ```
 
 - `src/lib/schema/` — every `Report`/`Proposal`/`CommunityConfig` shape as a Zod schema.

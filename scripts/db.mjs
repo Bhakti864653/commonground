@@ -62,6 +62,18 @@ async function status() {
     );
     console.log("Cases:", cases.rows.map((r) => `${r.n} ${r.source_type}`).join(", ") || "none");
   }
+  const communityTables = await client.query("select to_regclass('public.communities') is not null as ok");
+  if (communityTables.rows[0].ok) {
+    const communities = await client.query(
+      "select status, count(*)::int as n from public.communities group by status order by status",
+    );
+    const requests = await client.query("select count(*)::int as n from public.community_requests");
+    console.log(
+      "Communities created at runtime:",
+      communities.rows.map((r) => `${r.n} ${r.status}`).join(", ") || "none",
+      `(plus the built-in ones in code); place requests: ${requests.rows[0].n}`,
+    );
+  }
 }
 
 const commands = { migrate, seed, status };

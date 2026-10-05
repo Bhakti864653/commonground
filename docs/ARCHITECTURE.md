@@ -53,9 +53,16 @@ Demonstration cases (`sourceType: "demonstration"`, `verificationState: "demonst
 come from one list, `demo-seed.ts`, used by the in-memory store and by the generated
 `db/seed.sql`.
 
-**Not in the database yet:** runtime-created communities, starter communities, and place
-requests (`community-store.ts`, `community-request-store.ts`) are still in memory only, with the
-limits above.
+**Communities** work the same way. The two built-in communities (`src/data/communities`) live
+in code; everything created or changed at runtime — moderator-created and starter communities,
+moderators' source/contact changes and their change log, and visitors' place requests — is
+stored behind `community-store.ts` (`CommunityRepository` in `community-repository.ts`):
+`sql-community-store.ts` in Postgres (tables in `db/migrations/0002_communities.sql`) or the
+`memory-community-*` stores. The rules both use live in `community-logic.ts` and
+`community-request-logic.ts`, and `community-repository-contract.test.ts` runs the same tests on
+both. Unique constraints on a community's name and case-number prefix stop two servers from
+creating the same place twice. Admin pages say whether changes are saved in the database or
+only in this server's memory (`usesDatabase()` in `src/lib/db/storage-mode.ts`).
 
 ## Why this stack
 
@@ -179,7 +186,7 @@ areas may share a direction, and directions are dropped if no center is given. N
 are rejected, ignoring case and accents. Each community gets an id and a case-number prefix
 (`casePrefix` in `src/lib/case-number/format-case-number.ts`) that no other community uses, so
 case numbers never collide. New communities start with **no** trusted sources or official
-contacts. They are stored in memory only — see [Persistence](#persistence).
+contacts. They are stored like cases — see [Persistence](#persistence).
 
 The resident place selector also lists a "Panama City" entry and any names a visitor adds.
 Those are labels saved in the visitor's browser, not communities: choosing one shows a "not set
@@ -232,7 +239,8 @@ there is no background scheduling. Full detail: [`MODERATION.md`](MODERATION.md)
 
 ## Known limitations (not built)
 
-- No database: cases and runtime-created communities are temporary (see above).
+- Without `DATABASE_URL` (e.g. a fresh local checkout), everything created at runtime is kept
+  in memory and is temporary (see [Persistence](#persistence)).
 - No resident accounts; ownership of a submission is proven only by its one-time management link.
 - A single shared moderator access code, not a multi-moderator role system.
 - No background or scheduled jobs; the briefing and case analysis run only when a moderator asks.

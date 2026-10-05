@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
@@ -13,9 +13,16 @@ import {
   VerificationStateSchema,
   AgentSuggestionSchema,
 } from "@/lib/schema/report";
+import { CommunityConfigSchema } from "@/lib/schema/community";
+import { LANGUAGE_CODES } from "@/lib/i18n/languages";
 
 const ROOT = join(__dirname, "../../../..");
-const MIGRATION = readFileSync(join(ROOT, "db/migrations/0001_init.sql"), "utf8");
+/** Every migration, in the order db:migrate applies them. */
+const MIGRATION = readdirSync(join(ROOT, "db/migrations"))
+  .filter((f) => f.endsWith(".sql"))
+  .sort()
+  .map((f) => readFileSync(join(ROOT, "db/migrations", f), "utf8"))
+  .join("\n");
 const SEED_PATH = join(ROOT, "db/seed.sql");
 
 /** The quoted values inside a named CHECK constraint, e.g. cases_status_check → ["received", ...]. */
@@ -37,6 +44,8 @@ describe("migration CHECK constraints match the app's Zod enums", () => {
     ["case_events_kind_check", TimelineEventKindSchema.options],
     ["agent_suggestions_kind_check", AgentSuggestionSchema.shape.kind.options],
     ["moderation_actions_action_check", ModerationActionSchema.shape.action.options],
+    ["communities_status_check", CommunityConfigSchema.shape.status.options],
+    ["community_requests_language_check", LANGUAGE_CODES],
   ])("%s", (constraint, options) => {
     expect(checkValues(constraint)).toEqual(sorted(options));
   });
@@ -140,7 +149,8 @@ describe("migration + seed on a real Postgres (PGlite)", () => {
       `select relname, relrowsecurity from pg_class
        where relnamespace = 'public'::regnamespace and relkind = 'r'`,
     );
-    expect(rows.length).toBe(7);
+    // 7 case tables (0001) + 4 community tables (0002).
+    expect(rows.length).toBe(11);
     expect(rows.filter((r) => !r.relrowsecurity).map((r) => r.relname)).toEqual([]);
   });
 
