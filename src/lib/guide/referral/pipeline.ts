@@ -80,7 +80,7 @@ export async function runReferralPipeline(caseNumber: string): Promise<ReferralP
     return { outcome: "skipped" as const, reason, steps };
   };
 
-  const targetCase = getCaseByCaseNumber(caseNumber);
+  const targetCase = await getCaseByCaseNumber(caseNumber);
   if (!targetCase) return skip("case_not_found");
   const community = getCommunity(targetCase.communityId);
   // A community with no routing (the fictional demo, any community a moderator set up) simply
@@ -100,7 +100,7 @@ export async function runReferralPipeline(caseNumber: string): Promise<ReferralP
   const emergency = detectEmergencyPhrase(targetCase.description);
   const urgency = emergency ? "high" : classification.urgency;
   steps.push({ step: "classify", outcome: `category ${classification.categoryAssessment}, urgency ${urgency}` });
-  addTimelineEvent(caseNumber, { kind: "ai_reviewed", actorType: "agent" });
+  await addTimelineEvent(caseNumber, { kind: "ai_reviewed", actorType: "agent" });
 
   if (emergency) return skip("emergency");
 
@@ -146,7 +146,7 @@ export async function runReferralPipeline(caseNumber: string): Promise<ReferralP
     .filter(Boolean)
     .join("\n");
 
-  const suggestion = addReferralSuggestion(
+  const suggestion = await addReferralSuggestion(
     caseNumber,
     {
       contactId: office.id,
@@ -160,7 +160,7 @@ export async function runReferralPipeline(caseNumber: string): Promise<ReferralP
   );
   if (!suggestion) return skip("draft_invalid");
 
-  addTimelineEvent(caseNumber, { kind: "referral_prepared", actorType: "agent", contactId: office.id });
-  addTimelineEvent(caseNumber, { kind: "awaiting_approval", actorType: "agent", contactId: office.id });
+  await addTimelineEvent(caseNumber, { kind: "referral_prepared", actorType: "agent", contactId: office.id });
+  await addTimelineEvent(caseNumber, { kind: "awaiting_approval", actorType: "agent", contactId: office.id });
   return { outcome: "prepared", suggestionId: suggestion.id, contactId: office.id, steps };
 }

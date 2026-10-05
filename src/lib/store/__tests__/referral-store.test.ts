@@ -4,8 +4,8 @@ import {
   addTimelineEvent,
   createCase,
   getCaseByCaseNumber,
-  __resetCaseStoreForTests,
-} from "@/lib/store/case-store";
+  __resetMemoryCaseStore,
+} from "@/lib/store/memory-case-store";
 import { toPublicCase, type ReferralDraft } from "@/lib/schema/report";
 import { buildApproximateArea } from "@/lib/privacy/approximate-area";
 import { buildConsentRecord } from "@/lib/privacy/consent";
@@ -30,7 +30,7 @@ const draft: ReferralDraft = {
 };
 
 describe("addTimelineEvent", () => {
-  beforeEach(() => __resetCaseStoreForTests());
+  beforeEach(() => __resetMemoryCaseStore());
 
   it("appends a non-status entry that keeps the case's current status", () => {
     const c = newCase();
@@ -51,7 +51,7 @@ describe("addTimelineEvent", () => {
 });
 
 describe("addReferralSuggestion", () => {
-  beforeEach(() => __resetCaseStoreForTests());
+  beforeEach(() => __resetMemoryCaseStore());
 
   it("stores a pending referral and replaces an older pending one", () => {
     const c = newCase();

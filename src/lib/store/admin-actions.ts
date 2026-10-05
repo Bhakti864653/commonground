@@ -33,7 +33,7 @@ export async function listCasesForAdmin(): Promise<Case[]> {
 
 export async function getCaseForAdmin(caseNumber: string): Promise<Case | null> {
   await requireAdmin();
-  return getCaseByCaseNumber(caseNumber) ?? null;
+  return (await getCaseByCaseNumber(caseNumber)) ?? null;
 }
 
 /**
@@ -44,7 +44,7 @@ export async function getCaseForAdmin(caseNumber: string): Promise<Case | null> 
  */
 export async function getAdminDuplicateClusters(): Promise<DuplicateCluster[]> {
   await requireAdmin();
-  return findDuplicateClusters(listAllCasesForAdmin().map(toPublicCase));
+  return findDuplicateClusters((await listAllCasesForAdmin()).map(toPublicCase));
 }
 
 export async function adminChangeStatus(

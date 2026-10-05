@@ -33,7 +33,9 @@ removed, ESLint is invoked directly (reflected in `package.json`'s `lint` script
 
 ## Persistence (prototype limitation)
 
-There is **no database yet**. Cases live in an in-memory store (`src/lib/store/case-store.ts`)
+There is **no database yet**. Cases live in an in-memory store (`src/lib/store/memory-case-store.ts`;
+the rest of the app uses the async API in `case-store.ts`, defined by the `CaseRepository`
+interface in `case-repository.ts`, so a database implementation can replace it)
 and runtime-created communities in another (`src/lib/store/community-store.ts`), both attached
 to `globalThis` so they survive dev-mode hot reload. That means:
 

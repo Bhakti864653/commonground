@@ -31,7 +31,7 @@ describe("analyzeCaseForSuggestions (orchestration, mocked model boundary)", () 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getGroqClient).mockReturnValue({} as ReturnType<typeof getGroqClient>);
-    vi.mocked(getCaseByCaseNumber).mockImplementation((caseNumber: string) =>
+    vi.mocked(getCaseByCaseNumber).mockImplementation(async (caseNumber: string) =>
       caseNumber === TARGET_CASE.publicCaseNumber
         ? TARGET_CASE
         : caseNumber === OTHER_CASE.publicCaseNumber

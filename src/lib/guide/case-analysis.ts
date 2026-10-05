@@ -72,7 +72,7 @@ export async function analyzeCaseForSuggestions(caseNumber: string): Promise<Cas
   const client = getGroqClient();
   if (!client) return { suggestions: [], trace: [], decisions: [] };
 
-  const targetCase = getCaseByCaseNumber(caseNumber);
+  const targetCase = await getCaseByCaseNumber(caseNumber);
   if (!targetCase) return { suggestions: [], trace: [], decisions: [] };
 
   const [duplicate, status, verification] = await Promise.all([
@@ -87,10 +87,21 @@ export async function analyzeCaseForSuggestions(caseNumber: string): Promise<Cas
     (s): s is CaseAnalysisSuggestion => s !== null && RawSuggestionSchema.safeParse(s).success,
   );
 
+  // Validation is synchronous (it runs before and after critique), so look up every case a
+  // duplicate suggestion points to first. Critique only keeps or discards, so this set is complete.
+  const referencedCommunities = new Map<string, string | undefined>();
+  for (const candidate of candidates) {
+    if (candidate.kind === "duplicate" && !referencedCommunities.has(candidate.suggestedValue)) {
+      referencedCommunities.set(
+        candidate.suggestedValue,
+        (await getCaseByCaseNumber(candidate.suggestedValue))?.communityId,
+      );
+    }
+  }
   const context: SuggestionValidationContext = {
     targetCaseNumber: targetCase.publicCaseNumber,
     targetCommunityId: targetCase.communityId,
-    lookupCaseCommunity: (n) => getCaseByCaseNumber(n)?.communityId,
+    lookupCaseCommunity: (n) => referencedCommunities.get(n),
   };
 
   const decisions: SuggestionDecision[] = [];

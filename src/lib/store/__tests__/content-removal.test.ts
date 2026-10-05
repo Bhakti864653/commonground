@@ -4,14 +4,14 @@ vi.mock("@/lib/admin/auth", () => ({ requireAdmin: vi.fn() }));
 
 import { adminRemoveContent, adminRestoreContent } from "@/lib/store/admin-actions";
 import {
-  __resetCaseStoreForTests,
+  __resetMemoryCaseStore,
   createCase,
   flagInaccuracy,
   getCaseByCaseNumber,
   listCasesForCommunity,
   removeCaseContent,
   restoreCaseContent,
-} from "@/lib/store/case-store";
+} from "@/lib/store/memory-case-store";
 import { executeTool } from "@/lib/guide/tools";
 import { toPublicCase } from "@/lib/schema/report";
 import { buildApproximateArea } from "@/lib/privacy/approximate-area";
@@ -30,7 +30,7 @@ function makeCase(description = "Mi vecino Juan Pérez tira basura, su teléfono
 }
 
 describe("moderator content removal", () => {
-  beforeEach(() => __resetCaseStoreForTests());
+  beforeEach(() => __resetMemoryCaseStore());
 
   it("hides the content from lists and the public shape, but keeps the case and its reason", () => {
     const c = makeCase();

@@ -10,7 +10,7 @@ import {
   listCommunities,
   startCommunityForPlace,
 } from "@/lib/store/community-store";
-import { createCase, __resetCaseStoreForTests, listCasesForCommunity } from "@/lib/store/case-store";
+import { createCase, __resetMemoryCaseStore, listCasesForCommunity } from "@/lib/store/memory-case-store";
 import { startCommunityForPlaceAction } from "@/lib/store/actions";
 import { CommunityConfigSchema } from "@/lib/schema/community";
 import { buildApproximateArea } from "@/lib/privacy/approximate-area";
@@ -23,7 +23,7 @@ const kensington = { country: "Canada", region: "Ontario", city: "Toronto", neig
 describe("starter communities", () => {
   beforeEach(() => {
     __resetCommunityStoreForTests();
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
   });
 
   it("starts a schema-valid community for a new place, clearly marked as a starter", () => {

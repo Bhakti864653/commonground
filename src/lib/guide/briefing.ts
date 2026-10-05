@@ -103,7 +103,7 @@ export async function generateCommunityBriefing(communityId: string): Promise<Co
 
   // Nothing to brief — skip the API call entirely rather than asking the model to reason about
   // zero cases.
-  if (listCasesForCommunity(communityId).length === 0) {
+  if ((await listCasesForCommunity(communityId)).length === 0) {
     return { items: [], generatedAt: new Date().toISOString() };
   }
 
@@ -149,7 +149,7 @@ export async function generateCommunityBriefing(communityId: string): Promise<Co
           }
         }
         if (call.function.name === "list_all_cases_for_briefing") {
-          const cases = listCasesForCommunity(communityId)
+          const cases = (await listCasesForCommunity(communityId))
             .map(summarizeCase)
             .filter((c): c is NonNullable<typeof c> => c !== null);
           knownCaseNumbers = new Set(cases.map((c) => c.publicCaseNumber));

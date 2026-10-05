@@ -1,7 +1,7 @@
 import type Groq from "groq-sdk";
 import { getCaseByCaseNumber, listOpenCasesForCommunity } from "@/lib/store/case-store";
 import { getCommunity as getCommunityById } from "@/lib/store/community-store";
-import { toPublicCase, type PublicCase } from "@/lib/schema/report";
+import { toPublicCase, type Case, type PublicCase } from "@/lib/schema/report";
 
 /**
  * Shared by both Guide surfaces (admin case-analysis and the resident chat). Every tool is
@@ -50,7 +50,7 @@ type ToolContext = {
  * shouldn't reach the model in the first place, same as `PublicCase` does for page rendering.
  */
 export function summarizeCase(
-  c: ReturnType<typeof getCaseByCaseNumber>,
+  c: Case | undefined,
 ): Pick<
   PublicCase,
   "publicCaseNumber" | "type" | "categoryId" | "description" | "status" | "verificationState" | "createdAt"
@@ -76,7 +76,7 @@ export async function executeTool(
 ): Promise<unknown> {
   switch (name) {
     case "search_similar_cases": {
-      const cases = listOpenCasesForCommunity(context.communityId, context.excludeCaseNumber);
+      const cases = await listOpenCasesForCommunity(context.communityId, context.excludeCaseNumber);
       return { cases: cases.map(summarizeCase) };
     }
     case "get_case_details": {
@@ -87,7 +87,7 @@ export async function executeTool(
         return { error: "Invalid arguments" };
       }
       if (!caseNumber) return { error: "Missing caseNumber" };
-      const found = getCaseByCaseNumber(caseNumber);
+      const found = await getCaseByCaseNumber(caseNumber);
       if (!found || found.communityId !== context.communityId) {
         return { error: "Case not found in this community" };
       }

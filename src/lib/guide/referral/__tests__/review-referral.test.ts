@@ -9,8 +9,8 @@ import {
   createCase,
   getCaseByCaseNumber,
   removeCaseContent,
-  __resetCaseStoreForTests,
-} from "@/lib/store/case-store";
+  __resetMemoryCaseStore,
+} from "@/lib/store/memory-case-store";
 import { toPublicCase } from "@/lib/schema/report";
 import { buildApproximateArea } from "@/lib/privacy/approximate-area";
 import { buildConsentRecord } from "@/lib/privacy/consent";
@@ -45,7 +45,7 @@ const stored = (caseNumber: string) => getCaseByCaseNumber(caseNumber)!;
 
 describe("reviewReferral", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
     vi.mocked(requireAdmin).mockResolvedValue(undefined);
   });
 

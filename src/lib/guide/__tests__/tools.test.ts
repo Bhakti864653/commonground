@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { executeTool } from "@/lib/guide/tools";
-import { addAdminNote, createCase, __resetCaseStoreForTests } from "@/lib/store/case-store";
+import { addAdminNote, createCase, __resetMemoryCaseStore } from "@/lib/store/memory-case-store";
 import { buildApproximateArea } from "@/lib/privacy/approximate-area";
 import { buildConsentRecord } from "@/lib/privacy/consent";
 import { SANTIAGO_VERAGUAS } from "@/data/communities";
@@ -18,7 +18,7 @@ function createTestCase() {
 
 describe("executeTool", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
   });
 
   it("search_similar_cases never includes any private field, even after a private note is added", () => {

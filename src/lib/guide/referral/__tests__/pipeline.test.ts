@@ -9,7 +9,7 @@ vi.mock("@/lib/guide/groq-client", () => ({
 }));
 
 import { runReferralPipeline } from "@/lib/guide/referral/pipeline";
-import { createCase, getCaseByCaseNumber, __resetCaseStoreForTests } from "@/lib/store/case-store";
+import { createCase, getCaseByCaseNumber, __resetMemoryCaseStore } from "@/lib/store/memory-case-store";
 import { toPublicCase } from "@/lib/schema/report";
 import { buildApproximateArea } from "@/lib/privacy/approximate-area";
 import { buildConsentRecord } from "@/lib/privacy/consent";
@@ -63,7 +63,7 @@ const suggestions = (caseNumber: string) => getCaseByCaseNumber(caseNumber)!.age
 
 describe("runReferralPipeline", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
     create.mockReset();
     hasKey = true;
     vi.spyOn(console, "warn").mockImplementation(() => {});

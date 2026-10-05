@@ -10,7 +10,7 @@ import { generateCommunityBriefing } from "@/lib/guide/briefing";
 import { getGroqClient } from "@/lib/guide/groq-client";
 import { listCasesForCommunity } from "@/lib/store/case-store";
 import { SANTIAGO_VERAGUAS } from "@/data/communities";
-import { createCase, __resetCaseStoreForTests } from "@/lib/store/case-store";
+import { createCase, __resetMemoryCaseStore as __resetCaseStoreForTests } from "@/lib/store/memory-case-store";
 import { buildApproximateArea } from "@/lib/privacy/approximate-area";
 import { buildConsentRecord } from "@/lib/privacy/consent";
 import type Groq from "groq-sdk";
@@ -43,7 +43,7 @@ describe("generateCommunityBriefing", () => {
   });
 
   it("returns an empty briefing without calling the model when the community has no cases", async () => {
-    vi.mocked(listCasesForCommunity).mockReturnValue([]);
+    vi.mocked(listCasesForCommunity).mockResolvedValue([]);
     const create = vi.fn();
     vi.mocked(getGroqClient).mockReturnValue(mockClient(create));
 
@@ -53,7 +53,7 @@ describe("generateCommunityBriefing", () => {
   });
 
   it("returns null (not a throw) when the Groq call fails", async () => {
-    vi.mocked(listCasesForCommunity).mockReturnValue([makeRealCase("A real case")]);
+    vi.mocked(listCasesForCommunity).mockResolvedValue([makeRealCase("A real case")]);
     vi.mocked(getGroqClient).mockReturnValue(
       mockClient(() => {
         throw new Error("groq unavailable");
@@ -66,7 +66,7 @@ describe("generateCommunityBriefing", () => {
 
   it("rejects a briefing item referencing an invented case number", async () => {
     const real = makeRealCase("A real case");
-    vi.mocked(listCasesForCommunity).mockReturnValue([real]);
+    vi.mocked(listCasesForCommunity).mockResolvedValue([real]);
 
     // The model's first turn calls the list tool; its second turn records the briefing.
     let call = 0;
@@ -85,7 +85,7 @@ describe("generateCommunityBriefing", () => {
 
   it("rejects a briefing item referencing a real case number from a different community", async () => {
     const santiagoCase = makeRealCase("A Santiago case");
-    vi.mocked(listCasesForCommunity).mockImplementation((communityId: string) =>
+    vi.mocked(listCasesForCommunity).mockImplementation(async (communityId: string) =>
       communityId === SANTIAGO_VERAGUAS.id ? [santiagoCase] : [],
     );
 
@@ -106,7 +106,7 @@ describe("generateCommunityBriefing", () => {
 
   it("accepts a briefing item referencing a real case number the list tool actually returned", async () => {
     const real = makeRealCase("A real case");
-    vi.mocked(listCasesForCommunity).mockReturnValue([real]);
+    vi.mocked(listCasesForCommunity).mockResolvedValue([real]);
 
     let call = 0;
     const client = mockClient(() => {
@@ -130,7 +130,7 @@ describe("generateCommunityBriefing", () => {
     // tools; this is a separate implementation (list_all_cases_for_briefing), so it gets its
     // own direct check.
     real.adminNotes.push({ id: "note-1", authorId: "admin", createdAt: new Date().toISOString(), note: "PRIVATE" });
-    vi.mocked(listCasesForCommunity).mockReturnValue([real]);
+    vi.mocked(listCasesForCommunity).mockResolvedValue([real]);
 
     let sentToolContent = "";
     let call = 0;

@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { listCommunitiesForResidents, searchCases } from "@/lib/store/actions";
 import { adminCreateCommunity, adminListCommunities } from "@/lib/store/admin-community-actions";
 import { __resetCommunityStoreForTests } from "@/lib/store/community-store";
-import { __resetCaseStoreForTests, createCase } from "@/lib/store/case-store";
+import { __resetMemoryCaseStore, createCase } from "@/lib/store/memory-case-store";
 import { buildConsentRecord } from "@/lib/privacy/consent";
 
 const ALL = { query: "", type: "all", status: "all", categoryId: "all", areaId: "all" };
@@ -27,7 +27,7 @@ function seed(categoryId: string, areaId: string, description: string, daysAgo: 
 
 describe("searchCases (server-side search)", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
     seed("flooding-drainage", "norte", "Drenaje tapado en la calle principal", 5);
     seed("garbage-sanitation", "sur", "Basura sin recoger", 3);
     seed("flooding-drainage", "norte", "Se inunda cada vez que llueve", 1);
@@ -96,7 +96,7 @@ describe("communities for residents", () => {
   });
 
   it("lets a resident submit a case to a created community, with its own case-number prefix", async () => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
     const result = await adminCreateCommunity({
       displayName: "Ciudad de Panamá",
       country: "Panamá",

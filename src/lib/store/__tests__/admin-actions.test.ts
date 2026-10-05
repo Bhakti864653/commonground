@@ -13,7 +13,7 @@ import {
   getCaseForAdmin,
   getAdminDuplicateClusters,
 } from "@/lib/store/admin-actions";
-import { createCase, __resetCaseStoreForTests } from "@/lib/store/case-store";
+import { createCase, __resetMemoryCaseStore } from "@/lib/store/memory-case-store";
 import { buildApproximateArea } from "@/lib/privacy/approximate-area";
 import { buildConsentRecord } from "@/lib/privacy/consent";
 import { SANTIAGO_VERAGUAS } from "@/data/communities";
@@ -31,7 +31,7 @@ function makeRealCase() {
 
 describe("admin server actions reject unauthenticated calls", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
     vi.mocked(requireAdmin).mockRejectedValue(new Error("Admin authentication required"));
   });
 
@@ -49,7 +49,7 @@ describe("admin server actions reject unauthenticated calls", () => {
 
 describe("adminSetVerification requires approved evidence for officially_verified", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
     vi.mocked(requireAdmin).mockResolvedValue(undefined);
   });
 
@@ -181,7 +181,7 @@ describe("adminSetVerification rejects invalid runtime input from a direct call"
   type Args = Parameters<typeof adminSetVerification>;
 
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
     vi.mocked(requireAdmin).mockResolvedValue(undefined);
   });
 

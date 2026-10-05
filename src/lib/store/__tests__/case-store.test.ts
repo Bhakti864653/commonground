@@ -11,9 +11,9 @@ import {
   markDuplicate,
   markInaccuracyFlagReviewed,
   setVerificationState,
-  __resetCaseStoreForTests,
+  __resetMemoryCaseStore,
   type NewCaseInput,
-} from "@/lib/store/case-store";
+} from "@/lib/store/memory-case-store";
 import { buildApproximateArea } from "@/lib/privacy/approximate-area";
 import { buildConsentRecord } from "@/lib/privacy/consent";
 import { SANTIAGO_VERAGUAS, RIVERBEND_DEMO } from "@/data/communities";
@@ -35,7 +35,7 @@ function baseInput(overrides: Partial<NewCaseInput> = {}): NewCaseInput {
 
 describe("createCase", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
   });
 
   it("assigns a case number scoped per community per year, incrementing per submission", () => {
@@ -133,7 +133,7 @@ describe("createCase", () => {
 
 describe("getCaseByCaseNumber / listCasesForCommunity", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
   });
 
   it("looks a case back up by its public case number", () => {
@@ -168,7 +168,7 @@ describe("getCaseByCaseNumber / listCasesForCommunity", () => {
 
 describe("deleteCase", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
   });
 
   it("deletes when the token matches, and the case then behaves as not-found", () => {
@@ -196,7 +196,7 @@ describe("deleteCase", () => {
 
 describe("flagInaccuracy", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
   });
 
   it("requires no token, and records an optional note", () => {
@@ -220,7 +220,7 @@ describe("flagInaccuracy", () => {
 
 describe("changeCaseStatus", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
   });
 
   it("updates status, appends a moderator status event, and a moderation action", () => {
@@ -263,7 +263,7 @@ describe("changeCaseStatus", () => {
 
 describe("setVerificationState", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
   });
 
   const REAL_SOURCE = {
@@ -301,7 +301,7 @@ describe("setVerificationState", () => {
 
 describe("markDuplicate", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
   });
 
   it("sets isDuplicateOf when both cases exist and differ", () => {
@@ -326,7 +326,7 @@ describe("markDuplicate", () => {
 
 describe("addAdminNote", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
   });
 
   it("adds a private note distinct from public fields", () => {
@@ -345,7 +345,7 @@ describe("addAdminNote", () => {
 
 describe("markInaccuracyFlagReviewed", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
   });
 
   it("marks a flag reviewed without affecting others", () => {
@@ -362,7 +362,7 @@ describe("markInaccuracyFlagReviewed", () => {
 
 describe("listAllCasesForAdmin", () => {
   beforeEach(() => {
-    __resetCaseStoreForTests();
+    __resetMemoryCaseStore();
   });
 
   it("lists cases across every community, excluding deleted ones", () => {

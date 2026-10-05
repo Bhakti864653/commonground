@@ -111,7 +111,8 @@ runtime-validated schema, the single source of truth) · Vitest · Groq (`groq-s
 Guide's real reasoning. MapLibre GL (`maplibre-gl`) draws the street map from OpenFreeMap's
 keyless OpenStreetMap tiles; there is no 3D view.
 
-**Persistence (prototype phase):** in-memory stores (`src/lib/store/case-store.ts` for cases,
+**Persistence (prototype phase):** in-memory stores (`src/lib/store/memory-case-store.ts` for cases, behind the async
+`case-store.ts` API,
 `src/lib/store/community-store.ts` for runtime-created communities), `globalThis`-backed so they
 survive dev-mode hot reload. There is no database yet: submitted cases and created communities
 are lost on a restart or redeploy, and on a serverless host (Vercel) they aren't shared between
@@ -123,7 +124,7 @@ starts empty. A real database is the documented next step, per `docs/ARCHITECTUR
 ```mermaid
 flowchart LR
   Resident -->|submit / browse / chat| AppShell["(app)/ resident shell"]
-  AppShell --> Store["case-store.ts (mock, in-memory)"]
+  AppShell --> Store["case-store.ts (in-memory for now)"]
   AppShell -->|Explore search| Search["searchCases (server)"]
   Search --> Store
   AppShell --> Guide["Guide (resident chat)"]

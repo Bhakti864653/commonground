@@ -27,7 +27,7 @@ import { runReferralPipeline } from "@/lib/guide/referral/pipeline";
 export async function submitCase(
   input: NewCaseInput,
 ): Promise<{ publicCaseNumber: string; managementToken: string }> {
-  const created = createCase(input);
+  const created = await createCase(input);
   // The referral pipeline (several Groq calls) runs after the response, so the resident gets
   // their case number immediately. It never throws by design; the catch only guards against a
   // bug, which must not surface as a failed submission after the fact.
@@ -42,12 +42,12 @@ export async function submitCase(
 }
 
 export async function listCasesForActivity(communityId: string): Promise<PublicCase[]> {
-  return listCasesForCommunity(communityId).map(toPublicCase);
+  return (await listCasesForCommunity(communityId)).map(toPublicCase);
 }
 
 /** Aggregate counts only (never a specific case's private data) — safe to show publicly. */
 export async function getTrendsForActivity(communityId: string): Promise<Trend[]> {
-  return detectTrends(listCasesForCommunity(communityId).map(toPublicCase));
+  return detectTrends((await listCasesForCommunity(communityId)).map(toPublicCase));
 }
 
 export async function deleteSubmission(
@@ -145,7 +145,7 @@ export async function searchCases(communityId: string, rawFilters: unknown): Pro
   const parsed = SearchFiltersSchema.safeParse(rawFilters);
   if (!community || !parsed.success) return { total: 0, items: [] };
 
-  const all = listCasesForCommunity(community.id)
+  const all = (await listCasesForCommunity(community.id))
     .map(toPublicCase)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const indexById = new Map(all.map((c, i) => [c.id, i]));

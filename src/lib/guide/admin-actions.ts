@@ -27,7 +27,7 @@ export async function runCaseAnalysis(
 ): Promise<{ ok: boolean; trace: AgentTraceStep[]; decisions: SuggestionDecision[] }> {
   await requireAdmin();
   const { suggestions, trace, decisions } = await analyzeCaseForSuggestions(caseNumber);
-  const ok = suggestions.length === 0 ? true : addAgentSuggestions(caseNumber, suggestions);
+  const ok = suggestions.length === 0 ? true : await addAgentSuggestions(caseNumber, suggestions);
   return { ok, trace, decisions };
 }
 
@@ -50,25 +50,25 @@ export async function reviewAgentSuggestion(
   await requireAdmin();
 
   if (decision === "reject") {
-    const target = getCaseByCaseNumber(caseNumber)?.agentSuggestions.find((s) => s.id === suggestionId);
+    const target = (await getCaseByCaseNumber(caseNumber))?.agentSuggestions.find((s) => s.id === suggestionId);
     if (target?.kind === "referral") return false;
     return setAgentSuggestionStatus(caseNumber, suggestionId, "rejected");
   }
 
-  const found = getCaseByCaseNumber(caseNumber);
+  const found = await getCaseByCaseNumber(caseNumber);
   const suggestion = found?.agentSuggestions.find((s) => s.id === suggestionId);
   // Referrals have their own review path (reviewReferral), which records the public outcome.
   if (!suggestion || suggestion.status !== "pending" || suggestion.kind === "referral") return false;
 
   let applied = false;
   if (suggestion.kind === "duplicate") {
-    applied = markDuplicate(caseNumber, suggestion.suggestedValue, ACTOR_ID);
+    applied = await markDuplicate(caseNumber, suggestion.suggestedValue, ACTOR_ID);
   } else if (suggestion.kind === "status") {
     const parsed = ReportStatusSchema.safeParse(suggestion.suggestedValue);
-    applied = parsed.success && changeCaseStatus(caseNumber, parsed.data, ACTOR_ID);
+    applied = parsed.success && (await changeCaseStatus(caseNumber, parsed.data, ACTOR_ID));
   } else if (suggestion.kind === "verification") {
     const parsed = VerificationStateSchema.safeParse(suggestion.suggestedValue);
-    applied = parsed.success && setVerificationState(caseNumber, parsed.data, ACTOR_ID);
+    applied = parsed.success && (await setVerificationState(caseNumber, parsed.data, ACTOR_ID));
   }
 
   if (!applied) return false;
@@ -93,12 +93,12 @@ export async function reviewReferral(
   if (typeof caseNumber !== "string" || typeof suggestionId !== "string") return { ok: false, reason: "Invalid request." };
 
   if (decision === "reject") {
-    return rejectReferral(caseNumber, suggestionId, ACTOR_ID_MODERATOR)
+    return (await rejectReferral(caseNumber, suggestionId, ACTOR_ID_MODERATOR))
       ? { ok: true }
       : { ok: false, reason: "This referral is no longer pending." };
   }
 
-  const found = getCaseByCaseNumber(caseNumber);
+  const found = await getCaseByCaseNumber(caseNumber);
   const suggestion = found?.agentSuggestions.find((s) => s.id === suggestionId);
   if (!found || !suggestion?.referral) return { ok: false, reason: "This referral is no longer pending." };
 
@@ -111,7 +111,7 @@ export async function reviewReferral(
     return { ok: false, reason: "The office is no longer a verified, non-emergency contact. Reject this referral instead." };
   }
 
-  return approveReferral(caseNumber, suggestionId, message, ACTOR_ID_MODERATOR)
+  return (await approveReferral(caseNumber, suggestionId, message, ACTOR_ID_MODERATOR))
     ? { ok: true }
     : { ok: false, reason: "This referral is no longer pending." };
 }
