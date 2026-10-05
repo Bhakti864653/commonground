@@ -25,6 +25,9 @@ export function Footer() {
           <Link href="/resources" className="w-max font-bold text-ink underline underline-offset-4">
             {INFO.resources.title[language]}
           </Link>
+          <Link href="/agent" className="w-max font-bold text-ink underline underline-offset-4">
+            {FIELD.agent.nav[language]}
+          </Link>
         </div>
       </div>
     </footer>

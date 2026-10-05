@@ -9,11 +9,11 @@ import { FIELD } from "@/lib/i18n/field-notes";
  * a full reload, not a retry: the usual cause is a tab left open across a deploy, whose server
  * function ids no longer exist — calling them again would fail the same way.
  */
-export function CasesLoadError({ language }: { language: Language }) {
+export function CasesLoadError({ language, message }: { language: Language; message?: string }) {
   const t = FIELD.home;
   return (
     <div role="alert" className="flex flex-col items-start gap-3 border-t border-[#9faf9d] py-9 text-slate">
-      <p>{t.loadError[language]}</p>
+      <p>{message ?? t.loadError[language]}</p>
       <button
         type="button"
         onClick={() => window.location.reload()}

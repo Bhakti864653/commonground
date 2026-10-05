@@ -1,4 +1,4 @@
-import { Home, MessageSquareText, Phone, Plus, Search, ShieldCheck, type LucideIcon } from "lucide-react";
+import { Bot, Home, MessageSquareText, Phone, Plus, Search, ShieldCheck, type LucideIcon } from "lucide-react";
 import { FIELD } from "@/lib/i18n/field-notes";
 import { INFO } from "@/lib/i18n/community-info";
 import type { LocalizedText } from "@/lib/i18n/languages";
@@ -23,6 +23,8 @@ export const NAV_ITEMS: NavItem[] = [
   { key: "explore", label: FIELD.shell.nav.explore, icon: Search, href: "/activity", alsoActiveOn: ["/cases"] },
   { key: "submit", label: FIELD.shell.nav.submit, icon: Plus, href: "/report/new" },
   { key: "guide", label: FIELD.shell.nav.guide, icon: MessageSquareText, href: "/guide" },
+  // What the AI agent did, in public. The phone bar only fits five, so phones reach it from the footer.
+  { key: "agent", label: FIELD.agent.nav, icon: Bot, href: "/agent", desktopOnly: true },
   { key: "resources", label: INFO.resources.nav, icon: Phone, href: "/resources", desktopOnly: true },
   // The real, password-protected moderator workspace.
   { key: "moderation", label: FIELD.shell.nav.moderation, icon: ShieldCheck, href: "/admin" },
