@@ -177,8 +177,8 @@ describe("migration + seed on a real Postgres (PGlite)", () => {
       `select relname, relrowsecurity from pg_class
        where relnamespace = 'public'::regnamespace and relkind = 'r'`,
     );
-    // 7 case tables (0001) + 4 community tables (0002).
-    expect(rows.length).toBe(11);
+    // 7 case tables (0001) + 4 community tables (0002) + 2 moderator tables (0005).
+    expect(rows.length).toBe(13);
     expect(rows.filter((r) => !r.relrowsecurity).map((r) => r.relname)).toEqual([]);
   });
 
