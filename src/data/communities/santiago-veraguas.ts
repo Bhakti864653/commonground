@@ -4,6 +4,19 @@ import { CommunityConfigSchema, type CommunityConfig } from "@/lib/schema/commun
  * The first pilot community. Per spec §3: never mention David, Chiriquí, Cherokee, or any
  * other location here — "Santiago de Veraguas, Panama" only, exactly as configured below.
  */
+/** How the public timeline names the Alcaldía (article included, as each sentence needs it). */
+const ALCALDIA_PUBLIC_NAME = {
+  label: "the Santiago mayor's office (Alcaldía)",
+  labelEs: "la Alcaldía de Santiago",
+  labels: {
+    pt: "a Prefeitura de Santiago (Alcaldía)",
+    fr: "la mairie de Santiago (Alcaldía)",
+    zh: "圣地亚哥市政府（Alcaldía）",
+    hi: "सैंटियागो नगरपालिका (Alcaldía)",
+    it: "il Comune di Santiago (Alcaldía)",
+  },
+};
+
 const santiagoVeraguasConfig: CommunityConfig = {
   id: "santiago-veraguas",
   displayName: "Santiago de Veraguas",
@@ -190,21 +203,25 @@ const santiagoVeraguasConfig: CommunityConfig = {
     {
       categoryId: "flooding-drainage",
       contactId: "alcaldia-santiago-oficina",
+      publicName: ALCALDIA_PUBLIC_NAME,
       verificationNote: "No verified drainage office yet; the Alcaldía is the municipal office for the district.",
     },
     {
       categoryId: "garbage-sanitation",
       contactId: "alcaldia-santiago-oficina",
+      publicName: ALCALDIA_PUBLIC_NAME,
       verificationNote: "No verified sanitation office yet; the Alcaldía is the municipal office for the district.",
     },
     {
       categoryId: "road-infrastructure",
       contactId: "alcaldia-santiago-oficina",
+      publicName: ALCALDIA_PUBLIC_NAME,
       verificationNote: "No verified public-works office yet; the Alcaldía is the municipal office for the district.",
     },
     {
       categoryId: "other",
       contactId: "alcaldia-santiago-oficina",
+      publicName: ALCALDIA_PUBLIC_NAME,
       verificationNote: "Default: no clearer office applies, so the municipal office for the district.",
     },
   ],

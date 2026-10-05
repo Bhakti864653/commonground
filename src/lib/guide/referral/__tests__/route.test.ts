@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CommunityConfigSchema, type CommunityConfig } from "@/lib/schema/community";
 import { SANTIAGO_VERAGUAS, RIVERBEND_DEMO } from "@/data/communities";
-import { routeReferral } from "@/lib/guide/referral/route";
+import { routeReferral, timelineOfficeNames } from "@/lib/guide/referral/route";
 
 describe("Santiago de Veraguas referral routing", () => {
   it("routes every category, and only to a verified non-emergency contact", () => {
@@ -53,5 +53,20 @@ describe("referralRouting schema", () => {
 
   it("requires a verification note on every route", () => {
     expect(parse([{ categoryId: "other", contactId: "alcaldia-santiago-oficina", verificationNote: "" }]).success).toBe(false);
+  });
+});
+
+describe("timelineOfficeNames", () => {
+  it("uses the routing's short public name for a routed office, in every language", () => {
+    const alcaldia = timelineOfficeNames(SANTIAGO_VERAGUAS).find((o) => o.id === "alcaldia-santiago-oficina")!;
+    expect(alcaldia.nameEs).toBe("la Alcaldía de Santiago");
+    expect(alcaldia.name).not.toContain("office line");
+    expect(Object.keys(alcaldia.labels ?? {}).sort()).toEqual(["fr", "hi", "it", "pt", "zh"]);
+  });
+
+  it("keeps the contact's own name for offices with no route", () => {
+    const named = timelineOfficeNames(SANTIAGO_VERAGUAS).find((o) => o.id === "emergencias-911")!;
+    const contact = SANTIAGO_VERAGUAS.officialContacts.find((c) => c.id === "emergencias-911")!;
+    expect(named.nameEs).toBe(contact.nameEs);
   });
 });

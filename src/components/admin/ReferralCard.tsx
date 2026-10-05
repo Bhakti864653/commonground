@@ -73,6 +73,7 @@ export function ReferralCard({
         <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${URGENCY_STYLE[referral.urgency]}`}>
           Urgency: {referral.urgency}
         </span>
+        {referral.urgencyReason && <span className="text-xs text-ink/70">— {referral.urgencyReason}</span>}
         {!isPending && <span className="text-xs text-slate">({suggestion.status})</span>}
       </div>
 

@@ -5,7 +5,8 @@ import { addReferralSuggestion, addTimelineEvent, getCaseByCaseNumber } from "@/
 import { getCommunity } from "@/lib/store/community-store";
 import { classifyCase, critiqueReferral, draftReferral } from "./agents";
 import { routeReferral } from "./route";
-import { normalizeClassification, validateReferralMessage } from "./validate";
+import { addCaseReference, formatReportDate, normalizeClassification, validateReferralMessage } from "./validate";
+import { publicCaseUrl } from "@/lib/site-url";
 
 export type ReferralStep = "classify" | "route" | "draft" | "critique";
 
@@ -114,8 +115,9 @@ export async function runReferralPipeline(caseNumber: string): Promise<ReferralP
     draftReferral(client, targetCase, community, office),
   );
   if (!draft) return skip("draft_failed");
-  const message = draft.message.trim();
-  const validation = validateReferralMessage(message, caseNumber);
+  const caseUrl = publicCaseUrl(caseNumber);
+  const message = addCaseReference(draft.message.trim(), formatReportDate(targetCase.createdAt), caseUrl);
+  const validation = validateReferralMessage(message, caseNumber, caseUrl);
   if (!validation.valid) {
     steps.push({ step: "draft", outcome: `rejected: ${validation.reason}` });
     return skip("draft_invalid");
@@ -134,6 +136,7 @@ export async function runReferralPipeline(caseNumber: string): Promise<ReferralP
 
   const reasoning = [
     `Classification: ${classification.reasoning}`,
+    `Urgency (${urgency}): ${emergency ? "matches an emergency phrase." : classification.urgencyReason}`,
     classification.categoryAssessment === "questioned"
       ? `Category questioned — "${classification.suggestedCategoryId}" may fit better.`
       : null,
@@ -148,6 +151,7 @@ export async function runReferralPipeline(caseNumber: string): Promise<ReferralP
     {
       contactId: office.id,
       urgency,
+      urgencyReason: classification.urgencyReason,
       message,
       categoryAssessment: classification.categoryAssessment,
       suggestedCategoryId: classification.suggestedCategoryId,

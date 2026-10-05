@@ -138,6 +138,13 @@ export const ReferralRouteSchema = z.object({
   categoryId: z.string(),
   contactId: z.string(),
   verificationNote: z.string().min(1),
+  /**
+   * How the public timeline names the office ("la Alcaldía de Santiago"), including the article
+   * each language needs — the contact's own name is a phone-line label ("…, teléfono de oficina").
+   */
+  publicName: z
+    .object({ label: z.string().min(1), labelEs: z.string().min(1), labels: ExtraTranslationsSchema.optional() })
+    .optional(),
 });
 export type ReferralRoute = z.infer<typeof ReferralRouteSchema>;
 

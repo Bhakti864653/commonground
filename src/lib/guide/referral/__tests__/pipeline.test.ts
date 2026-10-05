@@ -14,6 +14,8 @@ import { toPublicCase } from "@/lib/schema/report";
 import { buildApproximateArea } from "@/lib/privacy/approximate-area";
 import { buildConsentRecord } from "@/lib/privacy/consent";
 import { SANTIAGO_VERAGUAS, RIVERBEND_DEMO } from "@/data/communities";
+import { formatReportDate } from "@/lib/guide/referral/validate";
+import { publicCaseUrl } from "@/lib/site-url";
 
 const TOOL_STEP = {
   record_classification: "classify",
@@ -44,7 +46,12 @@ function newCase(description = "La alcantarilla del área norte lleva tres días
   });
 }
 
-const classify = { categoryAssessment: "confirmed", urgency: "medium", reasoning: "Drain blocked for days." };
+const classify = {
+  categoryAssessment: "confirmed",
+  urgency: "medium",
+  urgencyReason: "Ongoing for days but no immediate danger.",
+  reasoning: "Drain blocked for days.",
+};
 const draftFor = (caseNumber: string) => ({
   message: `Estimados señores de la Alcaldía de Santiago: les escribimos desde CommonGround sobre el caso ${caseNumber}. Atentamente, Equipo de moderación de CommonGround.`,
   routeExplanation: "Municipal office for the district.",
@@ -73,6 +80,20 @@ describe("runReferralPipeline", () => {
     expect(referral.referral).toMatchObject({ contactId: "alcaldia-santiago-oficina", urgency: "medium" });
     expect(getCaseByCaseNumber(c.publicCaseNumber)!.status).toBe("received");
     expect(agentKinds(c.publicCaseNumber)).toEqual(["ai_reviewed", "referral_prepared", "awaiting_approval"]);
+  });
+
+  it("records why it chose the urgency, and adds the report date and case link to the letter", async () => {
+    const c = newCase();
+    respondWith({ classify, draft: draftFor(c.publicCaseNumber), critique: { verdict: "ok" } });
+    await runReferralPipeline(c.publicCaseNumber);
+    const referral = suggestions(c.publicCaseNumber)[0];
+    expect(referral.referral?.urgencyReason).toBe(classify.urgencyReason);
+    expect(referral.reasoning).toContain(`Urgency (medium): ${classify.urgencyReason}`);
+    const message = referral.referral!.message;
+    expect(message).toContain(`Fecha del reporte: ${formatReportDate(c.createdAt)}`);
+    expect(message).toContain(`Caso público: ${publicCaseUrl(c.publicCaseNumber)}`);
+    // The reference sits above the signature, which stays last.
+    expect(message.trimEnd().endsWith("Equipo de moderación de CommonGround.")).toBe(true);
   });
 
   it("never lets the model pick the office — routing comes from the config", async () => {

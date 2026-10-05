@@ -2,6 +2,7 @@ import { getCaseByCaseNumber } from "@/lib/store/case-store";
 import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 import { toPublicCase } from "@/lib/schema/report";
 import { CaseView } from "@/components/case/CaseView";
+import { timelineOfficeNames } from "@/lib/guide/referral/route";
 import { CaseNotFound } from "@/components/case/CaseNotFound";
 import { CaseRemoved } from "@/components/case/CaseRemoved";
 
@@ -40,8 +41,7 @@ export default async function CasePage({
       communityDisplayName={community.displayName}
       isNew={isNewParam === "1"}
       managementToken={validManagementToken}
-      // Names only (already public on /resources) — for naming the office in referral entries.
-      offices={community.officialContacts.map(({ id, name, nameEs, labels }) => ({ id, name, nameEs, labels }))}
+      offices={timelineOfficeNames(community)}
     />
   );
 }

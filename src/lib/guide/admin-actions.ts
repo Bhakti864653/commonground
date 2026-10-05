@@ -16,6 +16,7 @@ import {
 import { ReportStatusSchema, VerificationStateSchema } from "@/lib/schema/report";
 import { getCommunity } from "@/lib/store/community-store";
 import { validateReferralMessage } from "./referral/validate";
+import { publicCaseUrl } from "@/lib/site-url";
 
 const ACTOR_ID = "guide-agent";
 /** Referral decisions are a moderator's own call, not the Guide's — same id the manual panel uses. */
@@ -102,7 +103,7 @@ export async function reviewReferral(
   if (!found || !suggestion?.referral) return { ok: false, reason: "This referral is no longer pending." };
 
   const message = typeof editedMessage === "string" ? editedMessage.trim() : suggestion.referral.message;
-  const validation = validateReferralMessage(message, caseNumber);
+  const validation = validateReferralMessage(message, caseNumber, publicCaseUrl(caseNumber));
   if (!validation.valid) return { ok: false, reason: validation.reason };
 
   const contact = getCommunity(found.communityId)?.officialContacts.find((c) => c.id === suggestion.referral?.contactId);

@@ -64,7 +64,7 @@ When a resident submits a case (through the wizard or a confirmed Guide draft), 
 runs after the response (`src/lib/guide/referral/`, Groq):
 
 1. **Classify**: checks whether the chosen category fits (it may suggest another real category)
-   and estimates urgency (low/medium/high). A report matching an emergency phrase gets no
+   and estimates urgency (low/medium/high), with a one-line reason shown to the moderator. A report matching an emergency phrase gets no
    referral at all.
 2. **Route**: no AI. The office comes from the community's `referralRouting` (category →
    official contact). Every route must be verified like the contacts themselves were; only
@@ -72,9 +72,11 @@ runs after the response (`src/lib/guide/referral/`, Groq):
    again when it is approved. In Santiago de Veraguas every category currently routes to the
    Alcaldía's office line, the only verified non-emergency contact.
 3. **Draft**: a short, formal message in Spanish addressed to that office, built only from public
-   case fields (case number, category, approximate area, description). It must contain the case
-   number and may not contain emails, links, or phone numbers. Names can't be detected
-   automatically, which is one reason a moderator reads every message.
+   case fields (case number, category, approximate area, description). Code, not the model, then
+   adds the report date and a link to the case's public page above the signature. The message
+   must contain the case number and may not contain emails, phone numbers, or any link other than
+   that case page. Names can't be detected automatically, which is one reason a moderator reads
+   every message.
 4. **Review**: a second model call checks the draft against the case. Its concerns are shown to
    the moderator; it can't approve anything.
 
@@ -89,7 +91,8 @@ urgency, the AI's notes, and an editable message.
   decided not to send it (no reason is shown). The status doesn't change.
 
 The public timeline shows each AI step ("AI reviewed this report", "AI prepared a referral to
-{office}", "Waiting for moderator approval") with a "CommonGround AI" label. The message,
+{office}", "Waiting for moderator approval") with a "CommonGround AI" label. `{office}` is the
+route's short `publicName` ("la Alcaldía de Santiago"), not the contact's phone-line label. The message,
 urgency, and reasoning stay private. If Groq is unavailable or a step fails, the pipeline stops,
 logs the case number, step, and error status on the server, and adds no public entry for steps
 that didn't happen. Like everything else, referrals live in the in-memory prototype store: on a

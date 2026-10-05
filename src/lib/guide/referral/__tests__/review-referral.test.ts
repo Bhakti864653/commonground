@@ -15,6 +15,7 @@ import { toPublicCase } from "@/lib/schema/report";
 import { buildApproximateArea } from "@/lib/privacy/approximate-area";
 import { buildConsentRecord } from "@/lib/privacy/consent";
 import { SANTIAGO_VERAGUAS } from "@/data/communities";
+import { publicCaseUrl } from "@/lib/site-url";
 
 const OFFICE = "alcaldia-santiago-oficina";
 
@@ -85,6 +86,14 @@ describe("reviewReferral", () => {
     expect(result).toMatchObject({ ok: false, reason: expect.stringContaining("phone") });
     expect(stored(caseNumber).status).toBe("received");
     expect(stored(caseNumber).agentSuggestions[0].status).toBe("pending");
+  });
+
+  it("accepts an edited message that keeps the case's own link, but not another link", async () => {
+    const { caseNumber, suggestionId } = caseWithReferral();
+    const withOther = `Caso ${caseNumber}: https://example.com`;
+    expect((await reviewReferral(caseNumber, suggestionId, "approve", withOther)).ok).toBe(false);
+    const withOwn = `Caso ${caseNumber}. Caso público: ${publicCaseUrl(caseNumber)}`;
+    expect(await reviewReferral(caseNumber, suggestionId, "approve", withOwn)).toEqual({ ok: true });
   });
 
   it("can only decide a referral once", async () => {

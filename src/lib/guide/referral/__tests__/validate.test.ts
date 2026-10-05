@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeClassification, validateReferralMessage } from "@/lib/guide/referral/validate";
+import { addCaseReference, formatReportDate, normalizeClassification, validateReferralMessage } from "@/lib/guide/referral/validate";
 import { MAX_REFERRAL_MESSAGE_LENGTH } from "@/lib/schema/report";
 import { SANTIAGO_VERAGUAS } from "@/data/communities";
 
@@ -57,5 +57,31 @@ describe("normalizeClassification", () => {
         suggestedCategoryId: undefined,
       });
     }
+  });
+});
+
+describe("the case link and report date", () => {
+  const url = `https://commonground-psi.vercel.app/cases/${CASE}`;
+
+  it("allows exactly the case's own public link, and no other", () => {
+    expect(validateReferralMessage(`${ok}\nCaso público: ${url}`, CASE, url).valid).toBe(true);
+    expect(validateReferralMessage(`${ok}\nCaso público: ${url}`, CASE).valid).toBe(false);
+    expect(validateReferralMessage(`${ok}\n${url} y https://example.com`, CASE, url).valid).toBe(false);
+    expect(validateReferralMessage(`${ok}\nhttps://commonground-psi.vercel.app/cases/SV-2026-0001`, CASE, url).valid).toBe(false);
+  });
+
+  it("puts the reference just above the signature, or at the end if there is none", () => {
+    const signed = "Estimados señores:\n\nTexto.\n\nEquipo de moderación de CommonGround";
+    expect(addCaseReference(signed, "4 de octubre de 2026", url)).toBe(
+      `Estimados señores:\n\nTexto.\n\nFecha del reporte: 4 de octubre de 2026\nCaso público: ${url}\n\nEquipo de moderación de CommonGround`,
+    );
+    expect(addCaseReference("Texto.", "4 de octubre de 2026", url)).toBe(
+      `Texto.\n\nFecha del reporte: 4 de octubre de 2026\nCaso público: ${url}`,
+    );
+  });
+
+  it("formats the report date in Spanish, in Panama's time zone", () => {
+    // 02:00 UTC on Oct 5 is still Oct 4 in Panama (UTC-5).
+    expect(formatReportDate("2026-10-05T02:00:00Z")).toBe("4 de octubre de 2026");
   });
 });

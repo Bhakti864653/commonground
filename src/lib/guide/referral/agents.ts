@@ -66,9 +66,13 @@ const CLASSIFY_TOOL: Groq.Chat.Completions.ChatCompletionTool = {
           description: "Only when questioned: one of the community's real category ids that fits better.",
         },
         urgency: { type: "string", enum: ["low", "medium", "high"] },
-        reasoning: { type: "string", description: "One or two sentences grounded in the description." },
+        urgencyReason: {
+          type: "string",
+          description: "One sentence (English): what in the description made you choose this urgency.",
+        },
+        reasoning: { type: "string", description: "One or two sentences on the category, grounded in the description." },
       },
-      required: ["categoryAssessment", "urgency", "reasoning"],
+      required: ["categoryAssessment", "urgency", "urgencyReason", "reasoning"],
       additionalProperties: false,
     },
   },
@@ -78,6 +82,7 @@ const ClassifyArgsSchema = z.object({
   categoryAssessment: z.string(),
   suggestedCategoryId: z.string().optional(),
   urgency: z.string(),
+  urgencyReason: z.string(),
   reasoning: z.string(),
 });
 
@@ -135,6 +140,7 @@ or send it by WhatsApp, so it must be plain text, under 900 characters, with no 
 The message must:
 - greet the office formally and say it comes from CommonGround, an independent community project;
 - include the case number exactly as given, the category, and the approximate area;
+- leave out the report date and any link: CommonGround adds both automatically;
 - summarize the description faithfully in Spanish (translate it if needed), adding no facts;
 - politely ask whether the office can look into it or say who handles it;
 - thank them and sign as "Equipo de moderación de CommonGround".

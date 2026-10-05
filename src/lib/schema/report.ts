@@ -161,6 +161,8 @@ export const MAX_REFERRAL_MESSAGE_LENGTH = 1200;
 export const ReferralDraftSchema = z.object({
   contactId: z.string(),
   urgency: ReferralUrgencySchema,
+  /** One sentence from the classifier on why it chose this urgency (shown to moderators). */
+  urgencyReason: z.string().optional(),
   /** Spanish, addressed to the office, built only from public case fields. */
   message: z.string().min(1).max(MAX_REFERRAL_MESSAGE_LENGTH),
   /** The classifier's view of the resident's chosen category. */
