@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
 import crypto from "crypto";
+import { getModeratorRepository } from "@/lib/moderators/moderator-store";
+import { hashSessionToken, normalizeEmail, type ModeratorRole } from "@/lib/moderators/logic";
 
 /**
  * This prototype has no accounts at all (PRD non-goals), so there's no real session to check
@@ -40,18 +42,55 @@ export function verifyAccessCode(candidate: string): boolean {
   return timingSafeEqualStrings(candidate.trim(), code);
 }
 
-export async function isAdminAuthenticated(): Promise<boolean> {
+/** The moderator's own sign-in (Google): a random token whose hash is in moderator_sessions. */
+export const MODERATOR_SESSION_COOKIE = "cg_session";
+
+/**
+ * Who is using /admin. A moderator signed in with Google has their email; the shared access
+ * code (kept only until Google sign-in replaces it) has none and acts as the owner, so the
+ * operator can never be locked out while switching over.
+ */
+export type CurrentModerator = { email: string | null; name: string; role: ModeratorRole; via: "google" | "access_code" };
+
+/** OWNER_EMAIL: the one person who can add and remove moderators (made owner when they sign in). */
+export function ownerEmail(): string | undefined {
+  const value = process.env.OWNER_EMAIL?.trim();
+  return value ? normalizeEmail(value) : undefined;
+}
+
+async function accessCodeSignedIn(): Promise<boolean> {
   const token = signAdminToken();
   if (!token) return false;
-  const store = await cookies();
-  const cookieValue = store.get(ADMIN_COOKIE_NAME)?.value;
-  if (!cookieValue) return false;
-  return timingSafeEqualStrings(cookieValue, token);
+  const cookieValue = (await cookies()).get(ADMIN_COOKIE_NAME)?.value;
+  return Boolean(cookieValue) && timingSafeEqualStrings(cookieValue!, token);
+}
+
+export async function getCurrentModerator(): Promise<CurrentModerator | null> {
+  const sessionToken = (await cookies()).get(MODERATOR_SESSION_COOKIE)?.value;
+  if (sessionToken) {
+    const moderator = await getModeratorRepository().getSessionModerator(hashSessionToken(sessionToken));
+    if (moderator) {
+      return { email: moderator.email, name: moderator.name, role: moderator.role, via: "google" };
+    }
+  }
+  if (await accessCodeSignedIn()) return { email: null, name: "", role: "owner", via: "access_code" };
+  return null;
+}
+
+export async function isAdminAuthenticated(): Promise<boolean> {
+  return (await getCurrentModerator()) !== null;
 }
 
 /** Defense in depth: every admin-mutating server action calls this too, not just the layout. */
-export async function requireAdmin(): Promise<void> {
-  if (!(await isAdminAuthenticated())) {
-    throw new Error("Admin authentication required");
-  }
+export async function requireAdmin(): Promise<CurrentModerator> {
+  const moderator = await getCurrentModerator();
+  if (!moderator) throw new Error("Admin authentication required");
+  return moderator;
+}
+
+/** Adding and removing moderators: the owner only. */
+export async function requireOwner(): Promise<CurrentModerator> {
+  const moderator = await requireAdmin();
+  if (moderator.role !== "owner") throw new Error("Owner access required");
+  return moderator;
 }

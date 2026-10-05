@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
-import { isAdminAuthenticated } from "@/lib/admin/auth";
+import { Suspense, type ReactNode } from "react";
+import { getCurrentModerator, signAdminToken } from "@/lib/admin/auth";
+import { googleConfig } from "@/lib/admin/google";
 import { AdminLogin } from "@/components/admin/AdminLogin";
 import { AdminShell } from "@/components/admin/AdminShell";
 
@@ -14,9 +15,14 @@ import { AdminShell } from "@/components/admin/AdminShell";
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const authed = await isAdminAuthenticated();
-  if (!authed) {
-    return <AdminLogin />;
+  const moderator = await getCurrentModerator();
+  if (!moderator) {
+    return (
+      // useSearchParams (the "why sign-in failed" message) needs a Suspense boundary.
+      <Suspense>
+        <AdminLogin googleEnabled={googleConfig() !== null} codeEnabled={signAdminToken() !== null} />
+      </Suspense>
+    );
   }
-  return <AdminShell>{children}</AdminShell>;
+  return <AdminShell moderator={moderator}>{children}</AdminShell>;
 }

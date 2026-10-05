@@ -1,6 +1,7 @@
 "use server";
 
 import { requireAdmin } from "@/lib/admin/auth";
+import { actorIdOf } from "@/lib/admin/actor";
 import { analyzeCaseForSuggestions, type AgentTraceStep, type SuggestionDecision } from "./case-analysis";
 import { generateCommunityBriefing, type CommunityBriefing } from "./briefing";
 import {
@@ -19,8 +20,6 @@ import { validateReferralMessage } from "./referral/validate";
 import { publicCaseUrl } from "@/lib/site-url";
 
 const ACTOR_ID = "guide-agent";
-/** Referral decisions are a moderator's own call, not the Guide's — same id the manual panel uses. */
-const ACTOR_ID_MODERATOR = "admin";
 
 export async function runCaseAnalysis(
   caseNumber: string,
@@ -89,11 +88,12 @@ export async function reviewReferral(
   decision: "approve" | "reject",
   editedMessage?: string,
 ): Promise<ReferralReviewResult> {
-  await requireAdmin();
+  // Referral decisions are a moderator's own call, not the Guide's: recorded under their name.
+  const actor = actorIdOf(await requireAdmin());
   if (typeof caseNumber !== "string" || typeof suggestionId !== "string") return { ok: false, reason: "Invalid request." };
 
   if (decision === "reject") {
-    return (await rejectReferral(caseNumber, suggestionId, ACTOR_ID_MODERATOR))
+    return (await rejectReferral(caseNumber, suggestionId, actor))
       ? { ok: true }
       : { ok: false, reason: "This referral is no longer pending." };
   }
@@ -111,7 +111,7 @@ export async function reviewReferral(
     return { ok: false, reason: "The office is no longer a verified, non-emergency contact. Reject this referral instead." };
   }
 
-  return (await approveReferral(caseNumber, suggestionId, message, ACTOR_ID_MODERATOR))
+  return (await approveReferral(caseNumber, suggestionId, message, actor))
     ? { ok: true }
     : { ok: false, reason: "This referral is no longer pending." };
 }

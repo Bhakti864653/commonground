@@ -1,6 +1,7 @@
 "use server";
 
 import { requireAdmin } from "@/lib/admin/auth";
+import { actorIdOf } from "@/lib/admin/actor";
 import {
   addAdminNote,
   changeCaseStatus,
@@ -24,7 +25,6 @@ import {
 } from "@/lib/schema/report";
 import { findDuplicateClusters, type DuplicateCluster } from "@/lib/insights/duplicate-clusters";
 
-const ACTOR_ID = "admin";
 
 export async function listCasesForAdmin(): Promise<Case[]> {
   await requireAdmin();
@@ -52,8 +52,8 @@ export async function adminChangeStatus(
   status: ReportStatus,
   note?: string,
 ): Promise<boolean> {
-  await requireAdmin();
-  return changeCaseStatus(caseNumber, status, ACTOR_ID, note);
+  const actor = actorIdOf(await requireAdmin());
+  return changeCaseStatus(caseNumber, status, actor, note);
 }
 
 /**
@@ -73,7 +73,7 @@ export async function adminSetVerification(
   verificationState: VerificationState,
   source?: { title: string; url: string },
 ): Promise<boolean> {
-  await requireAdmin();
+  const actor = actorIdOf(await requireAdmin());
   // The TypeScript type isn't enforced at runtime for a direct server-action call — without
   // this, an arbitrary string would be stored as the case's verification state.
   if (!VerificationStateSchema.safeParse(verificationState).success) return false;
@@ -84,25 +84,25 @@ export async function adminSetVerification(
       title: source.title,
       url: source.url,
       checkedAt: new Date().toISOString(),
-      moderatorActorId: ACTOR_ID,
+      moderatorActorId: actor,
     });
     if (!parsed.success) return false;
     verifiedSource = parsed.data;
   }
-  return setVerificationState(caseNumber, verificationState, ACTOR_ID, verifiedSource);
+  return setVerificationState(caseNumber, verificationState, actor, verifiedSource);
 }
 
 export async function adminMarkDuplicate(
   caseNumber: string,
   duplicateOfCaseNumber: string,
 ): Promise<boolean> {
-  await requireAdmin();
-  return markDuplicate(caseNumber, duplicateOfCaseNumber, ACTOR_ID);
+  const actor = actorIdOf(await requireAdmin());
+  return markDuplicate(caseNumber, duplicateOfCaseNumber, actor);
 }
 
 export async function adminAddNote(caseNumber: string, note: string): Promise<boolean> {
-  await requireAdmin();
-  return addAdminNote(caseNumber, note, ACTOR_ID);
+  const actor = actorIdOf(await requireAdmin());
+  return addAdminNote(caseNumber, note, actor);
 }
 
 export async function adminReviewInaccuracyFlag(
@@ -122,14 +122,14 @@ export async function adminRemoveContent(
   reason: string,
   privateNote?: string,
 ): Promise<boolean> {
-  await requireAdmin();
+  const actor = actorIdOf(await requireAdmin());
   const parsedReason = RemovalReasonSchema.safeParse(reason);
   if (!parsedReason.success) return false;
   if (privateNote !== undefined && (typeof privateNote !== "string" || privateNote.length > 500)) return false;
-  return removeCaseContent(caseNumber, parsedReason.data, ACTOR_ID, privateNote);
+  return removeCaseContent(caseNumber, parsedReason.data, actor, privateNote);
 }
 
 export async function adminRestoreContent(caseNumber: string): Promise<boolean> {
-  await requireAdmin();
-  return restoreCaseContent(caseNumber, ACTOR_ID);
+  const actor = actorIdOf(await requireAdmin());
+  return restoreCaseContent(caseNumber, actor);
 }

@@ -71,11 +71,11 @@ describe("isAdminAuthenticated / requireAdmin", () => {
     await expect(requireAdmin()).rejects.toThrow(/authentication required/i);
   });
 
-  it("is true with the real signed session token, and requireAdmin resolves", async () => {
+  it("is true with the real signed session token, and requireAdmin resolves to the code's owner access", async () => {
     const token = signAdminToken();
     mockCookieValue(token ?? undefined);
     expect(await isAdminAuthenticated()).toBe(true);
-    await expect(requireAdmin()).resolves.toBeUndefined();
+    await expect(requireAdmin()).resolves.toEqual({ email: null, name: "", role: "owner", via: "access_code" });
   });
 
   it("is false when no access code is configured at all, even with a cookie present", async () => {

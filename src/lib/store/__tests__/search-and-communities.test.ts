@@ -80,7 +80,7 @@ describe("searchCases (server-side search)", () => {
 describe("communities for residents", () => {
   beforeEach(() => {
     __resetCommunityStoreForTests();
-    vi.mocked(requireAdmin).mockResolvedValue(undefined);
+    vi.mocked(requireAdmin).mockResolvedValue({ email: null, name: "", role: "owner", via: "access_code" });
   });
 
   it("includes created communities and strips moderator emails", async () => {
@@ -133,7 +133,7 @@ describe("admin community actions require a moderator", () => {
   });
 
   it("refuses to delete a community without an admin session, leaving it in place", async () => {
-    vi.mocked(requireAdmin).mockResolvedValueOnce(undefined);
+    vi.mocked(requireAdmin).mockResolvedValueOnce({ email: null, name: "", role: "owner", via: "access_code" });
     const created = await adminCreateCommunity({ displayName: "Lugar de prueba", country: "Panamá", areas: [{ labelEs: "A", label: "A" }], categoryIds: ["other"] });
     if (!created.ok) throw new Error("expected a community");
     await expect(adminDeleteCommunity(created.community.id)).rejects.toThrow();

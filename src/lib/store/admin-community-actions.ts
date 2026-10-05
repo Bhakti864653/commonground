@@ -1,6 +1,7 @@
 "use server";
 
 import { requireAdmin } from "@/lib/admin/auth";
+import { actorIdOf } from "@/lib/admin/actor";
 import {
   addOfficialContact,
   addTrustedSource,
@@ -19,7 +20,6 @@ import {
 import type { CommunityConfig } from "@/lib/schema/community";
 import { listCommunityRequestSummaries, type CommunityRequestSummary } from "@/lib/store/community-store";
 
-const ACTOR_ID = "admin";
 
 /**
  * Moderator-only. The input is validated inside `createCommunity` (never trusting the form),
@@ -37,15 +37,15 @@ export async function adminListCommunities(): Promise<CommunityConfig[]> {
 
 /** Same discipline: the store validates every field, the action only checks the id types. */
 export async function adminAddTrustedSource(communityId: string, input: unknown): Promise<InfoChangeResult> {
-  await requireAdmin();
+  const actor = actorIdOf(await requireAdmin());
   if (typeof communityId !== "string") return { ok: false, error: "unknown_community" };
-  return addTrustedSource(communityId, input, ACTOR_ID);
+  return addTrustedSource(communityId, input, actor);
 }
 
 export async function adminAddOfficialContact(communityId: string, input: unknown): Promise<InfoChangeResult> {
-  await requireAdmin();
+  const actor = actorIdOf(await requireAdmin());
   if (typeof communityId !== "string") return { ok: false, error: "unknown_community" };
-  return addOfficialContact(communityId, input, ACTOR_ID);
+  return addOfficialContact(communityId, input, actor);
 }
 
 export async function adminRemoveCommunityInfoEntry(
@@ -53,11 +53,11 @@ export async function adminRemoveCommunityInfoEntry(
   kind: "source" | "contact",
   id: string,
 ): Promise<InfoChangeResult> {
-  await requireAdmin();
+  const actor = actorIdOf(await requireAdmin());
   if (typeof communityId !== "string" || typeof id !== "string" || (kind !== "source" && kind !== "contact")) {
     return { ok: false, error: "invalid" };
   }
-  return removeCommunityInfoEntry(communityId, kind, id, ACTOR_ID);
+  return removeCommunityInfoEntry(communityId, kind, id, actor);
 }
 
 /** An explicit "I checked this today" — the only way an entry's check date moves forward. */
@@ -66,11 +66,11 @@ export async function adminReverifyCommunityInfoEntry(
   kind: "source" | "contact",
   id: string,
 ): Promise<InfoChangeResult> {
-  await requireAdmin();
+  const actor = actorIdOf(await requireAdmin());
   if (typeof communityId !== "string" || typeof id !== "string" || (kind !== "source" && kind !== "contact")) {
     return { ok: false, error: "invalid" };
   }
-  return reverifyCommunityInfoEntry(communityId, kind, id, ACTOR_ID);
+  return reverifyCommunityInfoEntry(communityId, kind, id, actor);
 }
 
 /** A moderator reviewed a visitor-started community and takes it on as a normal pilot. */
@@ -82,9 +82,9 @@ export async function adminAdoptStarterCommunity(id: string): Promise<boolean> {
 
 /** Removes a community created by mistake — only one with no cases (see deleteCommunity). */
 export async function adminDeleteCommunity(id: string): Promise<DeleteCommunityResult> {
-  await requireAdmin();
+  const actor = actorIdOf(await requireAdmin());
   if (typeof id !== "string") return { ok: false, error: "not_found" };
-  return deleteCommunity(id, ACTOR_ID);
+  return deleteCommunity(id, actor);
 }
 
 export async function adminListCommunityRequests(): Promise<CommunityRequestSummary[]> {

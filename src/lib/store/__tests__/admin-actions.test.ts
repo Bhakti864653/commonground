@@ -50,7 +50,7 @@ describe("admin server actions reject unauthenticated calls", () => {
 describe("adminSetVerification requires approved evidence for officially_verified", () => {
   beforeEach(() => {
     __resetMemoryCaseStore();
-    vi.mocked(requireAdmin).mockResolvedValue(undefined);
+    vi.mocked(requireAdmin).mockResolvedValue({ email: null, name: "", role: "owner", via: "access_code" });
   });
 
   it("refuses officially_verified with no source", async () => {
@@ -182,7 +182,7 @@ describe("adminSetVerification rejects invalid runtime input from a direct call"
 
   beforeEach(() => {
     __resetMemoryCaseStore();
-    vi.mocked(requireAdmin).mockResolvedValue(undefined);
+    vi.mocked(requireAdmin).mockResolvedValue({ email: null, name: "", role: "owner", via: "access_code" });
   });
 
   it("rejects an unknown verification state instead of storing it", async () => {

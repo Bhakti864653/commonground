@@ -46,7 +46,7 @@ const stored = (caseNumber: string) => getCaseByCaseNumber(caseNumber)!;
 describe("reviewReferral", () => {
   beforeEach(() => {
     __resetMemoryCaseStore();
-    vi.mocked(requireAdmin).mockResolvedValue(undefined);
+    vi.mocked(requireAdmin).mockResolvedValue({ email: null, name: "", role: "owner", via: "access_code" });
   });
 
   it("approving marks the case referred, logs one public entry and a moderation action, and keeps the edited message", async () => {

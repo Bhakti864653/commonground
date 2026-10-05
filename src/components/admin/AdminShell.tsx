@@ -2,9 +2,10 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminLogoutButton } from "./AdminLogoutButton";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import type { CurrentModerator } from "@/lib/admin/auth";
 
 /** "Explicitly labeled as a prototype everywhere it appears" — MODERATION.md. */
-export function AdminShell({ children }: { children: ReactNode }) {
+export function AdminShell({ children, moderator }: { children: ReactNode; moderator: CurrentModerator }) {
   return (
     <div className="min-h-screen bg-cream">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-coral/30 bg-coral/5 px-4 py-3">
@@ -13,7 +14,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
             CommonGround — Admin (local prototype)
           </Link>
           <p className="text-xs text-slate">
-            Never forwards anything externally. Every action is recorded.
+            Never forwards anything externally. Every action is recorded
+            {moderator.email ? ` under your name. Signed in as ${moderator.email}${moderator.role === "owner" ? " (owner)" : ""}.` : ". Signed in with the shared access code."}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -27,6 +29,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <Link href="/admin/sources" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
               Sources &amp; contacts
             </Link>
+            {moderator.role === "owner" && (
+              <Link href="/admin/moderators" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
+                Moderators
+              </Link>
+            )}
           </nav>
           <ThemeToggle />
           <AdminLogoutButton />
