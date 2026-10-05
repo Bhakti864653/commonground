@@ -96,6 +96,16 @@ export const FIELD = {
     eyebrow: { es: "Asuntos locales / atención compartida", en: "Local issues / shared attention", pt: "Questões locais / atenção compartilhada", fr: "Enjeux locaux / attention partagée", zh: "本地议题 / 共同关注", hi: "स्थानीय मुद्दे / साझा ध्यान", it: "Questioni locali / attenzione condivisa" },
     headlineTop: { es: "Este es nuestro", en: "This is our", pt: "Este é o nosso", fr: "Voici notre", zh: "这里是我们的", hi: "यह है हमारी", it: "Questo è il nostro" },
     headlineEmphasis: { es: "punto de encuentro.", en: "common ground.", pt: "ponto de encontro.", fr: "terrain commun.", zh: "共同家园。", hi: "साझा ज़मीन।", it: "terreno comune." },
+    loadError: {
+      es: "No se pudieron cargar los casos. Recarga la página para intentarlo de nuevo.",
+      en: "The cases couldn't be loaded. Reload the page to try again.",
+      pt: "Não foi possível carregar os casos. Recarregue a página para tentar de novo.",
+      fr: "Impossible de charger les dossiers. Rechargez la page pour réessayer.",
+      zh: "无法加载案件。请重新加载页面再试一次。",
+      hi: "मामले लोड नहीं हो सके। फिर से कोशिश करने के लिए पेज दोबारा लोड करें।",
+      it: "Impossibile caricare i casi. Ricarica la pagina per riprovare.",
+    },
+    reload: { es: "Recargar", en: "Reload", pt: "Recarregar", fr: "Recharger", zh: "重新加载", hi: "दोबारा लोड करें", it: "Ricarica" },
     stamp: { es: "{count} casos", en: "{count} cases", pt: "{count} casos", fr: "{count} dossiers", zh: "{count} 个案件", hi: "{count} मामले", it: "{count} casi" },
     intro: {
       es: "Conoce lo que han compartido tus vecinos, aporta tu perspectiva y sigue cada caso mientras avanza.",

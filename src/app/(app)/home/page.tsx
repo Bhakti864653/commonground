@@ -13,6 +13,8 @@ import type { PublicCase } from "@/lib/schema/report";
 import { CommunityMap } from "@/components/map/CommunityMap";
 import { UnconfiguredPlace } from "@/components/map/UnconfiguredPlace";
 import { CaseRow } from "@/components/journey/CaseRow";
+import { CasesLoadError } from "@/components/journey/CasesLoadError";
+import { UI_STRINGS } from "@/lib/i18n/dictionary";
 
 /** Newest first — the order that numbers both the map pins and the case rows. */
 function byNewest(a: PublicCase, b: PublicCase) {
@@ -24,22 +26,33 @@ export default function Home() {
   const { language } = useLanguage();
   const { activePlace } = usePlaces();
   const t = FIELD.home;
-  const [cases, setCases] = useState<PublicCase[]>([]);
+  // Keyed by community, so "not loaded yet" (or loaded for a previous community) is never shown
+  // as "0 cases" — the server-rendered HTML and the first paint have no cases at all.
+  const [loaded, setLoaded] = useState<{ communityId: string; cases: PublicCase[] } | null>(null);
+  const [failedFor, setFailedFor] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    listCasesForActivity(community.id).then((result) => {
-      if (!cancelled) {
-        setCases([...result].sort(byNewest));
+    const communityId = community.id;
+    listCasesForActivity(communityId)
+      .then((result) => {
+        if (cancelled) return;
+        setLoaded({ communityId, cases: [...result].sort(byNewest) });
+        setFailedFor(null);
         setSelectedId(null);
-      }
-    });
+      })
+      .catch(() => {
+        if (!cancelled) setFailedFor(communityId);
+      });
     return () => {
       cancelled = true;
     };
   }, [community.id]);
 
+  const ready = loaded?.communityId === community.id;
+  const failed = !ready && failedFor === community.id;
+  const cases = ready ? loaded.cases : [];
   const openCases = cases.filter((c) => c.status !== "closed");
   const unconfigured = activePlace.kind === "unconfigured";
 
@@ -58,7 +71,7 @@ export default function Home() {
             <p className="mt-5 flex items-center gap-2 text-[0.69rem] font-black uppercase tracking-[0.18em] text-caps">
               {community.displayName}
               <Asterisk aria-hidden="true" className="h-4 w-4 text-[#e58a52]" strokeWidth={2.5} />
-              {fill(t.stamp[language], { count: cases.length })}
+              {ready ? fill(t.stamp[language], { count: cases.length }) : failed ? "—" : UI_STRINGS.activity.loading[language]}
             </p>
           )}
         </div>
@@ -99,7 +112,7 @@ export default function Home() {
                 <div className="flex items-end justify-between gap-3">
                   <div>
                     <p className="font-heading text-[5rem] leading-[0.9] tracking-[-0.11em] text-ink md:text-[6.4rem]">
-                      {String(openCases.length).padStart(2, "0")}
+                      {ready ? String(openCases.length).padStart(2, "0") : "—"}
                     </p>
                     <p className="mt-2 max-w-[170px] text-[0.88rem] font-semibold text-ink/85">{t.pulseText[language]}</p>
                   </div>
@@ -128,11 +141,17 @@ export default function Home() {
                 {t.allCases[language]} <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
               </Link>
             </div>
-            <ul className="border-t border-[#9faf9d]">
-              {cases.slice(0, 3).map((c, i) => (
-                <CaseRow key={c.id} caseItem={c} index={i} category={community.categories.find((cat) => cat.id === c.categoryId)} language={language} />
-              ))}
-            </ul>
+            {failed ? (
+              <CasesLoadError language={language} />
+            ) : !ready ? (
+              <p className="border-t border-[#9faf9d] py-9 text-slate">{UI_STRINGS.activity.loading[language]}</p>
+            ) : (
+              <ul className="border-t border-[#9faf9d]">
+                {cases.slice(0, 3).map((c, i) => (
+                  <CaseRow key={c.id} caseItem={c} index={i} category={community.categories.find((cat) => cat.id === c.categoryId)} language={language} />
+                ))}
+              </ul>
+            )}
           </section>
         </>
       )}

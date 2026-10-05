@@ -15,6 +15,7 @@ import type { CaseFilters } from "@/lib/explore/filter-cases";
 import { CaseRow } from "@/components/journey/CaseRow";
 import { UnconfiguredPlace } from "@/components/map/UnconfiguredPlace";
 import { CaseLookupForm } from "@/components/case/CaseLookupForm";
+import { CasesLoadError } from "@/components/journey/CasesLoadError";
 import { labelOf } from "@/lib/i18n/labels";
 
 const EMPTY_FILTERS: CaseFilters = { query: "", type: "all", status: "all", categoryId: "all", areaId: "all" };
@@ -28,6 +29,7 @@ export default function ExplorePage() {
   const [trends, setTrends] = useState<Trend[]>([]);
   const [filters, setFilters] = useState<CaseFilters>(EMPTY_FILTERS);
   const [searchedCommunity, setSearchedCommunity] = useState(community.id);
+  const [failed, setFailed] = useState(false);
 
   // Switching community starts from a clean slate (filters from one community's areas and
   // categories don't apply to another's).
@@ -35,13 +37,17 @@ export default function ExplorePage() {
     setSearchedCommunity(community.id);
     setFilters(EMPTY_FILTERS);
     setResults(null);
+    setFailed(false);
   }
 
   useEffect(() => {
     let cancelled = false;
-    getTrendsForActivity(community.id).then((trendResult) => {
-      if (!cancelled) setTrends(trendResult);
-    });
+    getTrendsForActivity(community.id)
+      .then((trendResult) => {
+        if (!cancelled) setTrends(trendResult);
+      })
+      // Trends are optional extras; the case list's own error state covers a failed load.
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -53,9 +59,15 @@ export default function ExplorePage() {
     let cancelled = false;
     const timer = window.setTimeout(
       () => {
-        searchCases(community.id, filters).then((result) => {
-          if (!cancelled) setResults(result);
-        });
+        searchCases(community.id, filters)
+          .then((result) => {
+            if (cancelled) return;
+            setResults(result);
+            setFailed(false);
+          })
+          .catch(() => {
+            if (!cancelled) setFailed(true);
+          });
       },
       filters.query ? 250 : 0,
     );
@@ -135,7 +147,14 @@ export default function ExplorePage() {
           </button>
         )}
         <span className="ml-auto text-[0.85rem] font-bold tabular-nums text-slate" aria-live="polite">
-          {visible.length === 1 ? t.resultsOne[language] : fill(t.results[language], { count: visible.length })}
+          {/* No count until results exist — "0 cases" while loading (or after a failure) is wrong. */}
+          {results === null
+            ? failed
+              ? null
+              : UI_STRINGS.activity.loading[language]
+            : visible.length === 1
+              ? t.resultsOne[language]
+              : fill(t.results[language], { count: visible.length })}
         </span>
       </div>
 
@@ -167,7 +186,9 @@ export default function ExplorePage() {
         </ul>
       )}
 
-      {results === null ? (
+      {failed ? (
+        <CasesLoadError language={language} />
+      ) : results === null ? (
         <p className="py-9 text-slate">{UI_STRINGS.activity.loading[language]}</p>
       ) : visible.length === 0 ? (
         <p className="border-t border-[#9faf9d] py-9 text-slate">{t.empty[language]}</p>
