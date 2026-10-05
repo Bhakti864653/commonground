@@ -7,7 +7,7 @@ import {
   listCommunityInfoLog,
   removeCommunityInfoEntry,
   reverifyCommunityInfoEntry,
-} from "@/lib/store/community-store";
+} from "@/lib/store/memory-community-store";
 import { sourceFreshness } from "@/lib/sources/freshness";
 import { CommunityConfigSchema } from "@/lib/schema/community";
 import { SANTIAGO_VERAGUAS, RIVERBEND_DEMO } from "@/data/communities";

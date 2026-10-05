@@ -7,8 +7,8 @@ import { formatPlaceLabel, normalizeParts, type PlaceParts } from "@/lib/places/
  * use it, so the interest isn't lost at a dead end. Anonymous by design — no name, email, or
  * contact details are asked for or stored, so nobody can be contacted back (the form says so).
  *
- * Same prototype persistence as cases (globalThis, lost on restart/redeploy). The list is capped
- * so an anonymous endpoint can't grow memory without bound.
+ * The rules shared by both request stores (in memory and Postgres). The list is capped so an
+ * anonymous endpoint can't grow storage without bound.
  */
 export const MAX_STORED_REQUESTS = 1000;
 
@@ -33,13 +33,6 @@ export type CommunityRequestSummary = {
   notes: string[];
 };
 
-type State = { requests: CommunityRequest[] };
-
-function getStore(): State {
-  const g = globalThis as typeof globalThis & { __commonGroundCommunityRequests__?: State };
-  return (g.__commonGroundCommunityRequests__ ??= { requests: [] });
-}
-
 export function placeKeyOf(name: string): string {
   return name
     .normalize("NFD")
@@ -62,20 +55,20 @@ export const CommunityRequestInputSchema = z.object({
   language: z.enum(LANGUAGE_CODES),
 });
 
-export function recordCommunityRequest(rawInput: unknown, now: Date = new Date()): boolean {
+/** A validated request ready to store, or null if the input is invalid. */
+export function buildCommunityRequest(rawInput: unknown, now: Date): CommunityRequest | null {
   const parsed = CommunityRequestInputSchema.safeParse(rawInput);
-  if (!parsed.success) return false;
+  if (!parsed.success) return null;
   // When parts are given they must be complete (country + city) and they define the name, so a
   // request is always as specific as the form required.
   let parts: PlaceParts | undefined;
   if (parsed.data.parts !== undefined) {
     const normalized = normalizeParts(parsed.data.parts);
-    if (!normalized.ok) return false;
+    if (!normalized.ok) return null;
     parts = normalized.parts;
   }
   const placeName = parts ? formatPlaceLabel(parts) : parsed.data.placeName;
-  const store = getStore();
-  store.requests.push({
+  return {
     id: crypto.randomUUID(),
     placeName,
     parts,
@@ -83,17 +76,13 @@ export function recordCommunityRequest(rawInput: unknown, now: Date = new Date()
     note: parsed.data.note,
     language: parsed.data.language,
     createdAt: now.toISOString(),
-  });
-  if (store.requests.length > MAX_STORED_REQUESTS) {
-    store.requests.splice(0, store.requests.length - MAX_STORED_REQUESTS);
-  }
-  return true;
+  };
 }
 
 /** Grouped by place, most-requested first — what a moderator needs to decide where to set up next. */
-export function listCommunityRequestSummaries(): CommunityRequestSummary[] {
+export function summarizeCommunityRequests(requests: CommunityRequest[]): CommunityRequestSummary[] {
   const groups = new Map<string, CommunityRequest[]>();
-  for (const r of getStore().requests) {
+  for (const r of requests) {
     const list = groups.get(r.placeKey) ?? [];
     list.push(r);
     groups.set(r.placeKey, list);
@@ -112,7 +101,3 @@ export function listCommunityRequestSummaries(): CommunityRequestSummary[] {
     .sort((a, b) => b.count - a.count || b.latestAt.localeCompare(a.latestAt));
 }
 
-/** Test-only reset. */
-export function __resetCommunityRequestsForTests(): void {
-  getStore().requests = [];
-}

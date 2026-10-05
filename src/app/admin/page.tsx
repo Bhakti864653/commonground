@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { getAdminDuplicateClusters, listCasesForAdmin } from "@/lib/store/admin-actions";
-import { getCommunity as getCommunityById } from "@/lib/store/community-store";
+import { listCommunities } from "@/lib/store/community-store";
 import { STATUS_LABELS, VERIFICATION_LABELS } from "@/lib/schema/report";
 import { DuplicateClusterCard } from "@/components/admin/DuplicateClusterCard";
 import { BriefingPanel } from "@/components/admin/BriefingPanel";
@@ -13,7 +13,13 @@ export default async function AdminPage() {
   // own guard, checked before any protected data fetch, not just the layout's UI swap.
   if (!(await isAdminAuthenticated())) return null;
 
-  const [cases, clusters] = await Promise.all([listCasesForAdmin(), getAdminDuplicateClusters()]);
+  const [cases, clusters, communityList] = await Promise.all([
+    listCasesForAdmin(),
+    getAdminDuplicateClusters(),
+    listCommunities(),
+  ]);
+  const communities = new Map(communityList.map((c) => [c.id, c]));
+  const getCommunityById = (id: string) => communities.get(id);
   const caseByNumber = new Map(cases.map((c) => [c.publicCaseNumber, c]));
   const communityIds = [...new Set(cases.map((c) => c.communityId))];
 

@@ -5,7 +5,7 @@ import {
   listCommunityRequestSummaries,
   placeKeyOf,
   recordCommunityRequest,
-} from "@/lib/store/community-request-store";
+} from "@/lib/store/memory-community-request-store";
 import { requestCommunity } from "@/lib/store/actions";
 
 describe("community requests", () => {

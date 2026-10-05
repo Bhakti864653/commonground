@@ -106,7 +106,7 @@ export async function reviewReferral(
   const validation = validateReferralMessage(message, caseNumber, publicCaseUrl(caseNumber));
   if (!validation.valid) return { ok: false, reason: validation.reason };
 
-  const contact = getCommunity(found.communityId)?.officialContacts.find((c) => c.id === suggestion.referral?.contactId);
+  const contact = (await getCommunity(found.communityId))?.officialContacts.find((c) => c.id === suggestion.referral?.contactId);
   if (!contact || !contact.verified || contact.isEmergencyService) {
     return { ok: false, reason: "The office is no longer a verified, non-emergency contact. Reject this referral instead." };
   }

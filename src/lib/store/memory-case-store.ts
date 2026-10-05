@@ -15,6 +15,7 @@ import {
 } from "@/lib/schema/report";
 import { SANTIAGO_VERAGUAS } from "@/data/communities";
 import { prepareNewCase, type NewCaseInput } from "./new-case";
+import { getCommunity as getMemoryCommunity } from "./memory-community-store";
 
 export type { NewCaseInput } from "./new-case";
 
@@ -146,7 +147,7 @@ function nextSequence(store: CaseStoreState, communityId: string, year: number):
 
 export function createCase(input: NewCaseInput, now: () => Date = () => new Date()): Case {
   const createdAt = now();
-  const prepared = prepareNewCase(input, createdAt);
+  const prepared = prepareNewCase(input, createdAt, getMemoryCommunity(input.communityId));
   const store = getStore();
   const year = createdAt.getUTCFullYear();
   const created: Case = {

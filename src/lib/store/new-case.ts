@@ -1,5 +1,5 @@
 import { CaseSchema, MAX_DESCRIPTION_LENGTH, type ApproximateArea, type Case, type UserConsent } from "@/lib/schema/report";
-import { getCommunity as getCommunityById } from "@/lib/store/community-store";
+import type { CommunityConfig } from "@/lib/schema/community";
 import { validateImageMetadata } from "@/lib/privacy/image-validation";
 
 export type NewCaseInput = {
@@ -16,10 +16,14 @@ export type NewCaseInput = {
  * Checks a new submission and builds the case every store saves — everything except its public
  * number, which each store assigns its own way (an in-memory counter, or the database's
  * create_case function). Shared so both stores accept and reject exactly the same input.
+ * `community` is the one the input names (each store looks it up in its own community store).
  * Throws on anything invalid; a server action can be called with any input at all.
  */
-export function prepareNewCase(input: NewCaseInput, createdAt: Date): Omit<Case, "publicCaseNumber"> {
-  const community = getCommunityById(input.communityId);
+export function prepareNewCase(
+  input: NewCaseInput,
+  createdAt: Date,
+  community: CommunityConfig | undefined,
+): Omit<Case, "publicCaseNumber"> {
   if (!community) {
     throw new Error(`Unknown community: ${input.communityId}`);
   }

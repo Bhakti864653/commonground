@@ -17,7 +17,7 @@ export default async function AdminCasePage({
   const { caseNumber } = await params;
   const foundCase = await getCaseForAdmin(caseNumber);
   if (!foundCase) notFound();
-  const community = getCommunityById(foundCase.communityId);
+  const community = await getCommunityById(foundCase.communityId);
   const category = community?.categories.find((cat) => cat.id === foundCase.categoryId);
 
   return (

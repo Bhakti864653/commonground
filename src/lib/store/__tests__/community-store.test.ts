@@ -5,7 +5,7 @@ import {
   getCommunity,
   listCommunities,
   slugify,
-} from "@/lib/store/community-store";
+} from "@/lib/store/memory-community-store";
 import { casePrefix } from "@/lib/case-number/format-case-number";
 import { CommunityConfigSchema } from "@/lib/schema/community";
 

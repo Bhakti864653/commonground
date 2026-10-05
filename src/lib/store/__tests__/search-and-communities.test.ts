@@ -5,7 +5,7 @@ vi.mock("@/lib/admin/auth", () => ({ requireAdmin: vi.fn() }));
 import { requireAdmin } from "@/lib/admin/auth";
 import { listCommunitiesForResidents, searchCases } from "@/lib/store/actions";
 import { adminCreateCommunity, adminListCommunities } from "@/lib/store/admin-community-actions";
-import { __resetCommunityStoreForTests } from "@/lib/store/community-store";
+import { __resetCommunityStoreForTests } from "@/lib/store/memory-community-store";
 import { __resetMemoryCaseStore, createCase } from "@/lib/store/memory-case-store";
 import { buildConsentRecord } from "@/lib/privacy/consent";
 

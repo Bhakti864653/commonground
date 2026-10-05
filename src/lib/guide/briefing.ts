@@ -98,7 +98,7 @@ You must finish by calling record_briefing exactly once.`;
 export async function generateCommunityBriefing(communityId: string): Promise<CommunityBriefing | null> {
   const client = getGroqClient();
   if (!client) return null;
-  const community = getCommunityById(communityId);
+  const community = await getCommunityById(communityId);
   if (!community) return null;
 
   // Nothing to brief — skip the API call entirely rather than asking the model to reason about
@@ -109,7 +109,7 @@ export async function generateCommunityBriefing(communityId: string): Promise<Co
 
   const messages: Groq.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: "system", content: SYSTEM_PROMPT },
-    { role: "user", content: communityContextBlock(communityId) },
+    { role: "user", content: await communityContextBlock(communityId) },
   ];
 
   let knownCaseNumbers: Set<string> | null = null;

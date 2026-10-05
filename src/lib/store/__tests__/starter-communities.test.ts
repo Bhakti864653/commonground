@@ -9,7 +9,7 @@ import {
   getCommunity,
   listCommunities,
   startCommunityForPlace,
-} from "@/lib/store/community-store";
+} from "@/lib/store/memory-community-store";
 import { createCase, __resetMemoryCaseStore, listCasesForCommunity } from "@/lib/store/memory-case-store";
 import { startCommunityForPlaceAction } from "@/lib/store/actions";
 import { CommunityConfigSchema } from "@/lib/schema/community";

@@ -17,7 +17,7 @@ export default async function CasePage({
   const { new: isNewParam, manage: manageParam } = await searchParams;
 
   const foundCase = await getCaseByCaseNumber(caseNumber);
-  const community = foundCase ? getCommunityById(foundCase.communityId) : undefined;
+  const community = foundCase ? await getCommunityById(foundCase.communityId) : undefined;
   const category = community?.categories.find((c) => c.id === foundCase?.categoryId);
 
   if (!foundCase || !community || !category) {

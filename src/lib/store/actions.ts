@@ -12,7 +12,7 @@ import type { CommunityConfig } from "@/lib/schema/community";
 import { detectTrends, type Trend } from "@/lib/insights/trends";
 import { filterCases } from "@/lib/explore/filter-cases";
 import { getCommunity, listCommunities, startCommunityForPlace } from "@/lib/store/community-store";
-import { recordCommunityRequest } from "@/lib/store/community-request-store";
+import { recordCommunityRequest } from "@/lib/store/community-store";
 import { placeAtPoint, searchPlaces, type GeocodeResult } from "@/lib/places/geocode";
 import { isLanguage } from "@/lib/i18n/languages";
 import { z } from "zod";
@@ -70,7 +70,7 @@ export async function reportInaccuracy(caseNumber: string, note?: string): Promi
  * emails are stripped — they're never needed client-side.
  */
 export async function listCommunitiesForResidents(): Promise<CommunityConfig[]> {
-  return listCommunities().map((c) => ({ ...c, moderation: { ...c.moderation, moderatorEmails: [] } }));
+  return (await listCommunities()).map((c) => ({ ...c, moderation: { ...c.moderation, moderatorEmails: [] } }));
 }
 
 export type CommunityInfo = Pick<CommunityConfig, "id" | "displayName" | "status" | "trustedSources" | "officialContacts">;
@@ -80,7 +80,7 @@ export type CommunityInfo = Pick<CommunityConfig, "id" | "displayName" | "status
  * Contacts page never shows a stale copy from the client's community list.
  */
 export async function getCommunityInfo(communityId: string): Promise<CommunityInfo | null> {
-  const community = typeof communityId === "string" ? getCommunity(communityId) : undefined;
+  const community = typeof communityId === "string" ? await getCommunity(communityId) : undefined;
   if (!community) return null;
   const { id, displayName, status, trustedSources, officialContacts } = community;
   return { id, displayName, status, trustedSources, officialContacts };
@@ -94,7 +94,7 @@ export async function getCommunityInfo(communityId: string): Promise<CommunityIn
 export async function startCommunityForPlaceAction(
   parts: unknown,
 ): Promise<{ ok: true; community: CommunityConfig } | { ok: false; error: "invalid" | "full" }> {
-  const result = startCommunityForPlace(parts);
+  const result = await startCommunityForPlace(parts);
   if (!result.ok) return result;
   const c = result.community;
   return { ok: true, community: { ...c, moderation: { ...c.moderation, moderatorEmails: [] } } };
@@ -141,7 +141,7 @@ export type CaseSearchResult = { total: number; items: { caseItem: PublicCase; i
  * Invalid input or an unknown community returns an empty result rather than throwing.
  */
 export async function searchCases(communityId: string, rawFilters: unknown): Promise<CaseSearchResult> {
-  const community = typeof communityId === "string" ? getCommunity(communityId) : undefined;
+  const community = typeof communityId === "string" ? await getCommunity(communityId) : undefined;
   const parsed = SearchFiltersSchema.safeParse(rawFilters);
   if (!community || !parsed.success) return { total: 0, items: [] };
 

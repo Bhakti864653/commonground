@@ -15,7 +15,7 @@ import {
   type InfoChangeResult,
 } from "@/lib/store/community-store";
 import type { CommunityConfig } from "@/lib/schema/community";
-import { listCommunityRequestSummaries, type CommunityRequestSummary } from "@/lib/store/community-request-store";
+import { listCommunityRequestSummaries, type CommunityRequestSummary } from "@/lib/store/community-store";
 
 const ACTOR_ID = "admin";
 

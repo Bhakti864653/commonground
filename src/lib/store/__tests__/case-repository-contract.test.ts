@@ -5,6 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import { memoryCaseRepository, __resetMemoryCaseStore } from "@/lib/store/memory-case-store";
 import { createSqlCaseRepository } from "@/lib/store/sql-case-store";
+import { getCommunity as getMemoryCommunity } from "@/lib/store/memory-community-store";
 import { fromPglite } from "@/lib/db/sql-client";
 import type { CaseRepository } from "@/lib/store/case-repository";
 import type { NewCaseInput } from "@/lib/store/new-case";
@@ -28,7 +29,7 @@ const harnesses: Harness[] = [
   { name: "in-memory", repo: () => memoryCaseRepository, reset: async () => __resetMemoryCaseStore() },
   {
     name: "Postgres (PGlite)",
-    repo: () => createSqlCaseRepository(fromPglite(pg)),
+    repo: () => createSqlCaseRepository(fromPglite(pg), async (id) => getMemoryCommunity(id)),
     setup: async () => {
       pg = new PGlite();
       await pg.exec(MIGRATION);

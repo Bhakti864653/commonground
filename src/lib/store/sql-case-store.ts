@@ -7,6 +7,7 @@ import {
   type ModerationAction,
 } from "@/lib/schema/report";
 import type { SqlClient } from "@/lib/db/sql-client";
+import type { CommunityConfig } from "@/lib/schema/community";
 import type { CaseRepository } from "./case-repository";
 import { prepareNewCase } from "./new-case";
 
@@ -154,7 +155,14 @@ async function recordAction(
   );
 }
 
-export function createSqlCaseRepository(db: SqlClient): CaseRepository {
+/**
+ * `getCommunity` looks up the community a new case names — the Postgres community store in
+ * production, so the two always agree on which communities exist.
+ */
+export function createSqlCaseRepository(
+  db: SqlClient,
+  getCommunity: (id: string) => Promise<CommunityConfig | undefined>,
+): CaseRepository {
   const getCaseByCaseNumber = async (caseNumber: string) =>
     (await loadCases(db, "case_number = $1 and deleted_at is null", [caseNumber]))[0];
   const listCasesForCommunity = (communityId: string) =>
@@ -163,7 +171,7 @@ export function createSqlCaseRepository(db: SqlClient): CaseRepository {
   return {
     async createCase(input, now = defaultClock) {
       const createdAt = now();
-      const prepared = prepareNewCase(input, createdAt);
+      const prepared = prepareNewCase(input, createdAt, await getCommunity(input.communityId));
       const { rows } = await db.query<{ case_number: string }>(
         `select case_number from public.create_case(
            $1, $2, $3, $4, $5, $6::jsonb, $7::timestamptz, $8, $9, $10::jsonb, $11::jsonb, $12)`,

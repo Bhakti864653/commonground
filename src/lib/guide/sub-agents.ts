@@ -133,7 +133,7 @@ calling record_duplicate_suggestion exactly once.`;
   const { result, toolCalls } = await runFocusedAgent({
     client,
     systemPrompt,
-    userContent: `${communityContextBlock(targetCase.communityId)}\n\nCase to analyze:\n${caseContextBlock(targetCase)}`,
+    userContent: `${await communityContextBlock(targetCase.communityId)}\n\nCase to analyze:\n${caseContextBlock(targetCase)}`,
     tools: TOOL_DEFINITIONS,
     recordTool: DUPLICATE_RECORD_TOOL,
     recordToolName: "record_duplicate_suggestion",

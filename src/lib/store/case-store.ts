@@ -2,6 +2,7 @@ import type { CaseRepository } from "./case-repository";
 import { memoryCaseRepository, __resetMemoryCaseStore } from "./memory-case-store";
 import { createSqlCaseRepository } from "./sql-case-store";
 import { getSqlClient } from "@/lib/db/pool";
+import { getCommunity } from "./community-store";
 
 export type { NewCaseInput } from "./new-case";
 export type { CaseRepository } from "./case-repository";
@@ -16,7 +17,7 @@ let sqlRepository: CaseRepository | null = null;
 export function getCaseRepository(): CaseRepository {
   const url = process.env.DATABASE_URL;
   if (!url || process.env.VITEST) return memoryCaseRepository;
-  sqlRepository ??= createSqlCaseRepository(getSqlClient(url));
+  sqlRepository ??= createSqlCaseRepository(getSqlClient(url), getCommunity);
   return sqlRepository;
 }
 

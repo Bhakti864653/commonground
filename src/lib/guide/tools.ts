@@ -101,8 +101,8 @@ export async function executeTool(
   }
 }
 
-export function communityContextBlock(communityId: string): string {
-  const community = getCommunityById(communityId);
+export async function communityContextBlock(communityId: string): Promise<string> {
+  const community = await getCommunityById(communityId);
   if (!community) return "";
   const categories = community.categories.map((c) => `${c.id}: ${c.label}`).join(", ");
   return `Active community: ${community.displayName}, ${community.country}. Valid category ids: ${categories}.`;

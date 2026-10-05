@@ -48,8 +48,8 @@ const UNAVAILABLE_MESSAGE = {
   it: "La Guida non è disponibile al momento.",
 };
 
-function systemPrompt(communityId: string, language: Language): string {
-  const community = getCommunityById(communityId);
+async function systemPrompt(communityId: string, language: Language): Promise<string> {
+  const community = await getCommunityById(communityId);
   const isDemo = community?.status === "demo";
   const isStarter = community?.status === "starter";
   const hasContacts = (community?.officialContacts.length ?? 0) > 0;
@@ -64,7 +64,7 @@ function systemPrompt(communityId: string, language: Language): string {
 Respond in ${modelLanguageName(language)}, in plain text only — no markdown
 formatting (no **bold**, no bullet lists with dashes), since this chat renders plain text.
 
-${communityContextBlock(communityId)}
+${await communityContextBlock(communityId)}
 When talking to the resident, call categories by these names (never by their internal ids):
 ${categoryNames || "none configured"}.
 
@@ -138,12 +138,12 @@ export async function askGuide(
     return { emergency: false, answer: UNAVAILABLE_MESSAGE[language] };
   }
 
-  const community = getCommunityById(communityId);
+  const community = await getCommunityById(communityId);
   const draftTool = community ? buildDraftSubmissionTool(community) : null;
   const tools = draftTool ? [...TOOL_DEFINITIONS, draftTool] : TOOL_DEFINITIONS;
 
   const messages: Groq.Chat.Completions.ChatCompletionMessageParam[] = [
-    { role: "system", content: systemPrompt(communityId, language) },
+    { role: "system", content: await systemPrompt(communityId, language) },
     ...history.slice(-6),
     { role: "user", content: message },
   ];

@@ -82,7 +82,7 @@ export async function runReferralPipeline(caseNumber: string): Promise<ReferralP
 
   const targetCase = await getCaseByCaseNumber(caseNumber);
   if (!targetCase) return skip("case_not_found");
-  const community = getCommunity(targetCase.communityId);
+  const community = await getCommunity(targetCase.communityId);
   // A community with no routing (the fictional demo, any community a moderator set up) simply
   // doesn't use referrals yet; that's not an error worth logging.
   if (!community?.referralRouting?.length) return { outcome: "skipped", reason: "no_routing", steps };
