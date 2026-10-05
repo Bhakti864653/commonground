@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { FIELD } from "@/lib/i18n/field-notes";
-import type { Language } from "@/lib/i18n/dictionary";
+import { UI_STRINGS, type Language } from "@/lib/i18n/dictionary";
 import { formatApproximateAreaLabel } from "@/lib/privacy/approximate-area";
 import { STATUS_LABELS, type PublicCase } from "@/lib/schema/report";
 import type { CommunityConfig } from "@/lib/schema/community";
@@ -27,9 +27,12 @@ export function CommunityMap({
   selectedId,
   onSelect,
   language,
+  loading = false,
 }: {
   community: CommunityConfig;
   cases: PublicCase[];
+  /** True until the case list has arrived — the badge must not claim "00 cases" meanwhile. */
+  loading?: boolean;
   selectedId: string | null;
   onSelect: (c: PublicCase) => void;
   language: Language;
@@ -70,7 +73,7 @@ export function CommunityMap({
             {street && <MapCredit language={language} />}
           </div>
           <p className="hidden shrink-0 rounded-full bg-surface/90 px-4 py-[11px] text-[0.66rem] font-extrabold uppercase tracking-[0.09em] text-ink backdrop-blur min-[420px]:block">
-            {fill(t.mapCount[language], { count: String(cases.length).padStart(2, "0") })}
+            {loading ? UI_STRINGS.activity.loading[language] : fill(t.mapCount[language], { count: String(cases.length).padStart(2, "0") })}
           </p>
         </div>
 

@@ -91,7 +91,7 @@ export default function Home() {
       ) : (
         <>
           <section className="grid gap-7 min-[1100px]:grid-cols-[minmax(0,1.88fr)_minmax(270px,0.76fr)] min-[1100px]:gap-[clamp(24px,4vw,65px)]">
-            <CommunityMap community={community} cases={cases} selectedId={selectedId} onSelect={(c) => setSelectedId(c.id)} language={language} />
+            <CommunityMap community={community} cases={cases} loading={!ready} selectedId={selectedId} onSelect={(c) => setSelectedId(c.id)} language={language} />
 
             {/* Open (unboxed) Guide and pulse, as in the reference. */}
             <div className="flex flex-col min-[520px]:flex-row min-[520px]:gap-[22px] min-[1100px]:flex-col min-[1100px]:gap-0">

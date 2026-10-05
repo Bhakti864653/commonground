@@ -67,3 +67,17 @@ describe("home case count", () => {
     expect(screen.queryByText(/0 casos/)).not.toBeInTheDocument();
   });
 });
+
+describe("map case-count badge", () => {
+  it("says it's loading instead of '00 casos' until cases arrive", async () => {
+    const { CommunityMap } = await vi.importActual<typeof import("@/components/map/CommunityMap")>("@/components/map/CommunityMap");
+    const illustrated = { ...SANTIAGO_VERAGUAS, map: undefined };
+    const { rerender } = render(
+      <CommunityMap community={illustrated} cases={[]} loading selectedId={null} onSelect={() => {}} language="es" />,
+    );
+    expect(screen.queryByText(/00 casos/)).not.toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.activity.loading.es)).toBeInTheDocument();
+    rerender(<CommunityMap community={illustrated} cases={[oneCase]} selectedId={null} onSelect={() => {}} language="es" />);
+    expect(screen.queryByText(UI_STRINGS.activity.loading.es)).not.toBeInTheDocument();
+  });
+});
