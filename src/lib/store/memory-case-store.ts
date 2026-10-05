@@ -1,6 +1,15 @@
 import { formatCaseNumber } from "@/lib/case-number/format-case-number";
 import type { CaseRepository } from "./case-repository";
-import { DEMO_CASE_SEEDS, DEMO_COMMUNITY_ID, DEMO_CONSENT_VERSION, DEMO_STATUS_CHANGE_NOTE } from "./demo-seed";
+import {
+  DEMO_CASE_SEEDS,
+  DEMO_COMMUNITY_ID,
+  DEMO_CONSENT_VERSION,
+  DEMO_REFERRAL_OFFICE,
+  DEMO_REFERRAL_REASONING,
+  DEMO_STATUS_CHANGE_NOTE,
+  demoAgentSteps,
+  demoFinalStatus,
+} from "./demo-seed";
 import {
   CaseSchema,
   ReferralDraftSchema,
@@ -103,6 +112,51 @@ function seedDemoCases(store: CaseStoreState): void {
       });
     }
 
+    // The agent's steps (and a moderator's approval), in time order among the status changes.
+    const agentSuggestions: Case["agentSuggestions"] = [];
+    const minutesLater = (minutes: number) => new Date(Date.parse(createdAt) + minutes * 60 * 1000).toISOString();
+    for (const step of demoAgentSteps(seed)) {
+      statusHistory.push({
+        id: crypto.randomUUID(),
+        status: step.status,
+        occurredAt: minutesLater(step.minutesAfter),
+        actorType: step.actorType,
+        kind: step.kind,
+        contactId: step.contactId,
+      });
+      if (step.kind === "referral_approved") {
+        moderationActions.push({
+          id: crypto.randomUUID(),
+          actorId: "demo-seed",
+          action: "approve_referral",
+          occurredAt: minutesLater(step.minutesAfter),
+          detail: step.contactId,
+        });
+      }
+    }
+    statusHistory.sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
+    moderationActions.sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
+    const referral = seed.agent?.referral;
+    if (referral) {
+      const approvedAfter = referral.approvedAfterDays;
+      agentSuggestions.push({
+        id: crypto.randomUUID(),
+        kind: "referral",
+        suggestedValue: DEMO_REFERRAL_OFFICE,
+        reasoning: DEMO_REFERRAL_REASONING,
+        createdAt: minutesLater(4),
+        status: approvedAfter === undefined ? "pending" : "approved",
+        ...(approvedAfter === undefined ? {} : { reviewedAt: minutesLater(approvedAfter * 24 * 60) }),
+        referral: {
+          contactId: DEMO_REFERRAL_OFFICE,
+          urgency: referral.urgency,
+          message: referral.message,
+          categoryAssessment: "confirmed",
+        },
+      });
+    }
+    finalStatus = demoFinalStatus(seed);
+
     const candidate: Case = {
       id: crypto.randomUUID(),
       type: seed.type,
@@ -130,7 +184,7 @@ function seedDemoCases(store: CaseStoreState): void {
       adminNotes: [],
       inaccuracyFlags: [],
       moderationActions,
-      agentSuggestions: [],
+      agentSuggestions,
       managementToken: crypto.randomUUID(),
     } as Case;
 

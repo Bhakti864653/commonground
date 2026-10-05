@@ -14,6 +14,7 @@ import {
   changeCaseStatus,
   createCase,
   getCaseByCaseNumber,
+  listCasesForCommunity,
   rejectReferral,
 } from "@/lib/store/memory-case-store";
 import { buildConsentRecord } from "@/lib/privacy/consent";
@@ -55,6 +56,7 @@ function prepare(caseNumber: string) {
   return suggestion!.id;
 }
 
+const publicCasesFor = (communityId: string): PublicCase[] => listCasesForCommunity(communityId).map(toPublicCase);
 const publicCases = (...numbers: string[]): PublicCase[] => numbers.map((n) => toPublicCase(getCaseByCaseNumber(n)!));
 
 describe("agent feed", () => {
@@ -173,6 +175,40 @@ describe("listAgentActivity", () => {
     prepare(newCase());
     expect((await listAgentActivity(COMMUNITY, "abc")).items).toHaveLength(3);
     expect((await listAgentActivity(COMMUNITY, -5)).items).toHaveLength(3);
+  });
+});
+
+describe("demonstration cases", () => {
+  beforeEach(() => {
+    // A store that doesn't exist yet seeds the demonstration cases on first use, as on a fresh server.
+    delete (globalThis as { __commonGroundCaseStore__?: unknown }).__commonGroundCaseStore__;
+    isAdminAuthenticated.mockReset();
+  });
+
+  it("come with agent activity, every item labeled as a demonstration", async () => {
+    const page = await listAgentActivity("santiago-veraguas");
+    expect(page.counts).toEqual({ reviewed: 7, prepared: 4, approved: 2 });
+    expect(page.items.length).toBeGreaterThan(0);
+    expect(page.items.every((i) => i.isDemo)).toBe(true);
+    expect(page.offices.some((o) => o.id === "alcaldia-santiago-oficina")).toBe(true);
+    expect(JSON.stringify(page)).not.toContain("Datos de demostración] Estimada");
+  });
+
+  it("leave two referrals waiting for a moderator, and approved ones as referred", async () => {
+    isAdminAuthenticated.mockResolvedValue(true);
+    const pending = await listPendingReferrals("santiago-veraguas");
+    expect(pending).toHaveLength(2);
+    expect(pending!.every((p) => p.isDemo && p.contactId === "alcaldia-santiago-oficina")).toBe(true);
+    const referred = buildAgentFeed(publicCasesFor("santiago-veraguas")).filter((i) => i.kind === "referral_approved");
+    expect(referred).toHaveLength(2);
+    for (const item of referred) expect(getCaseByCaseNumber(item.caseNumber)!.status).toBe("referred");
+  });
+
+  it("keep each timeline in time order", () => {
+    for (const c of publicCasesFor("santiago-veraguas")) {
+      const times = c.statusHistory.map((e) => e.occurredAt);
+      expect(times).toEqual([...times].sort());
+    }
   });
 });
 

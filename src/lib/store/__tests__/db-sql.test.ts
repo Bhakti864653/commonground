@@ -3,8 +3,8 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
-import { buildDemoSeedSql } from "@/lib/store/demo-seed-sql";
-import { DEMO_CASE_SEEDS } from "@/lib/store/demo-seed";
+import { buildDemoAgentMigrationSql, buildDemoSeedSql } from "@/lib/store/demo-seed-sql";
+import { DEMO_CASE_SEEDS, demoAgentSteps, demoFinalStatus } from "@/lib/store/demo-seed";
 import {
   ModerationActionSchema,
   ReportStatusSchema,
@@ -24,6 +24,7 @@ const MIGRATION = readdirSync(join(ROOT, "db/migrations"))
   .map((f) => readFileSync(join(ROOT, "db/migrations", f), "utf8"))
   .join("\n");
 const SEED_PATH = join(ROOT, "db/seed.sql");
+const AGENT_MIGRATION_PATH = join(ROOT, "db/migrations/0004_demo_agent_steps.sql");
 
 /** The quoted values inside a named CHECK constraint, e.g. cases_status_check → ["received", ...]. */
 function checkValues(constraint: string): string[] {
@@ -34,6 +35,17 @@ function checkValues(constraint: string): string[] {
 }
 
 const sorted = (values: readonly string[]) => [...values].sort();
+
+/** Cases whose timeline, read in insertion order (seq, as the SQL store does), isn't in time order. */
+async function outOfOrderTimelines(db: PGlite): Promise<number> {
+  const { rows } = await db.query<{ n: number }>(
+    `select count(*)::int as n from (
+       select array_agg(id order by seq) as by_seq, array_agg(id order by occurred_at, seq) as by_time
+       from public.case_events group by case_id
+     ) t where by_seq <> by_time`,
+  );
+  return rows[0].n;
+}
 
 describe("migration CHECK constraints match the app's Zod enums", () => {
   it.each([
@@ -54,6 +66,12 @@ describe("migration CHECK constraints match the app's Zod enums", () => {
 describe("db/seed.sql", () => {
   it("is exactly what the generator produces from DEMO_CASE_SEEDS", async () => {
     await expect(buildDemoSeedSql()).toMatchFileSnapshot(SEED_PATH);
+  });
+});
+
+describe("db/migrations/0004_demo_agent_steps.sql", () => {
+  it("is exactly what the generator produces from DEMO_CASE_SEEDS", async () => {
+    await expect(buildDemoAgentMigrationSql()).toMatchFileSnapshot(AGENT_MIGRATION_PATH);
   });
 });
 
@@ -87,17 +105,27 @@ describe("migration + seed on a real Postgres (PGlite)", () => {
       const seed = DEMO_CASE_SEEDS[i];
       expect(row.case_number).toBe(num(i + 1));
       expect(row.description).toBe(seed.description);
-      expect(row.status).toBe(seed.secondStatus ?? seed.status);
+      expect(row.status).toBe(demoFinalStatus(seed));
       expect(row.source_type).toBe("demonstration");
     });
   });
 
   it("records the same timeline and moderation history as the in-memory seeding", async () => {
     const changed = DEMO_CASE_SEEDS.filter((s) => s.secondStatus || s.status !== "received").length;
+    const steps = DEMO_CASE_SEEDS.flatMap(demoAgentSteps);
+    const approvals = steps.filter((s) => s.kind === "referral_approved").length;
     const events = await db.query<{ n: number }>("select count(*)::int as n from public.case_events");
     const actions = await db.query<{ n: number }>("select count(*)::int as n from public.moderation_actions");
-    expect(events.rows[0].n).toBe(DEMO_CASE_SEEDS.length + changed);
-    expect(actions.rows[0].n).toBe(changed);
+    const referrals = await db.query<{ status: string }>("select status from public.agent_suggestions order by status");
+    expect(events.rows[0].n).toBe(DEMO_CASE_SEEDS.length + changed + steps.length);
+    expect(actions.rows[0].n).toBe(changed + approvals);
+    expect(referrals.rows.map((r) => r.status)).toEqual(
+      DEMO_CASE_SEEDS.flatMap((s) => (s.agent?.referral ? [s.agent.referral.approvedAfterDays === undefined ? "pending" : "approved"] : [])).sort(),
+    );
+  });
+
+  it("stores each timeline in time order, the order the app reads it in", async () => {
+    expect(await outOfOrderTimelines(db)).toBe(0);
   });
 
   it("does nothing when run a second time", async () => {
@@ -182,4 +210,62 @@ describe("migration + seed on a real Postgres (PGlite)", () => {
     expect(rows[0].n).toBe(DEMO_CASE_SEEDS.length);
     await bare.close();
   }, 60_000);
+});
+
+describe("0004 on a database seeded before the agent existed (PGlite)", () => {
+  let db: PGlite;
+
+  beforeAll(async () => {
+    db = new PGlite();
+    await db.exec(`create role anon; create role authenticated; create role visitor;`);
+    await db.exec(MIGRATION);
+    await db.exec(readFileSync(SEED_PATH, "utf8"));
+  }, 60_000);
+
+  it("adds the agent's steps to demonstration cases seeded before the agent existed, once", async () => {
+    const snapshot = async () =>
+      (
+        await db.query<{ row: string }>(
+          `select c.case_number || ' ' || c.status || ' ' || coalesce(string_agg(e.kind || '@' || (e.occurred_at - c.created_at)::text, ',' order by e.occurred_at, e.seq), '') as row
+           from public.cases c left join public.case_events e on e.case_id = c.id and e.kind is not null
+           where c.source_type = 'demonstration' group by c.id order by c.case_number`,
+        )
+      ).rows.map((r) => r.row);
+    const counts = async () =>
+      (
+        await db.query<{ n: string }>(
+          `select (select count(*) from public.agent_suggestions) || '/' || (select count(*) from public.moderation_actions) as n`,
+        )
+      ).rows[0].n;
+    const seeded = await snapshot();
+    const seededCounts = await counts();
+
+    // Turn the database back into one seeded before the agent: no agent steps, no drafts, no approvals.
+    await db.exec(`
+      delete from public.case_events where kind is not null;
+      delete from public.agent_suggestions;
+      delete from public.moderation_actions where action = 'approve_referral';
+      update public.cases c set status = (
+        select e.status from public.case_events e where e.case_id = c.id order by e.occurred_at desc, e.seq desc limit 1
+      );`);
+    // A real resident's case that happens to share a demo text is never touched.
+    await db.exec(`select public.create_case(
+      'santiago-veraguas', 'SV', 'report', 'flooding-drainage', ${"'" + DEMO_CASE_SEEDS[3].description.replace(/'/g, "''") + "'"},
+      '{"kind":"prefer_not_to_say","label":"-"}'::jsonb, now(), 'community_report', 'community', null, '{"consentVersion":"v1"}'::jsonb, 'token')`);
+    expect(await snapshot()).not.toEqual(seeded);
+
+    await db.exec(readFileSync(AGENT_MIGRATION_PATH, "utf8"));
+    expect(await snapshot()).toEqual(seeded);
+    expect(await counts()).toBe(seededCounts);
+    expect(await outOfOrderTimelines(db)).toBe(0);
+
+    await db.exec(readFileSync(AGENT_MIGRATION_PATH, "utf8"));
+    expect(await snapshot()).toEqual(seeded);
+    expect(await counts()).toBe(seededCounts);
+    const real = await db.query<{ n: number }>(
+      `select count(*)::int as n from public.case_events e join public.cases c on c.id = e.case_id
+       where c.source_type = 'community' and e.kind is not null`,
+    );
+    expect(real.rows[0].n).toBe(0);
+  });
 });
