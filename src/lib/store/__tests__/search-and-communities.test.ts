@@ -4,7 +4,7 @@ vi.mock("@/lib/admin/auth", () => ({ requireAdmin: vi.fn() }));
 
 import { requireAdmin } from "@/lib/admin/auth";
 import { listCommunitiesForResidents, searchCases } from "@/lib/store/actions";
-import { adminCreateCommunity, adminListCommunities } from "@/lib/store/admin-community-actions";
+import { adminCreateCommunity, adminDeleteCommunity, adminListCommunities } from "@/lib/store/admin-community-actions";
 import { __resetCommunityStoreForTests } from "@/lib/store/memory-community-store";
 import { __resetMemoryCaseStore, createCase } from "@/lib/store/memory-case-store";
 import { buildConsentRecord } from "@/lib/privacy/consent";
@@ -130,5 +130,13 @@ describe("admin community actions require a moderator", () => {
     ).rejects.toThrow();
     await expect(adminListCommunities()).rejects.toThrow();
     expect((await listCommunitiesForResidents()).map((c) => c.id)).toEqual(["santiago-veraguas", "riverbend-demo"]);
+  });
+
+  it("refuses to delete a community without an admin session, leaving it in place", async () => {
+    vi.mocked(requireAdmin).mockResolvedValueOnce(undefined);
+    const created = await adminCreateCommunity({ displayName: "Lugar de prueba", country: "Panamá", areas: [{ labelEs: "A", label: "A" }], categoryIds: ["other"] });
+    if (!created.ok) throw new Error("expected a community");
+    await expect(adminDeleteCommunity(created.community.id)).rejects.toThrow();
+    expect((await listCommunitiesForResidents()).some((c) => c.id === created.community.id)).toBe(true);
   });
 });

@@ -2,6 +2,7 @@ import type { CommunityConfig } from "@/lib/schema/community";
 import type {
   CommunityInfoLogEntry,
   CreateCommunityResult,
+  DeleteCommunityResult,
   InfoChangeResult,
   StartCommunityResult,
 } from "./community-logic";
@@ -22,6 +23,12 @@ export interface CommunityRepository {
   createCommunity(rawInput: unknown): Promise<CreateCommunityResult>;
   startCommunityForPlace(rawParts: unknown): Promise<StartCommunityResult>;
   adoptStarterCommunity(id: string): Promise<boolean>;
+  /**
+   * Deletes a community created at runtime (moderator- or visitor-started), but only while no
+   * case belongs to it — otherwise those cases' pages would point at nothing. Built-in
+   * communities can't be deleted. Its source/contact changes go with it; the deletion is logged.
+   */
+  deleteCommunity(id: string, actorId: string, now?: Date): Promise<DeleteCommunityResult>;
 
   addTrustedSource(communityId: string, rawInput: unknown, actorId: string, now?: Date): Promise<InfoChangeResult>;
   addOfficialContact(communityId: string, rawInput: unknown, actorId: string, now?: Date): Promise<InfoChangeResult>;

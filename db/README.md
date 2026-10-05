@@ -9,6 +9,7 @@ built-in communities live in code, not in the database. Production runs on a fre
 |---|---|
 | `migrations/0001_init.sql` | Cases: the tables, the `create_case` function that hands out case numbers, and the privacy lock-down (Row Level Security on; no access for any role but the owner). |
 | `migrations/0002_communities.sql` | Communities created at runtime, moderators' source/contact changes and their log, and visitors' place requests; same lock-down. |
+| `migrations/0003_delete_community_log.sql` | Lets the community change log record a deleted community. |
 | `seed.sql` | Adds the 8 demonstration cases once. **Generated** from `src/lib/store/demo-seed.ts` — don't edit it by hand. |
 | `../scripts/db.mjs` | Applies the files above (`npm run db:migrate`, `npm run db:seed`, `npm run db:status`). |
 

@@ -33,6 +33,7 @@ export const startCommunityForPlace: CommunityRepository["startCommunityForPlace
   repo().startCommunityForPlace(...a);
 export const adoptStarterCommunity: CommunityRepository["adoptStarterCommunity"] = (...a) =>
   repo().adoptStarterCommunity(...a);
+export const deleteCommunity: CommunityRepository["deleteCommunity"] = (...a) => repo().deleteCommunity(...a);
 export const addTrustedSource: CommunityRepository["addTrustedSource"] = (...a) => repo().addTrustedSource(...a);
 export const addOfficialContact: CommunityRepository["addOfficialContact"] = (...a) => repo().addOfficialContact(...a);
 export const removeCommunityInfoEntry: CommunityRepository["removeCommunityInfoEntry"] = (...a) =>

@@ -4,12 +4,21 @@ import { casePrefix } from "@/lib/case-number/format-case-number";
 import { CreateCommunityForm } from "@/components/admin/CreateCommunityForm";
 import { usesDatabase } from "@/lib/db/storage-mode";
 import { AdoptStarterButton } from "@/components/admin/AdoptStarterButton";
+import { DeleteCommunityButton } from "@/components/admin/DeleteCommunityButton";
+import { listCasesForAdmin } from "@/lib/store/admin-actions";
+import { isBuiltInCommunity } from "@/lib/store/community-store";
 
 export default async function AdminCommunitiesPage() {
   // Same page-level guard as admin/page.tsx — the layout's check alone can't stop this page
   // from running.
   if (!(await isAdminAuthenticated())) return null;
-  const [communities, requests] = await Promise.all([adminListCommunities(), adminListCommunityRequests()]);
+  const [communities, requests, cases] = await Promise.all([
+    adminListCommunities(),
+    adminListCommunityRequests(),
+    listCasesForAdmin(),
+  ]);
+  const caseCount = new Map<string, number>();
+  for (const c of cases) caseCount.set(c.communityId, (caseCount.get(c.communityId) ?? 0) + 1);
 
   return (
     <div className="flex flex-col gap-8">
@@ -42,6 +51,17 @@ export default async function AdminCommunitiesPage() {
                     <AdoptStarterButton id={c.id} />
                   </>
                 )}
+                {!isBuiltInCommunity(c.id) &&
+                  ((caseCount.get(c.id) ?? 0) > 0 ? (
+                    <span className="ml-2 text-xs">
+                      · {caseCount.get(c.id)} {caseCount.get(c.id) === 1 ? "case" : "cases"}, so it can&rsquo;t be deleted
+                    </span>
+                  ) : (
+                    <>
+                      {" "}
+                      <DeleteCommunityButton id={c.id} name={c.displayName} />
+                    </>
+                  ))}
               </span>
             </li>
           ))}

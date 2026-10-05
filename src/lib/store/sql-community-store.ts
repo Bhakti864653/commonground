@@ -18,6 +18,7 @@ import {
   emptyOverrides,
   entryId,
   findInfoEntry,
+  isBuiltInCommunity,
   type CommunityInfoLogEntry,
   type InfoChangeResult,
   type InfoOverrides,
@@ -176,6 +177,30 @@ export function createSqlCommunityRepository(db: SqlClient): CommunityRepository
         [id],
       );
       return rows.length > 0;
+    },
+
+    async deleteCommunity(id, actorId, now = new Date()) {
+      if (isBuiltInCommunity(id)) return { ok: false, error: "built_in" };
+      return db.transaction(async (tx) => {
+        // Locking the row means two moderators can't both delete it, and a concurrent edit waits.
+        const { rows } = await tx.query<{ name: string }>(
+          "select config->>'displayName' as name from public.communities where id = $1 for update",
+          [id],
+        );
+        if (rows.length === 0) return { ok: false, error: "not_found" } as const;
+        const cases = await tx.query<{ n: number }>(
+          "select count(*)::int as n from public.cases where community_id = $1 and deleted_at is null",
+          [id],
+        );
+        if (cases.rows[0].n > 0) return { ok: false, error: "has_cases" } as const;
+        await tx.query("delete from public.communities where id = $1", [id]);
+        await tx.query("delete from public.community_info_overrides where community_id = $1", [id]);
+        await tx.query(
+          "insert into public.community_info_log (community_id, action, detail, actor_id, occurred_at) values ($1, 'delete_community', $2, $3, $4::timestamptz)",
+          [id, rows[0].name, actorId, now.toISOString()],
+        );
+        return { ok: true } as const;
+      });
     },
 
     addTrustedSource: (communityId, rawInput, actorId, now = new Date()) =>

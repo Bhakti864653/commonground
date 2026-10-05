@@ -6,12 +6,14 @@ import {
   addTrustedSource,
   adoptStarterCommunity,
   createCommunity,
+  deleteCommunity,
   listCommunities,
   listCommunityInfoLog,
   removeCommunityInfoEntry,
   reverifyCommunityInfoEntry,
   type CommunityInfoLogEntry,
   type CreateCommunityResult,
+  type DeleteCommunityResult,
   type InfoChangeResult,
 } from "@/lib/store/community-store";
 import type { CommunityConfig } from "@/lib/schema/community";
@@ -76,6 +78,13 @@ export async function adminAdoptStarterCommunity(id: string): Promise<boolean> {
   await requireAdmin();
   if (typeof id !== "string") return false;
   return adoptStarterCommunity(id);
+}
+
+/** Removes a community created by mistake — only one with no cases (see deleteCommunity). */
+export async function adminDeleteCommunity(id: string): Promise<DeleteCommunityResult> {
+  await requireAdmin();
+  if (typeof id !== "string") return { ok: false, error: "not_found" };
+  return deleteCommunity(id, ACTOR_ID);
 }
 
 export async function adminListCommunityRequests(): Promise<CommunityRequestSummary[]> {

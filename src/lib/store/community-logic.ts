@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SANTIAGO_VERAGUAS } from "@/data/communities";
+import { COMMUNITIES, SANTIAGO_VERAGUAS } from "@/data/communities";
 import { formatPlaceLabel, normalizeParts } from "@/lib/places/places";
 import { CATEGORY_PRESETS, CATEGORY_PRESET_IDS } from "@/data/communities/category-presets";
 import { casePrefix } from "@/lib/case-number/format-case-number";
@@ -33,7 +33,14 @@ export type InfoOverrides = {
 export type CommunityInfoLogEntry = {
   id: string;
   communityId: string;
-  action: "add_source" | "remove_source" | "add_contact" | "remove_contact" | "reverify_source" | "reverify_contact";
+  action:
+    | "add_source"
+    | "remove_source"
+    | "add_contact"
+    | "remove_contact"
+    | "reverify_source"
+    | "reverify_contact"
+    | "delete_community";
   /** The entry's name — never anything private. */
   detail: string;
   actorId: string;
@@ -317,3 +324,10 @@ export function findInfoEntry(community: CommunityConfig, kind: "source" | "cont
 }
 
 export const emptyOverrides = (): InfoOverrides => ({ sources: [], contacts: [], removedIds: [], reverified: {} });
+
+export type DeleteCommunityResult = { ok: true } | { ok: false; error: "not_found" | "built_in" | "has_cases" };
+
+/** Santiago de Veraguas and the fictional demo live in code and can never be deleted. */
+export function isBuiltInCommunity(id: string): boolean {
+  return COMMUNITIES.some((c) => c.id === id);
+}

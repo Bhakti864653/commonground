@@ -22,6 +22,9 @@ never claims a government institution received or acted on a submission.
 - Review visitor-started ("starter") communities at `/admin/communities` and mark one reviewed,
   which turns it into a normal pilot and removes its "not reviewed" notice. Until then every page
   of a starter community tells residents that no local moderator reviews its reports.
+- Delete a community created at runtime (by a moderator or a visitor) at `/admin/communities`,
+  only while it has no cases, after a second click to confirm. Built-in communities can't be
+  deleted. The deletion is recorded in the community change history (`delete_community`).
 - Set up a community at `/admin/communities` (see
   [`ARCHITECTURE.md`](ARCHITECTURE.md#communities-created-at-runtime-prototype)).
 - View each case's moderation history.

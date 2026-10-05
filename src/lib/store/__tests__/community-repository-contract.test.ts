@@ -9,6 +9,8 @@ import { __resetCommunityRequestsForTests } from "@/lib/store/memory-community-r
 import { createSqlCommunityRepository } from "@/lib/store/sql-community-store";
 import { MAX_STARTER_COMMUNITIES } from "@/lib/store/community-logic";
 import { fromPglite } from "@/lib/db/sql-client";
+import { createCase as createMemoryCase, __resetMemoryCaseStore } from "@/lib/store/memory-case-store";
+import type { NewCaseInput } from "@/lib/store/new-case";
 import type { CommunityRepository } from "@/lib/store/community-repository";
 import { casePrefix } from "@/lib/case-number/format-case-number";
 import { CommunityConfigSchema } from "@/lib/schema/community";
@@ -25,7 +27,15 @@ const MIGRATIONS = readdirSync(MIGRATIONS_DIR)
   .sort()
   .map((f) => readFileSync(join(MIGRATIONS_DIR, f), "utf8"));
 
-type Harness = { name: string; repo: () => CommunityRepository; reset: () => Promise<void>; setup?: () => Promise<void>; teardown?: () => Promise<void> };
+type Harness = {
+  name: string;
+  repo: () => CommunityRepository;
+  reset: () => Promise<void>;
+  /** Files a case in a community, in the case store that pairs with this community store. */
+  addCase: (communityId: string, categoryId: string) => Promise<void>;
+  setup?: () => Promise<void>;
+  teardown?: () => Promise<void>;
+};
 
 let pg: PGlite;
 const harnesses: Harness[] = [
@@ -35,6 +45,10 @@ const harnesses: Harness[] = [
     reset: async () => {
       __resetCommunityStoreForTests();
       __resetCommunityRequestsForTests();
+      __resetMemoryCaseStore();
+    },
+    addCase: async (communityId, categoryId) => {
+      createMemoryCase(caseInput(communityId, categoryId));
     },
   },
   {
@@ -46,7 +60,14 @@ const harnesses: Harness[] = [
     },
     reset: async () => {
       await pg.exec(
-        "truncate public.communities, public.community_info_overrides, public.community_info_log, public.community_requests",
+        "truncate public.communities, public.community_info_overrides, public.community_info_log, public.community_requests, public.cases, public.case_number_counters cascade",
+      );
+    },
+    addCase: async (communityId) => {
+      await pg.query(
+        `select public.create_case($1, 'XX', 'report', 'other', 'Prueba', '{"kind":"prefer_not_to_say","label":"-"}'::jsonb,
+           now(), 'community_report', 'community', null, '{"consentVersion":"v1"}'::jsonb, 'token')`,
+        [communityId],
       );
     },
     teardown: async () => {
@@ -65,6 +86,17 @@ const newCommunity = {
   ],
   categoryIds: ["flooding-drainage", "street-lighting"],
 };
+
+function caseInput(communityId: string, categoryId: string): NewCaseInput {
+  return {
+    type: "report",
+    communityId,
+    categoryId,
+    description: "Prueba",
+    approximateArea: { kind: "prefer_not_to_say", label: "-" },
+    consent: { consentVersion: "v1", consentedAt: "2026-10-01T00:00:00Z", language: "es" },
+  };
+}
 
 const kensington = { country: "Canada", region: "Ontario", city: "Toronto", neighborhood: "Kensington Market" };
 
@@ -227,6 +259,46 @@ describe.each(harnesses)("CommunityRepository contract: $name", (h) => {
       expect(await repo.addTrustedSource(created.community.id, source, "admin")).toEqual({ ok: true });
       expect((await repo.getCommunity(created.community.id))!.trustedSources).toHaveLength(1);
       expect((await repo.listCommunities()).find((c) => c.id === created.community.id)!.trustedSources).toHaveLength(1);
+    });
+  });
+
+  describe("deleting a community", () => {
+    it("deletes a community created at runtime with no cases, frees its name, and logs it", async () => {
+      const created = await repo.createCommunity(newCommunity);
+      if (!created.ok) throw new Error("expected a community");
+      const id = created.community.id;
+      await repo.addTrustedSource(id, source, "admin");
+      expect(await repo.deleteCommunity(id, "admin", new Date("2026-10-05T00:00:00Z"))).toEqual({ ok: true });
+      expect(await repo.getCommunity(id)).toBeUndefined();
+      expect((await repo.listCommunities()).map((c) => c.id)).toEqual(COMMUNITIES.map((c) => c.id));
+      expect((await repo.listCommunityInfoLog())[0]).toMatchObject({
+        communityId: id,
+        action: "delete_community",
+        detail: "Ciudad de Panamá",
+        occurredAt: "2026-10-05T00:00:00.000Z",
+      });
+      // The name can be used again, and its old source/contact changes don't come back.
+      const again = await repo.createCommunity(newCommunity);
+      expect(again.ok).toBe(true);
+      if (again.ok) expect(again.community.trustedSources).toEqual([]);
+    });
+
+    it("deletes a visitor-started community too", async () => {
+      const started = await repo.startCommunityForPlace(kensington);
+      if (!started.ok) throw new Error("expected a starter");
+      expect(await repo.deleteCommunity(started.community.id, "admin")).toEqual({ ok: true });
+      expect(await repo.getCommunity(started.community.id)).toBeUndefined();
+    });
+
+    it("refuses built-in communities, unknown ones, and any community with a case", async () => {
+      expect(await repo.deleteCommunity(SANTIAGO_VERAGUAS.id, "admin")).toEqual({ ok: false, error: "built_in" });
+      expect(await repo.deleteCommunity("nowhere", "admin")).toEqual({ ok: false, error: "not_found" });
+      const created = await repo.createCommunity(newCommunity);
+      if (!created.ok) throw new Error("expected a community");
+      await h.addCase(created.community.id, "other");
+      expect(await repo.deleteCommunity(created.community.id, "admin")).toEqual({ ok: false, error: "has_cases" });
+      expect(await repo.getCommunity(created.community.id)).toBeDefined();
+      expect((await repo.listCommunityInfoLog()).some((e) => e.action === "delete_community")).toBe(false);
     });
   });
 

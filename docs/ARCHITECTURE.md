@@ -61,7 +61,9 @@ stored behind `community-store.ts` (`CommunityRepository` in `community-reposito
 `memory-community-*` stores. The rules both use live in `community-logic.ts` and
 `community-request-logic.ts`, and `community-repository-contract.test.ts` runs the same tests on
 both. Unique constraints on a community's name and case-number prefix stop two servers from
-creating the same place twice. Admin pages say whether changes are saved in the database or
+creating the same place twice. A moderator can delete a runtime-created community only while no
+case belongs to it (checked inside the delete's transaction), so no case is ever left without
+its community. Admin pages say whether changes are saved in the database or
 only in this server's memory (`usesDatabase()` in `src/lib/db/storage-mode.ts`).
 
 ## Why this stack

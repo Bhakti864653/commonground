@@ -9,8 +9,10 @@ import {
   emptyOverrides,
   entryId,
   findInfoEntry,
+  isBuiltInCommunity,
   type CommunityInfoLogEntry,
   type CreateCommunityResult,
+  type DeleteCommunityResult,
   type InfoChangeResult,
   type InfoOverrides,
   type StartCommunityResult,
@@ -75,6 +77,27 @@ export function adoptStarterCommunity(id: string): boolean {
   if (!found) return false;
   found.status = "pilot";
   return true;
+}
+
+/**
+ * `hasCases` says whether any (not deleted) case belongs to the community; the caller supplies it
+ * from the case store, which this store doesn't depend on.
+ */
+export function deleteCommunity(
+  id: string,
+  actorId: string,
+  hasCases: (communityId: string) => boolean,
+  now = new Date(),
+): DeleteCommunityResult {
+  if (isBuiltInCommunity(id)) return { ok: false, error: "built_in" };
+  const store = getStore();
+  const found = store.created.find((c) => c.id === id);
+  if (!found) return { ok: false, error: "not_found" };
+  if (hasCases(id)) return { ok: false, error: "has_cases" };
+  store.created = store.created.filter((c) => c.id !== id);
+  delete store.overrides[id];
+  logInfoChange(id, "delete_community", found.displayName, actorId, now);
+  return { ok: true };
 }
 
 function overridesFor(communityId: string): InfoOverrides {
