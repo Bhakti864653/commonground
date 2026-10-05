@@ -1,0 +1,2 @@
+# The seed SQL is compared byte-for-byte with its generator, so keep LF on every platform.
+supabase/**/*.sql text eol=lf
