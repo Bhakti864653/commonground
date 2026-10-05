@@ -111,20 +111,19 @@ runtime-validated schema, the single source of truth) · Vitest · Groq (`groq-s
 Guide's real reasoning. MapLibre GL (`maplibre-gl`) draws the street map from OpenFreeMap's
 keyless OpenStreetMap tiles; there is no 3D view.
 
-**Persistence (prototype phase):** in-memory stores (`src/lib/store/memory-case-store.ts` for cases, behind the async
-`case-store.ts` API,
-`src/lib/store/community-store.ts` for runtime-created communities), `globalThis`-backed so they
-survive dev-mode hot reload. There is no database yet: submitted cases and created communities
-are lost on a restart or redeploy, and on a serverless host (Vercel) they aren't shared between
-instances. A fixed set of clearly labeled demonstration cases is re-seeded whenever a store
-starts empty. A real database is the documented next step, per `docs/ARCHITECTURE.md`.
+**Persistence:** cases are stored in Postgres (a free Neon project) when `DATABASE_URL` is set,
+and otherwise in an in-memory prototype store — both behind the same async API in
+`src/lib/store/case-store.ts`, and tested against the same behaviour suite. Database setup:
+[`db/README.md`](db/README.md) (`npm run db:migrate`, `npm run db:seed`). Runtime-created
+communities and place requests are still in memory only (lost on a restart or redeploy, and not
+shared between serverless instances).
 
 ## Architecture notes
 
 ```mermaid
 flowchart LR
   Resident -->|submit / browse / chat| AppShell["(app)/ resident shell"]
-  AppShell --> Store["case-store.ts (in-memory for now)"]
+  AppShell --> Store["case-store.ts (Postgres, or in-memory)"]
   AppShell -->|Explore search| Search["searchCases (server)"]
   Search --> Store
   AppShell --> Guide["Guide (resident chat)"]

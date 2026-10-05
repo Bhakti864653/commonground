@@ -31,24 +31,31 @@ training data): `params`/`searchParams` are async everywhere (`await params`); t
 filename/export is renamed to `proxy` (not used — there is no proxy/middleware); `next lint` is
 removed, ESLint is invoked directly (reflected in `package.json`'s `lint` script).
 
-## Persistence (prototype limitation)
+## Persistence
 
-There is **no database yet**. Cases live in an in-memory store (`src/lib/store/memory-case-store.ts`;
-the rest of the app uses the async API in `case-store.ts`, defined by the `CaseRepository`
-interface in `case-repository.ts`, so a database implementation can replace it)
-and runtime-created communities in another (`src/lib/store/community-store.ts`), both attached
-to `globalThis` so they survive dev-mode hot reload. That means:
+**Cases** are stored in Postgres when `DATABASE_URL` is set (a free Neon project in production;
+setup and privacy details in [`../db/README.md`](../db/README.md)), and otherwise in an
+in-memory prototype store. Both sit behind one async API:
 
-- Submitted cases and moderator-created communities are **lost on a server restart or
-  redeploy**.
-- On a serverless host (Vercel), each instance has its own memory, so something created in one
-  request is not guaranteed to exist in a later one.
-- When the case store starts empty, it seeds a fixed set of cases that are clearly labeled as
-  demonstration data (`sourceType: "demonstration"`, `verificationState: "demonstration_data"`)
-  so the agentic features always have something real to work on.
+- `src/lib/store/case-store.ts` — what the rest of the app calls. `getCaseRepository()` picks
+  Postgres when `DATABASE_URL` is set, and always the in-memory store under tests.
+- `case-repository.ts` — the `CaseRepository` interface both stores implement.
+- `sql-case-store.ts` — Postgres (tables in `db/migrations/0001_init.sql`). Multi-step writes
+  run in one transaction with the case row locked; case numbers come from the database's
+  `create_case` function, so they stay unique across servers.
+- `memory-case-store.ts` — the in-memory store, attached to `globalThis` so it survives
+  dev-mode hot reload. Its cases are lost on a restart, aren't shared between serverless
+  instances, and it seeds the demonstration cases whenever it starts empty.
+- `new-case.ts` — the validation both stores apply to a new submission.
 
-The schema layer is designed so a real database (e.g. Postgres/Supabase) can replace the stores
-without touching components. Until then, nothing in the app should claim permanent storage.
+`case-repository-contract.test.ts` runs the same behaviour tests against both stores.
+Demonstration cases (`sourceType: "demonstration"`, `verificationState: "demonstration_data"`)
+come from one list, `demo-seed.ts`, used by the in-memory store and by the generated
+`db/seed.sql`.
+
+**Not in the database yet:** runtime-created communities, starter communities, and place
+requests (`community-store.ts`, `community-request-store.ts`) are still in memory only, with the
+limits above.
 
 ## Why this stack
 
@@ -88,7 +95,9 @@ src/
     icons/                  category icon map (icons always paired with text)
   lib/
     schema/                 Zod schemas + inferred types (community.ts, report.ts)
-    store/                  in-memory case and community stores, resident + admin server actions
+    store/                  case stores (Postgres + in-memory behind one API), community stores,
+                            resident + admin server actions
+    db/                     the server-only Postgres connection
     guide/                  Guide chat, tools, draft tool, emergency detection, multi-agent
                             case analysis, critique, suggestion validation, briefing
     explore/                filter-cases.ts (search/filter logic used by searchCases)
@@ -170,7 +179,7 @@ areas may share a direction, and directions are dropped if no center is given. N
 are rejected, ignoring case and accents. Each community gets an id and a case-number prefix
 (`casePrefix` in `src/lib/case-number/format-case-number.ts`) that no other community uses, so
 case numbers never collide. New communities start with **no** trusted sources or official
-contacts. They are stored in memory only — see [Persistence](#persistence-prototype-limitation).
+contacts. They are stored in memory only — see [Persistence](#persistence).
 
 The resident place selector also lists a "Panama City" entry and any names a visitor adds.
 Those are labels saved in the visitor's browser, not communities: choosing one shows a "not set
@@ -229,7 +238,7 @@ there is no background scheduling. Full detail: [`MODERATION.md`](MODERATION.md)
 - No background or scheduled jobs; the briefing and case analysis run only when a moderator asks.
 - No integration with any government or official system, and no automatic forwarding of
   reports. Referrals are delivered by a moderator by hand.
-- No follow-ups or scheduled reminders for referrals (no scheduler, no database yet).
+- No follow-ups or scheduled reminders for referrals (no scheduler yet).
 - No configured trusted sources or official contacts for any community yet.
 - Street-map zones are symbolic circles at fixed offsets from the town center, not real
   neighborhood boundaries; no community has boundary data.

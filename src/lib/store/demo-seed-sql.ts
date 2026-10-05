@@ -57,17 +57,17 @@ function seedBlock(seed: DemoCaseSeed, index: number): string {
 }
 
 /**
- * supabase/seed.sql, generated from DEMO_CASE_SEEDS so the database and the in-memory store can
+ * db/seed.sql, generated from DEMO_CASE_SEEDS so the database and the in-memory store can
  * never disagree about the demonstration cases. To regenerate after changing the list:
- * `npx vitest run src/lib/store/__tests__/supabase-sql.test.ts -u`.
+ * `npx vitest run src/lib/store/__tests__/db-sql.test.ts -u`.
  */
 export function buildDemoSeedSql(): string {
   return `-- CommonGround: demonstration cases for the Santiago de Veraguas pilot.
 --
 -- GENERATED from src/lib/store/demo-seed.ts by src/lib/store/demo-seed-sql.ts — don't edit by
--- hand. Regenerate with: npx vitest run src/lib/store/__tests__/supabase-sql.test.ts -u
+-- hand. Regenerate with: npx vitest run src/lib/store/__tests__/db-sql.test.ts -u
 --
--- Run once, after supabase/migrations/0001_init.sql: SQL Editor → New query → paste → Run.
+-- Applied by "npm run db:seed", after "npm run db:migrate".
 -- Safe to run again: if demonstration cases already exist, it does nothing. Dates are relative
 -- to when it runs ("9 days ago"), and from then on they age like any real case.
 -- Cases are numbered by create_case, the same function real submissions use, so the counter

@@ -53,8 +53,9 @@ privacy/safety constraint list and the emergency-phrase detection list.
 
 ## Architecture
 
-Next.js (App Router) + TypeScript + Tailwind CSS, in-memory prototype persistence (no database
-yet — cases and runtime-created communities are temporary), Zod for runtime-validated typed
+Next.js (App Router) + TypeScript + Tailwind CSS, cases in Postgres (Neon) when
+`DATABASE_URL` is set, otherwise in memory (tests always use memory; runtime-created communities
+are still in memory only — see `db/README.md`), Zod for runtime-validated typed
 models (`CommunityConfig`, `Report`, `Proposal`, status/verification enums, etc. — see
 `src/lib/schema/`). Full detail:
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).

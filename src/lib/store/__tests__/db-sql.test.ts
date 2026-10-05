@@ -15,8 +15,8 @@ import {
 } from "@/lib/schema/report";
 
 const ROOT = join(__dirname, "../../../..");
-const MIGRATION = readFileSync(join(ROOT, "supabase/migrations/0001_init.sql"), "utf8");
-const SEED_PATH = join(ROOT, "supabase/seed.sql");
+const MIGRATION = readFileSync(join(ROOT, "db/migrations/0001_init.sql"), "utf8");
+const SEED_PATH = join(ROOT, "db/seed.sql");
 
 /** The quoted values inside a named CHECK constraint, e.g. cases_status_check → ["received", ...]. */
 function checkValues(constraint: string): string[] {
@@ -42,7 +42,7 @@ describe("migration CHECK constraints match the app's Zod enums", () => {
   });
 });
 
-describe("supabase/seed.sql", () => {
+describe("db/seed.sql", () => {
   it("is exactly what the generator produces from DEMO_CASE_SEEDS", async () => {
     await expect(buildDemoSeedSql()).toMatchFileSnapshot(SEED_PATH);
   });
@@ -62,8 +62,9 @@ describe("migration + seed on a real Postgres (PGlite)", () => {
 
   beforeAll(async () => {
     db = new PGlite();
-    // Supabase's built-in roles, which the migration grants to / revokes from.
-    await db.exec(`create role anon; create role authenticated; create role service_role;`);
+    // Roles hosted APIs hand to browsers (the migration revokes them only if they exist), plus an
+    // ordinary role standing in for "anyone else" (PUBLIC).
+    await db.exec(`create role anon; create role authenticated; create role visitor;`);
     await db.exec(MIGRATION);
     await db.exec(readFileSync(SEED_PATH, "utf8"));
   }, 60_000);
@@ -143,21 +144,32 @@ describe("migration + seed on a real Postgres (PGlite)", () => {
     expect(rows.filter((r) => !r.relrowsecurity).map((r) => r.relname)).toEqual([]);
   });
 
-  it("gives the browser-facing roles no access at all, and only the server role can create cases", async () => {
-    const { rows } = await db.query<{ tbl: string; anon: boolean; authed: boolean }>(
+  it("gives other roles no access at all, and only the owner (the app's server) can create cases", async () => {
+    const { rows } = await db.query<{ tbl: string; anon: boolean; authed: boolean; visitor: boolean }>(
       `select c.relname as tbl,
               has_table_privilege('anon', c.oid, 'select,insert,update,delete') as anon,
-              has_table_privilege('authenticated', c.oid, 'select,insert,update,delete') as authed
+              has_table_privilege('authenticated', c.oid, 'select,insert,update,delete') as authed,
+              has_table_privilege('visitor', c.oid, 'select,insert,update,delete') as visitor
        from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'`,
     );
-    expect(rows.filter((r) => r.anon || r.authed)).toEqual([]);
+    expect(rows.filter((r) => r.anon || r.authed || r.visitor)).toEqual([]);
 
     const fn = "public.create_case(text, text, text, text, text, jsonb, timestamptz, text, text, jsonb, jsonb, text)";
-    const exec = await db.query<{ anon: boolean; authed: boolean; server: boolean }>(
+    const exec = await db.query<{ anon: boolean; authed: boolean; visitor: boolean; owner: boolean }>(
       `select has_function_privilege('anon', '${fn}', 'execute') as anon,
               has_function_privilege('authenticated', '${fn}', 'execute') as authed,
-              has_function_privilege('service_role', '${fn}', 'execute') as server`,
+              has_function_privilege('visitor', '${fn}', 'execute') as visitor,
+              has_function_privilege(current_user, '${fn}', 'execute') as owner`,
     );
-    expect(exec.rows[0]).toEqual({ anon: false, authed: false, server: true });
+    expect(exec.rows[0]).toEqual({ anon: false, authed: false, visitor: false, owner: true });
   });
+
+  it("applies cleanly on a server without any hosted-API roles (like Neon)", async () => {
+    const bare = new PGlite();
+    await bare.exec(MIGRATION);
+    await bare.exec(readFileSync(SEED_PATH, "utf8"));
+    const { rows } = await bare.query<{ n: number }>("select count(*)::int as n from public.cases");
+    expect(rows[0].n).toBe(DEMO_CASE_SEEDS.length);
+    await bare.close();
+  }, 60_000);
 });

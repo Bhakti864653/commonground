@@ -1,17 +1,20 @@
--- CommonGround: cases and everything attached to them (database plan step 2).
+-- CommonGround: cases and everything attached to them.
 --
--- Run once in the Supabase dashboard: SQL Editor → New query → paste this file → Run.
--- Then run supabase/seed.sql the same way to add the demonstration cases.
+-- Applied by `npm run db:migrate` (scripts/db.mjs), which records it in schema_migrations so it
+-- runs once. Then `npm run db:seed` adds the demonstration cases (db/seed.sql). Plain Postgres:
+-- runs on Neon (production), PGlite (tests), or any Postgres 13+.
 --
 -- Mirrors the Zod schemas in src/lib/schema/report.ts. The allowed values in each CHECK
--- constraint must match those schemas; src/lib/store/__tests__/supabase-sql.test.ts fails if
+-- constraint must match those schemas; src/lib/store/__tests__/db-sql.test.ts fails if
 -- they drift apart. Timestamps are timestamptz (stored in UTC). Small objects that always travel
 -- with a case (its approximate area, consent record, image metadata...) are jsonb columns.
 --
--- Privacy: Row Level Security is ON for every table, with NO policies, and the browser-facing
--- roles (anon, authenticated) are granted nothing. Only the server, using the secret key
--- (service_role), can read or write. Private fields (management_token, admin notes, moderation
--- actions, agent suggestions, flags) never need a policy because nothing public can reach them.
+-- Privacy: only the app's server connects, as the database owner, with DATABASE_URL (a
+-- server-only secret; nothing in the browser can reach the database). As a safety net, Row
+-- Level Security is ON for every table with NO policies — any other role that ever gets access
+-- (e.g. if a hosted "Data API" is switched on) sees nothing. The owner bypasses RLS, so the
+-- app is unaffected. Private fields (management_token, notes, moderation actions, suggestions,
+-- flags) never need a policy because nothing else can reach them.
 
 -- ---------------------------------------------------------------------------------------------
 -- Cases
@@ -211,7 +214,9 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------------------------
--- Lock everything down: RLS on with no policies, and nothing granted to browser-facing roles.
+-- Lock everything down: RLS on with no policies; no one but the owner may create cases; and
+-- the roles hosted APIs hand to browsers (Supabase's anon/authenticated, Neon Data API's
+-- anonymous/authenticated) get nothing, if they exist on this server.
 -- ---------------------------------------------------------------------------------------------
 alter table public.cases                enable row level security;
 alter table public.case_events          enable row level security;
@@ -221,13 +226,23 @@ alter table public.admin_notes          enable row level security;
 alter table public.inaccuracy_flags     enable row level security;
 alter table public.case_number_counters enable row level security;
 
-revoke all on public.cases, public.case_events, public.agent_suggestions, public.moderation_actions,
-  public.admin_notes, public.inaccuracy_flags, public.case_number_counters from anon, authenticated;
-
--- New functions are executable by everyone by default; only the server may create cases.
+-- New functions are executable by everyone (PUBLIC) by default; only the owner may create cases.
 revoke execute on function public.create_case(
   text, text, text, text, text, jsonb, timestamptz, text, text, jsonb, jsonb, text
-) from public, anon, authenticated;
-grant execute on function public.create_case(
-  text, text, text, text, text, jsonb, timestamptz, text, text, jsonb, jsonb, text
-) to service_role;
+) from public;
+
+do $$
+declare
+  r text;
+begin
+  foreach r in array array['anon', 'anonymous', 'authenticated'] loop
+    if exists (select 1 from pg_roles where rolname = r) then
+      execute format(
+        'revoke all on public.cases, public.case_events, public.agent_suggestions, public.moderation_actions,
+           public.admin_notes, public.inaccuracy_flags, public.case_number_counters from %I', r);
+      execute format(
+        'revoke execute on function public.create_case(text, text, text, text, text, jsonb, timestamptz, text, text, jsonb, jsonb, text) from %I', r);
+    end if;
+  end loop;
+end
+$$;

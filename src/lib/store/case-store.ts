@@ -1,15 +1,23 @@
 import type { CaseRepository } from "./case-repository";
 import { memoryCaseRepository, __resetMemoryCaseStore } from "./memory-case-store";
+import { createSqlCaseRepository } from "./sql-case-store";
+import { getSqlClient } from "@/lib/db/pool";
 
-export type { NewCaseInput } from "./memory-case-store";
+export type { NewCaseInput } from "./new-case";
 export type { CaseRepository } from "./case-repository";
 
+let sqlRepository: CaseRepository | null = null;
+
 /**
- * Where cases are stored. Only the in-memory prototype store exists so far; the Supabase
- * repository (database plan step 3) will be chosen here when SUPABASE_URL is configured.
+ * Where cases are stored: Postgres (Neon) when DATABASE_URL is set, otherwise the in-memory
+ * prototype store. Tests always get the in-memory store, even if DATABASE_URL happens to be in
+ * the environment, so no test can ever write to a real database.
  */
 export function getCaseRepository(): CaseRepository {
-  return memoryCaseRepository;
+  const url = process.env.DATABASE_URL;
+  if (!url || process.env.VITEST) return memoryCaseRepository;
+  sqlRepository ??= createSqlCaseRepository(getSqlClient(url));
+  return sqlRepository;
 }
 
 // The app's case API: the same names as before, now async, delegating to the configured store.

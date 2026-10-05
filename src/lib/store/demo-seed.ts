@@ -4,7 +4,7 @@ import type { ReportStatus } from "@/lib/schema/report";
  * The fixed demonstration cases for the Santiago de Veraguas pilot — clearly labeled
  * (`sourceType: "demonstration"`, `verificationState: "demonstration_data"`), never presented
  * as real resident submissions. One list, two users: the in-memory store seeds these whenever
- * it starts empty, and supabase/seed.sql (generated from this list by demo-seed-sql.ts) inserts
+ * it starts empty, and db/seed.sql (generated from this list by demo-seed-sql.ts) inserts
  * them once into the database.
  */
 export type DemoCaseSeed = {

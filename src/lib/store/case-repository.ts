@@ -8,7 +8,7 @@ import type {
   VerificationState,
   VerifiedSource,
 } from "@/lib/schema/report";
-import type { NewCaseInput } from "./memory-case-store";
+import type { NewCaseInput } from "./new-case";
 
 /** Every write takes an optional clock so tests can pin timestamps. */
 type Clock = () => Date;
@@ -16,8 +16,9 @@ type Clock = () => Date;
 /**
  * Everything the app can do with cases, independent of where they are stored. Two
  * implementations: the in-memory prototype store (memory-case-store.ts — used by tests and when
- * no database is configured) and, later, Supabase Postgres. Every method is async because a
- * database call is; the in-memory one just resolves immediately.
+ * no database is configured) and Postgres (sql-case-store.ts — Neon in production).
+ * case-repository-contract.test.ts runs the same tests against both. Every method is async
+ * because a database call is; the in-memory one just resolves immediately.
  *
  * Reads return copies: changing a returned case never changes the stored one (a database works
  * that way too), so every change has to go through one of the write methods below.

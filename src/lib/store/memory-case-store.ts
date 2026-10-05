@@ -3,32 +3,20 @@ import type { CaseRepository } from "./case-repository";
 import { DEMO_CASE_SEEDS, DEMO_COMMUNITY_ID, DEMO_CONSENT_VERSION, DEMO_STATUS_CHANGE_NOTE } from "./demo-seed";
 import {
   CaseSchema,
-  MAX_DESCRIPTION_LENGTH,
   ReferralDraftSchema,
   type AgentSuggestion,
   type Case,
   type ReferralDraft,
   type TimelineEventKind,
-  type ApproximateArea,
   type RemovalReason,
   type ReportStatus,
-  type UserConsent,
   type VerificationState,
   type VerifiedSource,
 } from "@/lib/schema/report";
-import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 import { SANTIAGO_VERAGUAS } from "@/data/communities";
-import { validateImageMetadata } from "@/lib/privacy/image-validation";
+import { prepareNewCase, type NewCaseInput } from "./new-case";
 
-export type NewCaseInput = {
-  type: "report" | "proposal";
-  communityId: string;
-  categoryId: string;
-  description: string;
-  approximateArea: ApproximateArea;
-  consent: UserConsent;
-  image?: Case["image"];
-};
+export type { NewCaseInput } from "./new-case";
 
 type CaseStoreState = {
   cases: Case[];
@@ -157,69 +145,16 @@ function nextSequence(store: CaseStoreState, communityId: string, year: number):
 }
 
 export function createCase(input: NewCaseInput, now: () => Date = () => new Date()): Case {
-  const community = getCommunityById(input.communityId);
-  if (!community) {
-    throw new Error(`Unknown community: ${input.communityId}`);
-  }
-
-  // A server action can be called with any category id; one the community doesn't have would
-  // create a case whose public page can never render (it looks the category up to show it).
-  if (!community.categories.some((c) => c.id === input.categoryId)) {
-    throw new Error(`Unknown category for ${input.communityId}: ${input.categoryId}`);
-  }
-  if (typeof input.description !== "string" || input.description.length > MAX_DESCRIPTION_LENGTH) {
-    throw new Error(`Description must be at most ${MAX_DESCRIPTION_LENGTH} characters`);
-  }
-
-  // Defense in depth — the wizard already checks this client-side, but a server action can be
-  // called directly with fabricated metadata, so this can't be the only check (PRIVACY.md).
-  if (input.image) {
-    const result = validateImageMetadata(input.image);
-    if (!result.valid) {
-      throw new Error(`Invalid image metadata: ${result.reason}`);
-    }
-  }
-
-  const store = getStore();
   const createdAt = now();
+  const prepared = prepareNewCase(input, createdAt);
+  const store = getStore();
   const year = createdAt.getUTCFullYear();
-  const sequence = nextSequence(store, input.communityId, year);
-  const nowIso = createdAt.toISOString();
-
-  const candidate: Case = {
-    id: crypto.randomUUID(),
-    type: input.type,
-    publicCaseNumber: formatCaseNumber(input.communityId, year, sequence),
-    communityId: input.communityId,
-    categoryId: input.categoryId,
-    description: input.description,
-    approximateArea: input.approximateArea,
-    createdAt: nowIso,
-    status: "received",
-    statusHistory: [
-      {
-        id: crypto.randomUUID(),
-        status: "received",
-        occurredAt: nowIso,
-        actorType: "system",
-      },
-    ],
-    sourceType: community.status === "demo" ? "demonstration" : "community",
-    verificationState: community.status === "demo" ? "demonstration_data" : "community_report",
-    image: input.image,
-    consent: input.consent,
-    adminNotes: [],
-    inaccuracyFlags: [],
-    moderationActions: [],
-    agentSuggestions: [],
-    managementToken: crypto.randomUUID(),
+  const created: Case = {
+    ...prepared,
+    publicCaseNumber: formatCaseNumber(input.communityId, year, nextSequence(store, input.communityId, year)),
   };
-
-  // Nothing bypasses schema validation on write (ARCHITECTURE.md) — this both double-checks
-  // every field the wizard assembled and normalizes defaults (e.g. adminNotes: []).
-  const validated = CaseSchema.parse(candidate);
-  store.cases.push(validated);
-  return validated;
+  store.cases.push(created);
+  return created;
 }
 
 /** A soft-deleted case behaves as not-found on the public side — "deleted" means gone. */
