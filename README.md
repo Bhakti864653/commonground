@@ -177,7 +177,7 @@ flowchart LR
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in ADMIN_ACCESS_CODE / GROQ_API_KEY if you need /admin or the Guide
+cp .env.example .env.local   # fill in GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / OWNER_EMAIL (or ADMIN_ACCESS_CODE) for /admin, GROQ_API_KEY for the Guide
 npm run dev
 ```
 

@@ -103,6 +103,28 @@ serverless host the moderator may be served by an instance that never saw them.
 
 ## Access
 
-Admin routes are protected as much as this local-prototype architecture reasonably allows for a
-single-operator app (matching the pattern used on Concord's `ADMIN_EMAIL`-gated admin actions) —
-a real multi-moderator role system is out of scope for this MVP.
+Moderators sign in to `/admin` with Google ("Sign in with Google", OpenID Connect with PKCE —
+`src/lib/admin/google.ts`). There are no passwords in CommonGround, and residents never have
+accounts.
+
+- **Owner.** The Google account whose email is in `OWNER_EMAIL` is the owner. They are added to
+  the moderator list the first time they sign in, and are the only one who sees **Moderators**
+  (`/admin/moderators`), where moderators are added (by Google email) and removed.
+- **Moderators.** Only emails on the list can sign in; anyone else is told they aren't a
+  moderator. Removing someone deletes their sessions, so they are signed out at once.
+- **Sessions** last 7 days. The cookie holds a random token; the database
+  (`moderator_sessions`, migration 0005) holds only its SHA-256 hash. Logging out deletes the
+  session on the server.
+- **Who did what.** Every admin action (status changes, notes, verification, removals,
+  referral approvals and rejections, source/contact changes) is recorded under the moderator's
+  email. Actions taken with the shared access code are recorded as `admin`, as everything was
+  before accounts existed.
+- **The shared access code** (`ADMIN_ACCESS_CODE`) still works, as the owner, so the operator
+  can't be locked out while switching over. Remove the variable to retire it; the code form
+  then disappears from the sign-in page.
+
+Setup: create an OAuth client (type "Web application") in Google Cloud, with the redirect URI
+`https://<your site>/api/auth/google/callback` (and `http://localhost:3000/api/auth/google/callback`
+for local development), then set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `OWNER_EMAIL`.
+Preview deployments have changing addresses, so Google sign-in works only on the addresses
+registered there.

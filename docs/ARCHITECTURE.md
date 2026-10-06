@@ -117,7 +117,7 @@ src/
     places/                 browser-saved place names for the place selector
     case-number/            case-number format and per-community prefix
     journey/                action-trail stage helpers
-    admin/                  admin auth (access code cookie)
+    admin/                  admin auth (Google sign-in for moderators; legacy access code)
     theme/                  light/dark theme
   data/
     communities/            built-in CommunityConfig instances (santiago-veraguas,
@@ -244,7 +244,7 @@ there is no background scheduling. Full detail: [`MODERATION.md`](MODERATION.md)
 - Without `DATABASE_URL` (e.g. a fresh local checkout), everything created at runtime is kept
   in memory and is temporary (see [Persistence](#persistence)).
 - No resident accounts; ownership of a submission is proven only by its one-time management link.
-- A single shared moderator access code, not a multi-moderator role system.
+- Two moderator roles only (owner and moderator), and one moderator list for every community.
 - No background or scheduled jobs; the briefing and case analysis run only when a moderator asks.
 - No integration with any government or official system, and no automatic forwarding of
   reports. Referrals are delivered by a moderator by hand.
