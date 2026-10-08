@@ -11,7 +11,7 @@ export function AdminShell({ children, moderator }: { children: ReactNode; moder
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-coral/30 bg-coral/5 px-4 py-3">
         <div>
           <Link href="/admin" className="text-sm font-semibold text-ink">
-            CommonGround — Admin (local prototype)
+            CommonGround — Admin
           </Link>
           <p className="text-xs text-slate">
             Never forwards anything externally. Every action is recorded
