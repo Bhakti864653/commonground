@@ -5,6 +5,7 @@ import { useLanguage } from "@/lib/i18n/context";
 import { UI_STRINGS } from "@/lib/i18n/dictionary";
 import { FIELD } from "@/lib/i18n/field-notes";
 import { INFO } from "@/lib/i18n/community-info";
+import { LEGAL } from "@/lib/i18n/legal";
 
 /**
  * The reference's footnote plus the independence disclosure required on every page
@@ -27,6 +28,12 @@ export function Footer() {
           </Link>
           <Link href="/agent" className="w-max font-bold text-ink underline underline-offset-4">
             {FIELD.agent.nav[language]}
+          </Link>
+          <Link href="/privacy" className="w-max font-bold text-ink underline underline-offset-4">
+            {LEGAL.links.privacy[language]}
+          </Link>
+          <Link href="/terms" className="w-max font-bold text-ink underline underline-offset-4">
+            {LEGAL.links.terms[language]}
           </Link>
         </div>
       </div>

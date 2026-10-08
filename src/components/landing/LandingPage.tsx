@@ -16,6 +16,7 @@ import {
 import { useLanguage } from "@/lib/i18n/context";
 import { UI_STRINGS } from "@/lib/i18n/dictionary";
 import { LANDING } from "@/lib/i18n/landing";
+import { LEGAL } from "@/lib/i18n/legal";
 import { fill } from "@/lib/i18n/experience";
 import { LANGUAGES } from "@/lib/i18n/languages";
 import { LogoMark } from "@/components/layout/Logo";
@@ -262,9 +263,17 @@ export function LandingPage() {
         <p className="font-bold text-ink/85">{t.footer.notEmergency[language]}</p>
         <p lang="es">{UI_STRINGS.footer.independenceEs}</p>
         <p lang="en">{UI_STRINGS.footer.independenceEn}</p>
-        <Link href="/resources" className={`w-max font-bold text-ink underline underline-offset-4 ${focus}`}>
-          {t.footer.contacts[language]}
-        </Link>
+        <div className="flex flex-wrap gap-x-5 gap-y-1">
+          <Link href="/resources" className={`w-max font-bold text-ink underline underline-offset-4 ${focus}`}>
+            {t.footer.contacts[language]}
+          </Link>
+          <Link href="/privacy" className={`w-max font-bold text-ink underline underline-offset-4 ${focus}`}>
+            {LEGAL.links.privacy[language]}
+          </Link>
+          <Link href="/terms" className={`w-max font-bold text-ink underline underline-offset-4 ${focus}`}>
+            {LEGAL.links.terms[language]}
+          </Link>
+        </div>
       </footer>
     </div>
   );

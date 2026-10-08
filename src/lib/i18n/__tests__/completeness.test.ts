@@ -4,6 +4,7 @@ import { EXPERIENCE } from "@/lib/i18n/experience";
 import { FIELD } from "@/lib/i18n/field-notes";
 import { LANDING } from "@/lib/i18n/landing";
 import { INFO } from "@/lib/i18n/community-info";
+import { LEGAL } from "@/lib/i18n/legal";
 import { LANGUAGE_CODES, dateLocale, htmlLang, isLanguage } from "@/lib/i18n/languages";
 import { REMOVAL_REASON_LABELS, STATUS_LABELS, VERIFICATION_LABELS } from "@/lib/schema/report";
 import { COMMUNITIES } from "@/data/communities";
@@ -32,6 +33,7 @@ collect(VERIFICATION_LABELS, "VERIFICATION_LABELS", entries);
 collect(REMOVAL_REASON_LABELS, "REMOVAL_REASON_LABELS", entries);
 collect(LANDING, "LANDING", entries);
 collect(INFO, "INFO", entries);
+collect(LEGAL, "LEGAL", entries);
 
 const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
 
