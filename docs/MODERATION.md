@@ -119,9 +119,10 @@ accounts.
   referral approvals and rejections, source/contact changes) is recorded under the moderator's
   email. Actions taken with the shared access code are recorded as `admin`, as everything was
   before accounts existed.
-- **The shared access code** (`ADMIN_ACCESS_CODE`) still works, as the owner, so the operator
-  can't be locked out while switching over. Remove the variable to retire it; the code form
-  then disappears from the sign-in page.
+- **The shared access code** (`ADMIN_ACCESS_CODE`) works as the owner only where the variable
+  is set; without it the code form disappears from the sign-in page. It was retired from
+  production on 2026-10-07 (Google sign-in only). It stays set for Preview deployments, which
+  have no Google sign-in, so previews remain reachable.
 
 Setup: create an OAuth client (type "Web application") in Google Cloud, with the redirect URI
 `https://<your site>/api/auth/google/callback` (and `http://localhost:3000/api/auth/google/callback`
