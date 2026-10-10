@@ -8,6 +8,8 @@ official emergency services, and never a guarantee that a problem will be solved
 > "CommonGround es un proyecto independiente de tecnología comunitaria. No representa a ningún
 > gobierno, municipio, servicio de emergencia ni institución pública."
 
+**Live app:** https://commonground-psi.vercel.app
+
 ## Live pilot community
 
 **Santiago de Veraguas, Panamá** (Spanish-first). A second, wholly fictional community
@@ -59,7 +61,9 @@ language.
   (emergency lines first, under a clear "CommonGround is not an emergency service" notice) and
   approved sources, each with where and when it was checked. Unverified entries show as
   "Por verificar".
-- **Admin moderation** — a passphrase-gated local prototype (`/admin`) for status changes,
+- **Admin moderation** — `/admin`, where moderators sign in with Google (the owner adds and
+  removes moderators at `/admin/moderators`; the old shared access code is retired in
+  production — see [`docs/MODERATION.md`](docs/MODERATION.md)), for status changes,
   verification marking (officially verified requires a real http/https source), duplicate
   marking, private notes, reviewing the public inaccuracy-flag queue, removing (and restoring)
   content that breaks the guidelines, and managing each community's sources and contacts at
@@ -129,7 +133,7 @@ flowchart LR
   AppShell --> Guide["Guide (resident chat)"]
   Guide -->|tool calls| Store
   Guide -->|reasoning| Groq[(Groq API)]
-  Moderator -->|passphrase| Admin["/admin (gated)"]
+  Moderator -->|Google sign-in| Admin["/admin (gated)"]
   Admin --> Store
   Admin --> Orchestrator["case-analysis.ts (orchestrator)"]
   Orchestrator --> DupAgent["duplicate agent"]
