@@ -26,7 +26,6 @@ export const UI_STRINGS = {
     create: { es: "Crear", en: "Create", pt: "Criar", fr: "Créer", zh: "创建", hi: "बनाएँ", it: "Crea" },
     more: { es: "Más", en: "More", pt: "Mais", fr: "Plus", zh: "更多", hi: "और", it: "Altro" },
   },
-  comingSoon: { es: "Próximamente", en: "Coming soon", pt: "Em breve", fr: "Bientôt disponible", zh: "即将推出", hi: "जल्द आ रहा है", it: "Prossimamente" },
   fictionalBadge: { es: "Comunidad ficticia", en: "Fictional community", pt: "Comunidade fictícia", fr: "Communauté fictive", zh: "虚构社区", hi: "काल्पनिक समुदाय", it: "Comunità fittizia" },
   communitySelector: {
     label: { es: "Comunidad activa", en: "Active community", pt: "Comunidade ativa", fr: "Communauté active", zh: "当前社区", hi: "सक्रिय समुदाय", it: "Comunità attiva" },
@@ -227,7 +226,6 @@ export const UI_STRINGS = {
         hi: "यह फ़ोटो बहुत बड़ी है (अधिकतम 10MB)।",
         it: "Questa foto è troppo grande (max 10 MB).",
       },
-      voiceNoteLabel: { es: "Nota de voz", en: "Voice note", pt: "Mensagem de voz", fr: "Note vocale", zh: "语音留言", hi: "वॉइस नोट", it: "Nota vocale" },
     },
     areaStep: {
       heading: {

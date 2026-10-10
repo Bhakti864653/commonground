@@ -138,7 +138,7 @@ export function PlaceSelector({ compact = false }: { compact?: boolean }) {
           aria-busy={opening || undefined}
           onChange={(e) => onChange(e.target.value)}
           className={`w-full min-w-0 appearance-none truncate rounded-full border border-line bg-transparent py-2 pl-3.5 pr-8 text-[0.8rem] font-extrabold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${
-            compact ? "max-w-[9.5rem]" : "max-w-[13rem]"
+            compact ? "max-w-full sm:max-w-[14rem]" : "max-w-[13rem]"
           }`}
         >
           <optgroup label={t.communitiesGroup[language]}>

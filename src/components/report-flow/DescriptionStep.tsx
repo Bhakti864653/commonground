@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { AlertTriangle, Mic, Upload, X } from "lucide-react";
+import { AlertTriangle, Upload, X } from "lucide-react";
 import { UI_STRINGS, type Language } from "@/lib/i18n/dictionary";
 import { validateImageMetadata } from "@/lib/privacy/image-validation";
 import { detectEmergencyPhrase } from "@/lib/guide/emergency";
@@ -114,15 +114,6 @@ export function DescriptionStep({
             {t.photoLabel[language]}
           </button>
         )}
-      </div>
-
-      <div
-        aria-disabled="true"
-        className="flex items-center gap-2 rounded-[13px] border border-line px-3 py-2 text-sm text-slate"
-      >
-        <Mic aria-hidden="true" className="h-4 w-4" />
-        {t.voiceNoteLabel[language]}
-        <span className="ml-auto text-[11px] font-medium">{UI_STRINGS.comingSoon[language]}</span>
       </div>
     </fieldset>
   );

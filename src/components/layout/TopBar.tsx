@@ -11,14 +11,15 @@ import { ThemeToggle } from "./ThemeToggle";
 
 /**
  * "✳ YOUR COMMUNITY / [place]" on the left, the pilot label and "New case" on the right. On
- * phones (no sidebar) it also carries the logo, language, and theme controls.
+ * phones (no sidebar) it also carries the logo, language, and theme controls; below 640px the
+ * place moves to its own labeled row, so the community name is never cut to a few letters.
  */
 export function TopBar() {
   const { language } = useLanguage();
 
   return (
-    <header className="sticky top-0 z-30 flex h-[65px] items-center justify-between gap-3 border-b border-line bg-paper/95 px-[18px] backdrop-blur md:h-[76px] md:px-[clamp(20px,4vw,65px)]">
-      <div className="flex min-w-0 items-center gap-2.5">
+    <header className="sticky top-0 z-30 flex flex-wrap items-center gap-x-3 gap-y-2.5 border-b border-line bg-paper/95 px-[18px] py-3 backdrop-blur sm:h-[65px] sm:flex-nowrap sm:py-0 md:h-[76px] md:px-[clamp(20px,4vw,65px)]">
+      <div className="order-1 flex min-w-0 items-center gap-2.5">
         <Link href="/home" className="shrink-0 rounded-lg md:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal">
           <LogoMark tone="ink" className="h-8 w-8" />
           <span className="sr-only">CommonGround</span>
@@ -30,10 +31,16 @@ export function TopBar() {
         <span aria-hidden="true" className="hidden text-2xl font-light text-line min-[900px]:inline">
           /
         </span>
+      </div>
+
+      <div className="order-3 flex w-full min-w-0 items-center gap-2.5 sm:order-2 sm:w-auto sm:flex-1">
+        <span className="shrink-0 text-[0.68rem] font-extrabold uppercase tracking-[0.13em] text-caps sm:hidden">
+          {FIELD.shell.communityLabel[language]}
+        </span>
         <PlaceSelector compact />
       </div>
 
-      <div className="flex shrink-0 items-center gap-2.5">
+      <div className="order-2 ml-auto flex shrink-0 items-center gap-2.5 sm:order-3">
         <span className="hidden text-[0.68rem] font-extrabold uppercase tracking-[0.13em] text-caps min-[1100px]:inline">
           {FIELD.shell.pilotBadge[language]}
         </span>
