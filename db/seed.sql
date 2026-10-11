@@ -32,21 +32,9 @@ begin
   select created_at into v_created from public.cases where id = v_id;
   insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
   values (v_id, v_created + interval '3 minutes', 'received', 'agent', 'ai_reviewed', null);
-  insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
-  values (v_id, v_created + interval '4 minutes', 'received', 'agent', 'referral_prepared', 'alcaldia-santiago-oficina');
-  insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
-  values (v_id, v_created + interval '4 minutes', 'received', 'agent', 'awaiting_approval', 'alcaldia-santiago-oficina');
-  insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
-  values (v_id, v_created + interval '1440 minutes', 'referred', 'moderator', 'referral_approved', 'alcaldia-santiago-oficina');
-  insert into public.moderation_actions (case_id, actor_id, action, occurred_at, detail)
-  values (v_id, 'demo-seed', 'approve_referral', v_created + interval '1440 minutes', 'alcaldia-santiago-oficina');
-  insert into public.agent_suggestions (case_id, kind, suggested_value, reasoning, status, created_at, reviewed_at, referral)
-  values (v_id, 'referral', 'alcaldia-santiago-oficina', 'Demonstration data: written by hand for the demo, not produced by the AI.', 'approved',
-    v_created + interval '4 minutes', v_created + interval '1440 minutes', '{"contactId":"alcaldia-santiago-oficina","urgency":"medium","message":"[Datos de demostración] Estimada Alcaldía de Santiago: vecinos reportaron en CommonGround un poste de luz dañado frente a la escuela primaria del área central, que no enciende desde hace una semana. Les compartimos el reporte para su conocimiento. Gracias por su atención.","categoryAssessment":"confirmed"}'::jsonb);
   for v_event in select id from public.case_events where case_id = v_id order by occurred_at, seq loop
     update public.case_events set seq = default where id = v_event;
   end loop;
-  update public.cases set status = 'referred' where id = v_id;
 
   -- 2. report · road-infrastructure · centro
   select c.id into v_id from public.create_case(
@@ -81,21 +69,9 @@ begin
   select created_at into v_created from public.cases where id = v_id;
   insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
   values (v_id, v_created + interval '3 minutes', 'received', 'agent', 'ai_reviewed', null);
-  insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
-  values (v_id, v_created + interval '4 minutes', 'received', 'agent', 'referral_prepared', 'alcaldia-santiago-oficina');
-  insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
-  values (v_id, v_created + interval '4 minutes', 'received', 'agent', 'awaiting_approval', 'alcaldia-santiago-oficina');
-  insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
-  values (v_id, v_created + interval '4320 minutes', 'referred', 'moderator', 'referral_approved', 'alcaldia-santiago-oficina');
-  insert into public.moderation_actions (case_id, actor_id, action, occurred_at, detail)
-  values (v_id, 'demo-seed', 'approve_referral', v_created + interval '4320 minutes', 'alcaldia-santiago-oficina');
-  insert into public.agent_suggestions (case_id, kind, suggested_value, reasoning, status, created_at, reviewed_at, referral)
-  values (v_id, 'referral', 'alcaldia-santiago-oficina', 'Demonstration data: written by hand for the demo, not produced by the AI.', 'approved',
-    v_created + interval '4 minutes', v_created + interval '4320 minutes', '{"contactId":"alcaldia-santiago-oficina","urgency":"medium","message":"[Datos de demostración] Estimada Alcaldía de Santiago: vecinos reportaron en CommonGround una alcantarilla bloqueada en la calle principal del área norte, donde el agua se acumula cada vez que llueve. Les compartimos el reporte para su conocimiento. Gracias por su atención.","categoryAssessment":"confirmed"}'::jsonb);
   for v_event in select id from public.case_events where case_id = v_id order by occurred_at, seq loop
     update public.case_events set seq = default where id = v_event;
   end loop;
-  update public.cases set status = 'referred' where id = v_id;
 
   -- 4. report · flooding-drainage · norte
   select c.id into v_id from public.create_case(
@@ -109,13 +85,6 @@ begin
   select created_at into v_created from public.cases where id = v_id;
   insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
   values (v_id, v_created + interval '3 minutes', 'received', 'agent', 'ai_reviewed', null);
-  insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
-  values (v_id, v_created + interval '4 minutes', 'received', 'agent', 'referral_prepared', 'alcaldia-santiago-oficina');
-  insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
-  values (v_id, v_created + interval '4 minutes', 'received', 'agent', 'awaiting_approval', 'alcaldia-santiago-oficina');
-  insert into public.agent_suggestions (case_id, kind, suggested_value, reasoning, status, created_at, reviewed_at, referral)
-  values (v_id, 'referral', 'alcaldia-santiago-oficina', 'Demonstration data: written by hand for the demo, not produced by the AI.', 'pending',
-    v_created + interval '4 minutes', null, '{"contactId":"alcaldia-santiago-oficina","urgency":"medium","message":"[Datos de demostración] Estimada Alcaldía de Santiago: vecinos reportaron en CommonGround un drenaje tapado en la avenida norte, que forma un charco grande después de cada lluvia. Les compartimos el reporte para su conocimiento. Gracias por su atención.","categoryAssessment":"confirmed"}'::jsonb);
   for v_event in select id from public.case_events where case_id = v_id order by occurred_at, seq loop
     update public.case_events set seq = default where id = v_event;
   end loop;
@@ -132,13 +101,6 @@ begin
   select created_at into v_created from public.cases where id = v_id;
   insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
   values (v_id, v_created + interval '3 minutes', 'received', 'agent', 'ai_reviewed', null);
-  insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
-  values (v_id, v_created + interval '4 minutes', 'received', 'agent', 'referral_prepared', 'alcaldia-santiago-oficina');
-  insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
-  values (v_id, v_created + interval '4 minutes', 'received', 'agent', 'awaiting_approval', 'alcaldia-santiago-oficina');
-  insert into public.agent_suggestions (case_id, kind, suggested_value, reasoning, status, created_at, reviewed_at, referral)
-  values (v_id, 'referral', 'alcaldia-santiago-oficina', 'Demonstration data: written by hand for the demo, not produced by the AI.', 'pending',
-    v_created + interval '4 minutes', null, '{"contactId":"alcaldia-santiago-oficina","urgency":"high","message":"[Datos de demostración] Estimada Alcaldía de Santiago: vecinos reportaron en CommonGround inundaciones repetidas en el área norte por el mismo drenaje bloqueado, tres veces este mes. Les compartimos el reporte para su conocimiento. Gracias por su atención.","categoryAssessment":"confirmed"}'::jsonb);
   for v_event in select id from public.case_events where case_id = v_id order by occurred_at, seq loop
     update public.case_events set seq = default where id = v_event;
   end loop;

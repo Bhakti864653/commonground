@@ -8,6 +8,16 @@ vi.mock("@/lib/guide/groq-client", () => ({
   getGroqClient: () => (hasKey ? { chat: { completions: { create } } } : null),
 }));
 
+// Santiago's referrals are paused in the live config (independent student demo). The pipeline is
+// kept for if the Alcaldía ever agrees, so these tests run it against the paused, verified routing.
+vi.mock("@/data/communities", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/data/communities")>();
+  const { SANTIAGO_REFERRAL_ROUTING } = await import("@/data/communities/santiago-veraguas");
+  const SANTIAGO_VERAGUAS = { ...actual.SANTIAGO_VERAGUAS, referralRouting: SANTIAGO_REFERRAL_ROUTING };
+  const COMMUNITIES = [SANTIAGO_VERAGUAS, actual.RIVERBEND_DEMO];
+  return { ...actual, SANTIAGO_VERAGUAS, COMMUNITIES, getCommunityById: (id: string) => COMMUNITIES.find((c) => c.id === id) };
+});
+
 import { runReferralPipeline } from "@/lib/guide/referral/pipeline";
 import { createCase, getCaseByCaseNumber, __resetMemoryCaseStore } from "@/lib/store/memory-case-store";
 import { toPublicCase } from "@/lib/schema/report";

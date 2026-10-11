@@ -63,7 +63,7 @@ export const VERIFICATION_LABELS: Record<VerificationState, LocalizedText> = {
   community_report: { es: "Reportado por la comunidad", en: "Community report", pt: "Relato da comunidade", fr: "Signalement de la communauté", zh: "社区报告", hi: "समुदाय की रिपोर्ट", it: "Segnalazione della comunità" },
   officially_verified: { es: "Información oficial verificada", en: "Officially verified", pt: "Verificado oficialmente", fr: "Vérifié officiellement", zh: "官方已核实", hi: "आधिकारिक रूप से सत्यापित", it: "Verificato ufficialmente" },
   needs_verification: { es: "Pendiente de verificación", en: "Needs verification", pt: "Precisa de verificação", fr: "À vérifier", zh: "待核实", hi: "सत्यापन की ज़रूरत", it: "Da verificare" },
-  demonstration_data: { es: "Datos de demostración", en: "Demonstration data", pt: "Dados de demonstração", fr: "Données de démonstration", zh: "演示数据", hi: "प्रदर्शन डेटा", it: "Dati dimostrativi" },
+  demonstration_data: { es: "Ejemplo – no es un reporte real", en: "Example – not a real report", pt: "Exemplo – não é um relato real", fr: "Exemple – pas un vrai signalement", zh: "示例 – 不是真实报告", hi: "उदाहरण – असली रिपोर्ट नहीं", it: "Esempio – non è una segnalazione reale" },
 };
 
 /**

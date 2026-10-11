@@ -1,9 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { CommunityConfigSchema, type CommunityConfig } from "@/lib/schema/community";
-import { SANTIAGO_VERAGUAS, RIVERBEND_DEMO } from "@/data/communities";
+import { SANTIAGO_VERAGUAS as SANTIAGO_LIVE, RIVERBEND_DEMO } from "@/data/communities";
+import { SANTIAGO_REFERRAL_ROUTING } from "@/data/communities/santiago-veraguas";
 import { routeReferral, timelineOfficeNames } from "@/lib/guide/referral/route";
 
+// Referrals are paused in Santiago's live config; these tests check the kept, verified routing.
+const SANTIAGO_VERAGUAS: CommunityConfig = { ...SANTIAGO_LIVE, referralRouting: SANTIAGO_REFERRAL_ROUTING };
+
 describe("Santiago de Veraguas referral routing", () => {
+  it("is paused in the live config, so nothing is prepared for any office", () => {
+    expect(SANTIAGO_LIVE.referralRouting ?? []).toEqual([]);
+    expect(routeReferral(SANTIAGO_LIVE, "other")).toBeNull();
+  });
+
+  it("keeps a routing table that is still valid if it is ever turned back on", () => {
+    expect(() => CommunityConfigSchema.parse(SANTIAGO_VERAGUAS)).not.toThrow();
+  });
+
   it("routes every category, and only to a verified non-emergency contact", () => {
     for (const category of SANTIAGO_VERAGUAS.categories) {
       const contact = routeReferral(SANTIAGO_VERAGUAS, category.id);

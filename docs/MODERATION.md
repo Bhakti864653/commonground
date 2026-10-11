@@ -63,6 +63,12 @@ never claims a government institution received or acted on a submission.
 
 ## Referrals
 
+> **Paused (2026-10-10).** CommonGround runs as an independent student demo, not affiliated with
+> the Alcaldía, so Santiago has no `referralRouting` and nothing is prepared for any office. The
+> verified routing is kept as `SANTIAGO_REFERRAL_ROUTING` in
+> `src/data/communities/santiago-veraguas.ts`; restore it only if the Alcaldía agrees to receive
+> reports. The rest of this section describes how referrals work when enabled.
+
 When a resident submits a case (through the wizard or a confirmed Guide draft), an AI pipeline
 runs after the response (`src/lib/guide/referral/`, Groq):
 

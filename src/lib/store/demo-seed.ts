@@ -57,9 +57,8 @@ export const DEMO_REFERRAL_OFFICE = "alcaldia-santiago-oficina";
 /** The reasoning stored with a demonstration referral, so moderators can tell it wasn't a real AI run. */
 export const DEMO_REFERRAL_REASONING = "Demonstration data: written by hand for the demo, not produced by the AI.";
 
-const DEMO_MESSAGE = (problem: string) =>
-  `[Datos de demostración] Estimada Alcaldía de Santiago: vecinos reportaron en CommonGround ${problem}. ` +
-  "Les compartimos el reporte para su conocimiento. Gracias por su atención.";
+// No demonstration case carries a referral: CommonGround runs as an independent student demo, and
+// referrals to the Alcaldía are paused (see santiago-veraguas.ts), so the examples don't show one.
 
 export const DEMO_CASE_SEEDS: DemoCaseSeed[] = [
   // Near-duplicate pair (road-infrastructure/centro) — exercises duplicate cluster detection.
@@ -73,7 +72,7 @@ export const DEMO_CASE_SEEDS: DemoCaseSeed[] = [
       "Hay un poste de luz dañado frente a la escuela primaria del centro, no enciende desde hace una semana.",
     daysAgo: 9,
     status: "received",
-    agent: { referral: { urgency: "medium", approvedAfterDays: 1, message: DEMO_MESSAGE("un poste de luz dañado frente a la escuela primaria del área central, que no enciende desde hace una semana") } },
+    agent: {},
   },
   {
     type: "report",
@@ -98,7 +97,7 @@ export const DEMO_CASE_SEEDS: DemoCaseSeed[] = [
       "La alcantarilla en la calle principal del área norte está bloqueada y el agua se acumula cada vez que llueve.",
     daysAgo: 14,
     status: "under_review",
-    agent: { referral: { urgency: "medium", approvedAfterDays: 3, message: DEMO_MESSAGE("una alcantarilla bloqueada en la calle principal del área norte, donde el agua se acumula cada vez que llueve") } },
+    agent: {},
   },
   {
     type: "report",
@@ -110,7 +109,7 @@ export const DEMO_CASE_SEEDS: DemoCaseSeed[] = [
       "El drenaje de la avenida norte sigue tapado, se forma un charco grande después de cada lluvia.",
     daysAgo: 8,
     status: "received",
-    agent: { referral: { urgency: "medium", message: DEMO_MESSAGE("un drenaje tapado en la avenida norte, que forma un charco grande después de cada lluvia") } },
+    agent: {},
   },
   {
     type: "report",
@@ -122,7 +121,7 @@ export const DEMO_CASE_SEEDS: DemoCaseSeed[] = [
       "Inundación recurrente en el área norte por el mismo drenaje bloqueado, ya pasó tres veces este mes.",
     daysAgo: 2,
     status: "received",
-    agent: { referral: { urgency: "high", message: DEMO_MESSAGE("inundaciones repetidas en el área norte por el mismo drenaje bloqueado, tres veces este mes") } },
+    agent: {},
   },
   // A case with a status change already applied — exercises the auto-drafted status explanation.
   {

@@ -1,5 +1,10 @@
 # CommonGround
 
+**A working student demo.** CommonGround is an independent student project, not a government
+service: it sends no reports to any authority and is not affiliated with the Santiago mayor's
+office (Alcaldía de Santiago) or any public institution. Every page carries a banner saying so,
+in all seven languages.
+
 An independent, multilingual, privacy-preserving civic-action platform. CommonGround helps a
 community turn scattered local observations (flooding, garbage, damaged infrastructure) into
 organized, verified information and trackable collective action — never a replacement for
@@ -10,11 +15,13 @@ official emergency services, and never a guarantee that a problem will be solved
 
 **Live app:** https://commonground-psi.vercel.app
 
-## Live pilot community
+## Demo community
 
-**Santiago de Veraguas, Panamá** (Spanish-first). A second, wholly fictional community
-(**Riverbend**) exists only to prove the platform's `CommunityConfig` schema generalizes to a
-different country/language/category set — it is always visibly labeled as demonstration data.
+**Santiago de Veraguas, Panamá** (Spanish-first). Anyone can submit a report; real submissions
+appear as community reports. Its 8 built-in sample cases are labeled "Ejemplo – no es un reporte
+real" on every page that shows them. A second, wholly fictional community (**Riverbend**) exists
+only to prove the platform's `CommunityConfig` schema generalizes to a different
+country/language/category set — it is always visibly labeled as demonstration data.
 
 ## Languages
 
@@ -99,7 +106,10 @@ language.
   AI-generated and on-demand (not a real scheduled job — this is a serverless prototype).
   Guide safety is covered by a live adversarial eval suite (`npm run eval:guide-safety`), not
   just unit tests.
-- **AI-prepared referrals (phase 1)** — after each submission, an AI pipeline (Groq) classifies
+- **AI-prepared referrals (phase 1) — paused in the demo.** Santiago has no `referralRouting`, so
+  nothing is prepared for or sent to any office, and the sample cases show no referral. The
+  verified routing is kept as `SANTIAGO_REFERRAL_ROUTING` (and still tested) in case the Alcaldía
+  ever agrees to receive reports. When enabled: after each submission, an AI pipeline (Groq) classifies
   the case (category check, urgency), routes it to a verified non-emergency office from the
   community's `referralRouting` map (no AI in the routing itself), and drafts a short, formal
   Spanish message from public case fields only. A moderator edits and approves it, then delivers

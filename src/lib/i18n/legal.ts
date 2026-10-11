@@ -31,6 +31,30 @@ export const LEGAL = {
     },
     sections: [
       {
+        title: { es: "Es una demo estudiantil", en: "This is a student demo", pt: "É uma demo estudantil", fr: "C’est une démo étudiante", zh: "这是一个学生演示项目", hi: "यह एक छात्र डेमो है", it: "È una demo studentesca" },
+        body: {
+          es: "CommonGround es un proyecto estudiantil independiente. No envía reportes a ninguna autoridad, no está afiliado a la Alcaldía de Santiago ni a ninguna institución pública, y no reemplaza los canales oficiales. Los reportes solo se publican en este sitio.",
+          en: "CommonGround is an independent student project. It does not send reports to any authority, is not affiliated with the Santiago mayor’s office (Alcaldía de Santiago) or any public institution, and does not replace official channels. Reports are only published on this site.",
+          pt: "O CommonGround é um projeto estudantil independente. Não envia relatos a nenhuma autoridade, não é afiliado à Prefeitura de Santiago (Alcaldía de Santiago) nem a nenhuma instituição pública, e não substitui os canais oficiais. Os relatos só são publicados neste site.",
+          fr: "CommonGround est un projet étudiant indépendant. Il n’envoie de signalements à aucune autorité, n’est pas affilié à la mairie de Santiago (Alcaldía de Santiago) ni à aucune institution publique, et ne remplace pas les canaux officiels. Les signalements sont seulement publiés sur ce site.",
+          zh: "CommonGround 是一个独立的学生项目。它不会向任何机构发送报告，与圣地亚哥市政府（Alcaldía de Santiago）或任何公共机构都没有隶属关系，也不能替代官方渠道。报告只在本网站上公开。",
+          hi: "CommonGround एक स्वतंत्र छात्र परियोजना है। यह किसी भी प्राधिकरण को रिपोर्ट नहीं भेजती, सैंटियागो नगरपालिका (Alcaldía de Santiago) या किसी सार्वजनिक संस्था से संबद्ध नहीं है, और आधिकारिक माध्यमों की जगह नहीं लेती। रिपोर्ट सिर्फ़ इसी साइट पर प्रकाशित होती हैं।",
+          it: "CommonGround è un progetto studentesco indipendente. Non invia segnalazioni ad alcuna autorità, non è affiliato al Comune di Santiago (Alcaldía de Santiago) né ad alcuna istituzione pubblica, e non sostituisce i canali ufficiali. Le segnalazioni sono pubblicate solo su questo sito.",
+        },
+      },
+      {
+        title: { es: "Fotos y descripciones", en: "Photos and descriptions", pt: "Fotos e descrições", fr: "Photos et descriptions", zh: "照片和描述", hi: "फ़ोटो और विवरण", it: "Foto e descrizioni" },
+        body: {
+          es: "No subas fotos que muestren rostros, placas de vehículos ni información personal, y no escribas nombres, teléfonos ni direcciones en la descripción. Lo que escribes se publica tal cual.",
+          en: "Don’t upload photos that show faces, license plates, or personal information, and don’t write names, phone numbers, or addresses in the description. What you write is published as written.",
+          pt: "Não envie fotos que mostrem rostos, placas de veículos ou informações pessoais, e não escreva nomes, telefones ou endereços na descrição. O que você escreve é publicado como está.",
+          fr: "N’envoyez pas de photos montrant des visages, des plaques d’immatriculation ou des informations personnelles, et n’écrivez ni noms, ni numéros de téléphone, ni adresses dans la description. Ce que vous écrivez est publié tel quel.",
+          zh: "请不要上传显示人脸、车牌或个人信息的照片，也不要在描述中写姓名、电话号码或地址。你写的内容会按原样公开。",
+          hi: "ऐसी फ़ोटो अपलोड न करें जिनमें चेहरे, गाड़ियों की नंबर प्लेट या निजी जानकारी दिखे, और विवरण में नाम, फ़ोन नंबर या पते न लिखें। आप जो लिखते हैं, वह वैसा ही प्रकाशित होता है।",
+          it: "Non caricare foto che mostrano volti, targhe o informazioni personali, e non scrivere nomi, numeri di telefono o indirizzi nella descrizione. Ciò che scrivi viene pubblicato così com’è.",
+        },
+      },
+      {
         title: { es: "No se necesita cuenta", en: "No account needed", pt: "Não é preciso conta", fr: "Aucun compte nécessaire", zh: "无需账户", hi: "किसी खाते की ज़रूरत नहीं", it: "Nessun account necessario" },
         body: {
           es: "CommonGround nunca pide a los residentes su nombre, número de teléfono, correo electrónico ni dirección exacta.",

@@ -1,4 +1,4 @@
-import { CommunityConfigSchema, type CommunityConfig } from "@/lib/schema/community";
+import { CommunityConfigSchema, type CommunityConfig, type ReferralRoute } from "@/lib/schema/community";
 
 /**
  * The first pilot community. Per spec §3: never mention David, Chiriquí, Cherokee, or any
@@ -192,39 +192,10 @@ const santiagoVeraguasConfig: CommunityConfig = {
     // (same pattern as Concord's ADMIN_EMAIL) — placeholder only.
     moderatorEmails: ["moderator@commonground.example"],
   },
-  // Category → office for AI-prepared referrals (a moderator approves and delivers every one).
-  // Mappings MUST be verified the same way the contacts above were — a primary source showing the
-  // office handles that kind of problem — before they are changed or added. Only the Alcaldía's
-  // office line is a verified, non-emergency contact today, so every category goes there; the
-  // other contacts are emergency lines and must never receive everyday complaints. Offices that
-  // may fit some categories better (e.g. MOP for roads, the waste authority for garbage) are not
-  // verified contacts yet and are deliberately not used.
-  referralRouting: [
-    {
-      categoryId: "flooding-drainage",
-      contactId: "alcaldia-santiago-oficina",
-      publicName: ALCALDIA_PUBLIC_NAME,
-      verificationNote: "No verified drainage office yet; the Alcaldía is the municipal office for the district.",
-    },
-    {
-      categoryId: "garbage-sanitation",
-      contactId: "alcaldia-santiago-oficina",
-      publicName: ALCALDIA_PUBLIC_NAME,
-      verificationNote: "No verified sanitation office yet; the Alcaldía is the municipal office for the district.",
-    },
-    {
-      categoryId: "road-infrastructure",
-      contactId: "alcaldia-santiago-oficina",
-      publicName: ALCALDIA_PUBLIC_NAME,
-      verificationNote: "No verified public-works office yet; the Alcaldía is the municipal office for the district.",
-    },
-    {
-      categoryId: "other",
-      contactId: "alcaldia-santiago-oficina",
-      publicName: ALCALDIA_PUBLIC_NAME,
-      verificationNote: "Default: no clearer office applies, so the municipal office for the district.",
-    },
-  ],
+  // AI-prepared referrals are paused: CommonGround runs as an independent student demo and is not
+  // affiliated with the Alcaldía, so nothing is prepared for any office. The verified routing is
+  // kept below (SANTIAGO_REFERRAL_ROUTING); restore `referralRouting: SANTIAGO_REFERRAL_ROUTING`
+  // only if the Alcaldía agrees to receive reports.
   enabledFeatures: {
     mapView: true,
     // The 3D view was removed (docs/3D_EXPERIENCE.md); nothing reads this legacy flag.
@@ -236,3 +207,37 @@ const santiagoVeraguasConfig: CommunityConfig = {
 };
 
 export const SANTIAGO_VERAGUAS = CommunityConfigSchema.parse(santiagoVeraguasConfig);
+
+// Category → office for AI-prepared referrals (a moderator approves and delivers every one).
+// Mappings MUST be verified the same way the contacts above were — a primary source showing the
+// office handles that kind of problem — before they are changed or added. Only the Alcaldía's
+// office line is a verified, non-emergency contact today, so every category goes there; the
+// other contacts are emergency lines and must never receive everyday complaints. Offices that
+// may fit some categories better (e.g. MOP for roads, the waste authority for garbage) are not
+// verified contacts yet and are deliberately not used.
+export const SANTIAGO_REFERRAL_ROUTING: ReferralRoute[] = [
+  {
+    categoryId: "flooding-drainage",
+    contactId: "alcaldia-santiago-oficina",
+    publicName: ALCALDIA_PUBLIC_NAME,
+    verificationNote: "No verified drainage office yet; the Alcaldía is the municipal office for the district.",
+  },
+  {
+    categoryId: "garbage-sanitation",
+    contactId: "alcaldia-santiago-oficina",
+    publicName: ALCALDIA_PUBLIC_NAME,
+    verificationNote: "No verified sanitation office yet; the Alcaldía is the municipal office for the district.",
+  },
+  {
+    categoryId: "road-infrastructure",
+    contactId: "alcaldia-santiago-oficina",
+    publicName: ALCALDIA_PUBLIC_NAME,
+    verificationNote: "No verified public-works office yet; the Alcaldía is the municipal office for the district.",
+  },
+  {
+    categoryId: "other",
+    contactId: "alcaldia-santiago-oficina",
+    publicName: ALCALDIA_PUBLIC_NAME,
+    verificationNote: "Default: no clearer office applies, so the municipal office for the district.",
+  },
+];

@@ -187,21 +187,17 @@ describe("demonstration cases", () => {
 
   it("come with agent activity, every item labeled as a demonstration", async () => {
     const page = await listAgentActivity("santiago-veraguas");
-    expect(page.counts).toEqual({ reviewed: 7, prepared: 4, approved: 2 });
+    expect(page.counts).toEqual({ reviewed: 7, prepared: 0, approved: 0 });
     expect(page.items.length).toBeGreaterThan(0);
     expect(page.items.every((i) => i.isDemo)).toBe(true);
-    expect(page.offices.some((o) => o.id === "alcaldia-santiago-oficina")).toBe(true);
-    expect(JSON.stringify(page)).not.toContain("Datos de demostración] Estimada");
   });
 
-  it("leave two referrals waiting for a moderator, and approved ones as referred", async () => {
+  it("show no referral to the Alcaldía or any office (referrals are paused in the demo)", async () => {
     isAdminAuthenticated.mockResolvedValue(true);
-    const pending = await listPendingReferrals("santiago-veraguas");
-    expect(pending).toHaveLength(2);
-    expect(pending!.every((p) => p.isDemo && p.contactId === "alcaldia-santiago-oficina")).toBe(true);
-    const referred = buildAgentFeed(publicCasesFor("santiago-veraguas")).filter((i) => i.kind === "referral_approved");
-    expect(referred).toHaveLength(2);
-    for (const item of referred) expect(getCaseByCaseNumber(item.caseNumber)!.status).toBe("referred");
+    expect(await listPendingReferrals("santiago-veraguas")).toEqual([]);
+    const feed = buildAgentFeed(publicCasesFor("santiago-veraguas"));
+    expect(feed.some((i) => i.kind === "referral_prepared" || i.kind === "referral_approved")).toBe(false);
+    expect(publicCasesFor("santiago-veraguas").some((c) => c.status === "referred")).toBe(false);
   });
 
   it("keep each timeline in time order", () => {
