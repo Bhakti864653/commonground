@@ -181,7 +181,7 @@ const MINUTES_PER_DAY = 24 * 60;
 
 /**
  * The public timeline entries the agent (and, for an approved referral, a moderator) added to a
- * demonstration case — the same entries the real pipeline writes (guide/referral/pipeline.ts).
+ * demonstration case — the same entries the earlier referral pipeline wrote.
  * One list for the in-memory store, db/seed.sql and the migration that adds them to databases
  * seeded before the agent existed.
  */

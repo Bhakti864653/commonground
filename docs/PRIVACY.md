@@ -130,7 +130,13 @@ same situations in Portuguese ("estou me afogando," "perigo imediato," "fogo," "
 "紧急危险," "着火," "火灾," "有人受伤," "紧急求助," "煤气泄漏," "燃气泄漏," "闻到煤气," "闻到燃气"),
 Hindi ("डूब रहा/रही हूँ," "तुरंत ख़तरा," "आग लग," "कोई घायल," "तुरंत मदद," "गैस लीक," "गैस रिस,"
 "गैस की गंध," "गैस की बदबू"), and Italian ("sto annegando," "pericolo immediato," "al fuoco," "c'è un
-incendio," "persona ferita," "aiuto urgente," "fuga di gas," "odore di gas," "puzza di gas"). When detected: show an
+incendio," "persona ferita," "aiuto urgente," "fuga di gas," "odore di gas," "puzza di gas"). Added 2026-10 for the
+agentic pipeline, in all seven languages: injuries ("herido/heridos," "injured," "ferido," "blessé,"
+"受伤," "घायल," "ferito"), live or fallen wires ("cable caído," "live wire," "downed power line," "fio
+desencapado," "fil électrique," "电线掉/断," "तार गिर/टूट," "cavo elettrico"), collapses ("derrumbe,"
+"colapso," "collapsed," "desabamento," "effondrement," "倒塌/坍塌," "ढह गया/गई," "crollo"), and people
+trapped ("atrapado/s," "trapped," "pessoas presas," "coincé," "被困," "फंसे," "intrappolati") — see
+src/lib/guide/emergency.ts for the exact list. When detected: show an
 emergency banner **immediately**, above any normal assistant response (never buried in a longer
 answer), telling the user to contact official emergency services directly. Never provide an
 invented emergency contact — only a verified one, or none.

@@ -81,6 +81,17 @@ const TRIGGER_PHRASES = [
   "fuga di gas",
   "odore di gas",
   "puzza di gas",
+  // Added 2026-10 for the agentic pipeline: injuries, live wires, collapses, people trapped by
+  // water. Accent-free, like the rest; short stems ("herid", "ferit") catch singular and plural.
+  "herido", "herida", "heridos", "lesionado", "cable caido", "cables caidos", "cable electrico", "cable suelto",
+  "derrumbe", "se derrumbo", "colapso", "se cayo el techo", "atrapado", "atrapada", "atrapados",
+  "injured", "injury", "live wire", "power line down", "downed power line", "fallen power line", "wire down",
+  "collapsed", "collapse", "trapped",
+  "ferido", "feridos", "fio caido", "fio desencapado", "fios caidos", "desabamento", "desabou", "pessoas presas",
+  "blesse", "fil electrique", "cable electrique tombe", "effondrement", "effondre", "coince",
+  "受伤", "电线掉", "电线断", "倒塌", "坍塌", "被困",
+  "घायल", "तार गिर", "तार टूट", "ढह गया", "ढह गई", "फंसे", "फँसे",
+  "ferito", "feriti", "cavo elettrico", "filo scoperto", "crollo", "crollat", "intrappolat",
 ];
 
 function normalize(text: string): string {

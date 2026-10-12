@@ -128,7 +128,9 @@ export const ProposalSchema = z.discriminatedUnion("kind", [
 ]);
 export type Proposal = z.infer<typeof ProposalSchema>;
 export type ProposalKind = Proposal["kind"];
-export type NewProposal = Omit<Proposal, "id" | "status" | "createdAt" | "reviewedAt" | "reviewedBy">;
+/** Omit that keeps each member of a union separate (plain Omit merges them). */
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+export type NewProposal = DistributiveOmit<Proposal, "id" | "status" | "createdAt" | "reviewedAt" | "reviewedBy">;
 
 export const CasePipelineStateSchema = z.object({
   caseNumber: z.string(),

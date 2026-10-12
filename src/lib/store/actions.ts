@@ -17,28 +17,45 @@ import { placeAtPoint, searchPlaces, type GeocodeResult } from "@/lib/places/geo
 import { isLanguage } from "@/lib/i18n/languages";
 import { z } from "zod";
 import { after } from "next/server";
-import { runReferralPipeline } from "@/lib/guide/referral/pipeline";
+import { runIntake } from "@/lib/pipeline/pipeline";
+import { redactPersonalInfo, type PiiKind } from "@/lib/pipeline/redact";
+import { getPublishedSummary } from "@/lib/pipeline/pipeline";
 
 /**
- * Only `publicCaseNumber` + `managementToken` — the wizard needs the token to build the
- * one-time manage link, but nothing else about the freshly created case (which has no private
- * data yet anyway) needs to reach the client as a blanket object.
+ * Only `publicCaseNumber` + `managementToken` (+ what the privacy filter removed) — the wizard
+ * needs the token to build the one-time manage link, but nothing else about the freshly created
+ * case needs to reach the client as a blanket object.
+ *
+ * Personal details (phones, emails, ID numbers, house numbers, "my name is…") are removed from
+ * the description on the server before it is saved, whatever the browser sent; the resident's
+ * review screen shows the same filter beforehand. The removed text is never stored.
  */
 export async function submitCase(
   input: NewCaseInput,
-): Promise<{ publicCaseNumber: string; managementToken: string }> {
-  const created = await createCase(input);
-  // The referral pipeline (several Groq calls) runs after the response, so the resident gets
-  // their case number immediately. It never throws by design; the catch only guards against a
-  // bug, which must not surface as a failed submission after the fact.
+  intake?: { title?: unknown },
+): Promise<{ publicCaseNumber: string; managementToken: string; redacted: PiiKind[] }> {
+  const language = isLanguage(input?.consent?.language) ? input.consent.language : "es";
+  const redaction =
+    typeof input?.description === "string" ? redactPersonalInfo(input.description, language) : { text: input?.description, found: [] };
+  const created = await createCase({ ...input, description: redaction.text });
+  const title = typeof intake?.title === "string" && intake.title.trim() ? redactPersonalInfo(intake.title.trim().slice(0, 120), language).text : undefined;
+  // The agentic pipeline (Routing Agent + Critic, several Groq calls) runs after the response,
+  // so the resident gets their case number immediately. It never throws by design; the catch
+  // only guards against a bug, which must not surface as a failed submission after the fact.
   after(async () => {
     try {
-      await runReferralPipeline(created.publicCaseNumber);
+      await runIntake(created.publicCaseNumber, { title, redacted: redaction.found });
     } catch (error) {
-      console.error(`[referral-agent] ${created.publicCaseNumber}: pipeline crashed`, error);
+      console.error(`[pipeline] ${created.publicCaseNumber}: intake crashed`, error);
     }
   });
-  return { publicCaseNumber: created.publicCaseNumber, managementToken: created.managementToken };
+  return { publicCaseNumber: created.publicCaseNumber, managementToken: created.managementToken, redacted: redaction.found };
+}
+
+/** The latest weekly summary moderators published for a community: counts and case numbers only. */
+export async function getWeeklySummaryForActivity(communityId: string) {
+  if (typeof communityId !== "string") return null;
+  return getPublishedSummary(communityId);
 }
 
 export async function listCasesForActivity(communityId: string): Promise<PublicCase[]> {
