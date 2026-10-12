@@ -71,6 +71,15 @@ the migration's data part and `db/seed.sql` are generated from
 `src/lib/pipeline/store/demo-pipeline-data.ts`, which walks the eight example cases through every
 stage (labelled "Example data (written by hand)"). Resident cases are never given example data.
 
+### Reset demo
+
+`/admin/pipeline` → **Reset demo** puts the eight example cases back to their starting state
+(timeline, status, suggestions, pipeline stage, outbox, audit log) in one transaction. It selects
+only cases that are demonstration data in the demo community **and** carry one of the eight fixed
+example descriptions; every delete is limited to those cases. `demo-reset.test.ts` proves, on
+memory and on Postgres, that a resident case — even one copying an example description, with its
+own pipeline records — is left exactly as it was. Community-wide weekly summaries are not reset.
+
 ### Backup and restore
 
 Before 0007 was applied to production (2026-10-12), a full backup was taken and a restore was

@@ -1,17 +1,8 @@
 import { formatCaseNumber } from "@/lib/case-number/format-case-number";
 import type { CaseRepository } from "./case-repository";
+import { DEMO_CASE_SEEDS, DEMO_COMMUNITY_ID } from "./demo-seed";
+import { buildDemoCase } from "./demo-history";
 import {
-  DEMO_CASE_SEEDS,
-  DEMO_COMMUNITY_ID,
-  DEMO_CONSENT_VERSION,
-  DEMO_REFERRAL_OFFICE,
-  DEMO_REFERRAL_REASONING,
-  DEMO_STATUS_CHANGE_NOTE,
-  demoAgentSteps,
-  demoFinalStatus,
-} from "./demo-seed";
-import {
-  CaseSchema,
   ReferralDraftSchema,
   type AgentSuggestion,
   type Case,
@@ -23,9 +14,6 @@ import {
   type VerificationState,
   type VerifiedSource,
 } from "@/lib/schema/report";
-import { SANTIAGO_VERAGUAS } from "@/data/communities";
-import { DEMO_PIPELINE_RECORDS } from "@/lib/pipeline/store/demo-pipeline-records";
-import { asTimelineNote } from "@/lib/pipeline/store/demo-pipeline-data";
 import { prepareNewCase, type NewCaseInput } from "./new-case";
 import { getCommunity as getMemoryCommunity } from "./memory-community-store";
 
@@ -60,158 +48,38 @@ function getStore(): CaseStoreState {
   return g.__commonGroundCaseStore__;
 }
 
-function daysAgoIso(days: number): string {
-  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+function seedDemoCases(store: CaseStoreState): void {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  for (const seed of DEMO_CASE_SEEDS) {
+    const keep = {
+      id: crypto.randomUUID(),
+      publicCaseNumber: formatCaseNumber(DEMO_COMMUNITY_ID, year, nextSequence(store, DEMO_COMMUNITY_ID, year)),
+      managementToken: crypto.randomUUID(),
+    };
+    store.cases.push(buildDemoCase(seed, keep, now));
+  }
 }
 
-function seedDemoCases(store: CaseStoreState): void {
-  const year = new Date().getUTCFullYear();
+/**
+ * "Reset demo": puts the eight demonstration cases back exactly as freshly seeded (same id,
+ * number and token). A case is reset only if it is demonstration data in the demo community AND
+ * has one of the fixed demo descriptions — a resident's case can never match. Returns the reset
+ * case numbers.
+ */
+export function resetDemoCasesInMemory(now: Date = new Date()): string[] {
+  const store = getStore();
+  const reset: string[] = [];
   for (const seed of DEMO_CASE_SEEDS) {
-    // Carry the pilot area's translated names, the same as a real submission would.
-    const areaLabels = SANTIAGO_VERAGUAS.areas.find((a) => a.id === seed.areaId)?.labels;
-    const createdAt = daysAgoIso(seed.daysAgo);
-    const sequence = nextSequence(store, DEMO_COMMUNITY_ID, year);
-    const statusHistory: Case["statusHistory"] = [
-      {
-        id: crypto.randomUUID(),
-        status: "received",
-        occurredAt: createdAt,
-        actorType: "system",
-      },
-    ];
-    let finalStatus: ReportStatus = seed.status;
-    const moderationActions: Case["moderationActions"] = [];
-    if (seed.secondStatus) {
-      const changedAt = daysAgoIso(Math.max(seed.daysAgo - 4, 0));
-      statusHistory.push({
-        id: crypto.randomUUID(),
-        status: seed.secondStatus,
-        occurredAt: changedAt,
-        actorType: "moderator",
-        // Describes only what CommonGround itself recorded — never an institution's action.
-        ...DEMO_STATUS_CHANGE_NOTE,
-      });
-      moderationActions.push({
-        id: crypto.randomUUID(),
-        actorId: "demo-seed",
-        action: "status_change",
-        occurredAt: changedAt,
-        detail: seed.secondStatus,
-      });
-      finalStatus = seed.secondStatus;
-    } else if (seed.status !== "received") {
-      statusHistory.push({
-        id: crypto.randomUUID(),
-        status: seed.status,
-        occurredAt: daysAgoIso(Math.max(seed.daysAgo - 2, 0)),
-        actorType: "moderator",
-      });
-      moderationActions.push({
-        id: crypto.randomUUID(),
-        actorId: "demo-seed",
-        action: "status_change",
-        occurredAt: daysAgoIso(Math.max(seed.daysAgo - 2, 0)),
-        detail: seed.status,
-      });
-    }
-
-    // The agent's steps (and a moderator's approval), in time order among the status changes.
-    const agentSuggestions: Case["agentSuggestions"] = [];
-    const minutesLater = (minutes: number) => new Date(Date.parse(createdAt) + minutes * 60 * 1000).toISOString();
-    for (const step of demoAgentSteps(seed)) {
-      statusHistory.push({
-        id: crypto.randomUUID(),
-        status: step.status,
-        occurredAt: minutesLater(step.minutesAfter),
-        actorType: step.actorType,
-        kind: step.kind,
-        contactId: step.contactId,
-      });
-      if (step.kind === "referral_approved") {
-        moderationActions.push({
-          id: crypto.randomUUID(),
-          actorId: "demo-seed",
-          action: "approve_referral",
-          occurredAt: minutesLater(step.minutesAfter),
-          detail: step.contactId,
-        });
-      }
-    }
-    // The agentic pipeline's public steps (demo-pipeline-data.ts): a referral prepared with sending
-    // paused, and an approved follow-up update. Each carries the status the case had at that moment.
-    const pipeline = DEMO_PIPELINE_RECORDS.find((r) => r.description === seed.description);
-    for (const step of pipeline?.publicEvents ?? []) {
-      const occurredAt = daysAgoIso(step.daysAgo);
-      const statusThen =
-        statusHistory
-          .filter((e) => (e.kind ?? "status") === "status" && e.occurredAt <= occurredAt)
-          .sort((a, b) => a.occurredAt.localeCompare(b.occurredAt))
-          .at(-1)?.status ?? "received";
-      statusHistory.push({
-        id: crypto.randomUUID(),
-        status: statusThen,
-        occurredAt,
-        actorType: "moderator",
-        kind: step.kind,
-        ...(step.notes ? asTimelineNote(step.notes) : {}),
-      });
-    }
-    statusHistory.sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
-    moderationActions.sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
-    const referral = seed.agent?.referral;
-    if (referral) {
-      const approvedAfter = referral.approvedAfterDays;
-      agentSuggestions.push({
-        id: crypto.randomUUID(),
-        kind: "referral",
-        suggestedValue: DEMO_REFERRAL_OFFICE,
-        reasoning: DEMO_REFERRAL_REASONING,
-        createdAt: minutesLater(4),
-        status: approvedAfter === undefined ? "pending" : "approved",
-        ...(approvedAfter === undefined ? {} : { reviewedAt: minutesLater(approvedAfter * 24 * 60) }),
-        referral: {
-          contactId: DEMO_REFERRAL_OFFICE,
-          urgency: referral.urgency,
-          message: referral.message,
-          categoryAssessment: "confirmed",
-        },
-      });
-    }
-    finalStatus = demoFinalStatus(seed);
-
-    const candidate: Case = {
-      id: crypto.randomUUID(),
-      type: seed.type,
-      publicCaseNumber: formatCaseNumber(DEMO_COMMUNITY_ID, year, sequence),
-      communityId: DEMO_COMMUNITY_ID,
-      categoryId: seed.categoryId,
-      description: seed.description,
-      approximateArea: {
-        kind: "neighborhood",
-        areaId: seed.areaId,
-        label: seed.areaLabel,
-        ...(areaLabels ? { labels: areaLabels } : {}),
-        labelEs: seed.areaLabelEs,
-      },
-      createdAt,
-      status: finalStatus,
-      statusHistory,
-      sourceType: "demonstration",
-      verificationState: "demonstration_data",
-      consent: {
-        consentVersion: DEMO_CONSENT_VERSION,
-        consentedAt: createdAt,
-        language: "es",
-      },
-      adminNotes: [],
-      inaccuracyFlags: [],
-      moderationActions,
-      agentSuggestions,
-      managementToken: crypto.randomUUID(),
-    } as Case;
-
-    store.cases.push(CaseSchema.parse(candidate));
+    const index = store.cases.findIndex(
+      (c) => c.sourceType === "demonstration" && c.communityId === DEMO_COMMUNITY_ID && c.description === seed.description && !c.deletedAt,
+    );
+    if (index === -1) continue;
+    const old = store.cases[index];
+    store.cases[index] = buildDemoCase(seed, { id: old.id, publicCaseNumber: old.publicCaseNumber, managementToken: old.managementToken }, now);
+    reset.push(old.publicCaseNumber);
   }
+  return reset;
 }
 
 function nextSequence(store: CaseStoreState, communityId: string, year: number): number {

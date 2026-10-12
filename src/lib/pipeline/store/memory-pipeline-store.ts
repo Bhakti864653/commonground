@@ -9,7 +9,8 @@ import {
   type Proposal,
 } from "../types";
 import type { PipelineRepository } from "./pipeline-repository";
-import { DEMO_PIPELINE_RECORDS, DEMO_MODERATOR, fillPlaceholders } from "./demo-pipeline-records";
+import { DEMO_PIPELINE_RECORDS, materializeDemoPipeline } from "./demo-pipeline-records";
+import type { Case } from "@/lib/schema/report";
 import { listAllCasesForAdmin as listMemoryCases } from "@/lib/store/memory-case-store";
 import { publicCaseUrl } from "@/lib/site-url";
 
@@ -32,58 +33,44 @@ function getStore(): State {
 
 const copy = <T>(value: T): T => structuredClone(value);
 
-const daysAgoIso = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+/** Writes the example pipeline records for the given demonstration cases into the store. */
+function writeDemoPipeline(store: State, demoCases: Case[]): void {
+  const numberOf = (description: string) => demoCases.find((c) => c.description === description)?.publicCaseNumber ?? "";
+  for (const record of DEMO_PIPELINE_RECORDS) {
+    const target = demoCases.find((c) => c.description === record.description);
+    if (!target) continue;
+    const rows = materializeDemoPipeline(record, {
+      caseNumber: target.publicCaseNumber,
+      communityId: target.communityId,
+      createdAt: target.createdAt,
+      caseUrl: publicCaseUrl(target.publicCaseNumber),
+      duplicateNumbers: record.duplicateDescriptions.map(numberOf),
+    });
+    store.states.set(target.publicCaseNumber, rows.state);
+    store.proposals.push(...rows.proposals);
+    store.outbox.push(...rows.outbox);
+    store.audit.push(...rows.audit);
+  }
+}
 
 /** The demonstration cases' example pipeline history (demo-pipeline-data.ts). */
 function seedDemoPipeline(store: State): void {
-  const demoCases = listMemoryCases().filter((c) => c.sourceType === "demonstration");
-  const numberOf = (description: string) => demoCases.find((c) => c.description === description)?.publicCaseNumber;
-  for (const raw of DEMO_PIPELINE_RECORDS) {
-    const caseNumber = numberOf(raw.description);
-    if (!caseNumber) continue;
-    const found = demoCases.find((c) => c.publicCaseNumber === caseNumber)!;
-    const r = fillPlaceholders(raw, caseNumber, publicCaseUrl(caseNumber), raw.duplicateDescriptions.map((d) => numberOf(d) ?? ""));
-    const s = r.state;
-    store.states.set(
-      caseNumber,
-      CasePipelineStateSchema.parse({
-        caseNumber,
-        communityId: found.communityId,
-        emergency: false,
-        officeId: s.officeId,
-        priority: s.priority,
-        routedAt: s.routedDaysAgo === undefined ? undefined : daysAgoIso(s.routedDaysAgo),
-        referralQueuedAt: s.referralQueuedDaysAgo === undefined ? undefined : daysAgoIso(s.referralQueuedDaysAgo),
-        lastFollowUpAt: s.lastFollowUpDaysAgo === undefined ? undefined : daysAgoIso(s.lastFollowUpDaysAgo),
-        lastProgressAt: daysAgoIso(s.lastProgressDaysAgo),
-      }),
-    );
-    for (const p of r.proposals) {
-      store.proposals.push(
-        ProposalSchema.parse({
-          id: crypto.randomUUID(),
-          kind: p.kind,
-          caseNumber,
-          communityId: found.communityId,
-          status: p.status,
-          createdAt: daysAgoIso(p.createdDaysAgo),
-          ...(p.reviewedDaysAgo === undefined ? {} : { reviewedAt: daysAgoIso(p.reviewedDaysAgo), reviewedBy: DEMO_MODERATOR }),
-          payload: p.payload,
-          critique: p.critique,
-        }),
-      );
-    }
-    for (const o of r.outbox) {
-      const { daysAgo, ...item } = o;
-      store.outbox.push(
-        OutboxItemSchema.parse({ ...item, id: crypto.randomUUID(), caseNumber, communityId: found.communityId, status: "dry_run", createdAt: daysAgoIso(daysAgo), approvedBy: DEMO_MODERATOR }),
-      );
-    }
-    for (const a of r.audit) {
-      const { daysAgo, ...entry } = a;
-      store.audit.push(AuditEntrySchema.parse({ ...entry, id: crypto.randomUUID(), caseNumber, communityId: found.communityId, occurredAt: daysAgoIso(daysAgo) }));
-    }
-  }
+  writeDemoPipeline(store, listMemoryCases().filter((c) => c.sourceType === "demonstration"));
+}
+
+/**
+ * "Reset demo", pipeline half: removes every pipeline record of exactly these demonstration
+ * cases (state, proposals, outbox, audit) and writes their example history again. Records of any
+ * other case are never touched.
+ */
+export function resetDemoPipelineInMemory(demoCases: Case[]): void {
+  const store = getStore();
+  const numbers = new Set(demoCases.map((c) => c.publicCaseNumber));
+  for (const n of numbers) store.states.delete(n);
+  store.proposals = store.proposals.filter((p) => !p.caseNumber || !numbers.has(p.caseNumber));
+  store.outbox = store.outbox.filter((o) => !o.caseNumber || !numbers.has(o.caseNumber));
+  store.audit = store.audit.filter((a) => !a.caseNumber || !numbers.has(a.caseNumber));
+  writeDemoPipeline(store, demoCases);
 }
 
 export const memoryPipelineRepository: PipelineRepository = {

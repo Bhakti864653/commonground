@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { approveWeeklySummaryAction, rejectProposalAction, runFollowUpNowAction } from "@/lib/pipeline/actions";
+import { approveWeeklySummaryAction, rejectProposalAction, resetDemoAction, runFollowUpNowAction } from "@/lib/pipeline/actions";
 import type { FollowUpRunReport, PipelineResult } from "@/lib/pipeline/pipeline";
 import type { Proposal } from "@/lib/pipeline/types";
 import { CritiqueView, FailureNote, SourceBadge } from "./bits";
@@ -90,6 +90,57 @@ export function SummaryCard({ proposal, areaName }: { proposal: Extract<Proposal
           Dismiss
         </button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * "Reset demo": two clicks (no browser dialog). Resets only the eight example cases; resident
+ * cases are never touched.
+ */
+export function ResetDemoButton() {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<PipelineResult | null>(null);
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {confirming ? (
+          <>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  setResult(await resetDemoAction());
+                } catch {
+                  setResult({ ok: false, reason: "The reset didn't finish. Nothing was changed." });
+                }
+                setBusy(false);
+                setConfirming(false);
+                router.refresh();
+              }}
+              className="rounded-md bg-coral px-3 py-1.5 text-sm font-semibold text-cream disabled:opacity-50"
+            >
+              {busy ? "Resetting…" : "Yes, reset the 8 example cases"}
+            </button>
+            <button type="button" disabled={busy} onClick={() => setConfirming(false)} className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink">
+              Cancel
+            </button>
+          </>
+        ) : (
+          <button type="button" onClick={() => { setResult(null); setConfirming(true); }} className="rounded-md border border-coral/50 px-3 py-1.5 text-sm font-semibold text-coral">
+            Reset demo
+          </button>
+        )}
+      </div>
+      {result && (
+        <p role="status" className={`text-sm ${result.ok ? "text-teal" : "text-coral"}`}>
+          {result.ok ? `✓ ${result.message}` : `✗ ${result.reason}`}
+        </p>
+      )}
     </div>
   );
 }

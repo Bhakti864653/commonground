@@ -2,7 +2,18 @@ import { getReferralOffice } from "@/data/referral-offices";
 import { SANTIAGO_VERAGUAS } from "@/data/communities";
 import { DEMO_CASE_SEEDS } from "@/lib/store/demo-seed";
 import type { LocalizedText } from "@/lib/i18n/languages";
-import type { AuditEntry, Critique, Priority, Proposal } from "../types";
+import {
+  AuditEntrySchema,
+  CasePipelineStateSchema,
+  OutboxItemSchema,
+  ProposalSchema,
+  type AuditEntry,
+  type CasePipelineState,
+  type Critique,
+  type OutboxItem,
+  type Priority,
+  type Proposal,
+} from "../types";
 import { FOLLOW_UP_AFTER_DAYS } from "../schedule";
 import {
   DEMO_ACTOR_SUFFIX,
@@ -190,4 +201,52 @@ export function fillPlaceholders<T>(value: T, caseNumber: string, caseUrl: strin
     .split("{URL}").join(caseUrl)
     .replace(/\{DUP(\d+)\}/g, (_, i) => duplicates[Number(i)] ?? "");
   return JSON.parse(text) as T;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * One demo case's example pipeline records as concrete rows, with times anchored to the case's
+ * own creation time (as db/seed.sql does). Used by the in-memory seed and by "Reset demo".
+ */
+export function materializeDemoPipeline(
+  record: DemoRecords,
+  target: { caseNumber: string; communityId: string; createdAt: string; caseUrl: string; duplicateNumbers: string[] },
+): { state: CasePipelineState; proposals: Proposal[]; outbox: OutboxItem[]; audit: AuditEntry[] } {
+  const caseSeed = DEMO_CASE_SEEDS.find((c) => c.description === record.description)!;
+  const created = Date.parse(target.createdAt);
+  const at = (daysAgo: number) => new Date(created + (caseSeed.daysAgo - daysAgo) * DAY_MS).toISOString();
+  const opt = (daysAgo: number | undefined) => (daysAgo === undefined ? undefined : at(daysAgo));
+  const r = fillPlaceholders(record, target.caseNumber, target.caseUrl, target.duplicateNumbers);
+  const { caseNumber, communityId } = target;
+  return {
+    state: CasePipelineStateSchema.parse({
+      caseNumber,
+      communityId,
+      emergency: false,
+      officeId: r.state.officeId,
+      priority: r.state.priority,
+      routedAt: opt(r.state.routedDaysAgo),
+      referralQueuedAt: opt(r.state.referralQueuedDaysAgo),
+      lastFollowUpAt: opt(r.state.lastFollowUpDaysAgo),
+      lastProgressAt: at(r.state.lastProgressDaysAgo),
+    }),
+    proposals: r.proposals.map((p) =>
+      ProposalSchema.parse({
+        id: crypto.randomUUID(),
+        kind: p.kind,
+        caseNumber,
+        communityId,
+        status: p.status,
+        createdAt: at(p.createdDaysAgo),
+        ...(p.reviewedDaysAgo === undefined ? {} : { reviewedAt: at(p.reviewedDaysAgo), reviewedBy: DEMO_MODERATOR }),
+        payload: p.payload,
+        critique: p.critique,
+      }),
+    ),
+    outbox: r.outbox.map(({ daysAgo, ...item }) =>
+      OutboxItemSchema.parse({ ...item, id: crypto.randomUUID(), caseNumber, communityId, status: "dry_run", createdAt: at(daysAgo), approvedBy: DEMO_MODERATOR }),
+    ),
+    audit: r.audit.map(({ daysAgo, ...entry }) => AuditEntrySchema.parse({ ...entry, id: crypto.randomUUID(), caseNumber, communityId, occurredAt: at(daysAgo) })),
+  };
 }

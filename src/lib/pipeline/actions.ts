@@ -23,6 +23,7 @@ import {
   type PipelineResult,
 } from "./pipeline";
 import { PrioritySchema } from "./types";
+import { resetDemo } from "./demo-reset";
 
 /**
  * Moderator-only entry points to the pipeline. Every one checks the session first and validates
@@ -122,4 +123,16 @@ export async function approveWeeklySummaryAction(proposalId: unknown): Promise<P
 export async function runFollowUpNowAction(): Promise<FollowUpRunReport> {
   await requireAdmin();
   return runFollowUp("manual");
+}
+
+/**
+ * "Reset demo": puts only the eight example cases back to their starting state, so the demo can
+ * be shown again. Resident cases are never touched (demo-reset.test.ts proves it).
+ */
+export async function resetDemoAction(): Promise<PipelineResult> {
+  const actor = actorIdOf(await requireAdmin());
+  const { reset } = await resetDemo(actor);
+  return reset.length
+    ? { ok: true, message: `Reset ${reset.length} example cases (${reset.join(", ")}). Resident cases were not touched.` }
+    : { ok: false, reason: "No example cases were found." };
 }

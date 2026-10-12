@@ -6,7 +6,7 @@ import { listCommunities } from "@/lib/store/community-store";
 import { PIPELINE_STAGES, STAGE_LABELS, type Proposal } from "@/lib/pipeline/types";
 import { isSendingEnabled } from "@/lib/pipeline/sending";
 import { AuditTimeline, OutboxItemView, PriorityBadge } from "@/components/admin/pipeline/bits";
-import { RunFollowUpButton, SummaryCard } from "@/components/admin/pipeline/DashboardControls";
+import { ResetDemoButton, RunFollowUpButton, SummaryCard } from "@/components/admin/pipeline/DashboardControls";
 import { FOLLOW_UP_AFTER_DAYS } from "@/lib/pipeline/schedule";
 
 // "Run follow-up now" runs the Follow-up Agent (several Groq calls) inside this page's action.
@@ -48,6 +48,14 @@ export default async function PipelineDashboardPage() {
             {FOLLOW_UP_AFTER_DAYS.medium} (medium) or {FOLLOW_UP_AFTER_DAYS.low} (low), drafts the weekly summary, and routes older cases that were never routed.
           </p>
           <RunFollowUpButton />
+        </div>
+        <div className="rounded-lg border border-coral/30 p-4">
+          <h2 className="text-sm font-semibold text-ink">Reset demo</h2>
+          <p className="mb-3 mt-1 text-xs text-slate">
+            Puts the 8 example cases back to their starting state (stages, suggestions, outbox, timeline, audit log), so you can show the demo
+            again. Resident cases are never touched.
+          </p>
+          <ResetDemoButton />
         </div>
       </section>
 
