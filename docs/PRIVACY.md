@@ -100,11 +100,14 @@ After a case is submitted, the AI prepares a referral to a verified local office
   approximate area, and description. Residents never give names, phone numbers, or addresses,
   and the model is told to leave out any that appear in a description. Messages containing an
   email, link, or phone number are rejected automatically, and a moderator reads every message.
-- **Never to emergency services.** Emergency lines can't be referral targets, and a report that
-  matches an emergency phrase gets no referral.
-- **Transparent.** The public timeline shows each step the AI and the moderator took, marked
-  "CommonGround AI" for automatic steps. The message, urgency, and reasoning are private to
-  moderators, and only the office's name appears publicly.
+- **Never to emergency services.** Emergency lines can't be referral targets. A report that
+  matches an emergency phrase shows the resident the verified emergency number (911) at once and
+  is marked urgent for moderators; the agentic pipeline never contacts emergency services.
+- **Transparent.** Since the agentic pipeline (2026-10, [AGENTIC_PIPELINE.md](AGENTIC_PIPELINE.md)),
+  agents' steps are recorded in a private audit log, and the public timeline changes only when a
+  moderator approves: "Referral prepared – sending is paused in this demo" (no office named) or a
+  moderator-approved follow-up update. Nothing is ever sent: approved messages wait in a dry-run
+  outbox.
 
 ### Voice input
 

@@ -106,16 +106,38 @@ language.
   AI-generated and on-demand (not a real scheduled job — this is a serverless prototype).
   Guide safety is covered by a live adversarial eval suite (`npm run eval:guide-safety`), not
   just unit tests.
-- **AI-prepared referrals (phase 1) — paused in the demo.** Santiago has no `referralRouting`, so
-  nothing is prepared for or sent to any office, and the sample cases show no referral. The
-  verified routing is kept as `SANTIAGO_REFERRAL_ROUTING` (and still tested) in case the Alcaldía
-  ever agrees to receive reports. When enabled: after each submission, an AI pipeline (Groq) classifies
-  the case (category check, urgency), routes it to a verified non-emergency office from the
-  community's `referralRouting` map (no AI in the routing itself), and drafts a short, formal
-  Spanish message from public case fields only. A moderator edits and approves it, then delivers
-  it by hand by phone or WhatsApp; nothing is sent automatically, and emergency lines are never a
-  target. Each step appears on the public case timeline, labeled "CommonGround AI". Detail:
-  [`docs/MODERATION.md`](docs/MODERATION.md#referrals).
+- **The four-step agentic pipeline (drafting → routing → sending in dry-run → follow-up).**
+  AI agents handle a complaint's whole lifecycle, but they can only *propose*: a human moderator
+  approves every change, and **nothing is ever sent to any office** — CommonGround is a student
+  demo. Full detail: [`docs/AGENTIC_PIPELINE.md`](docs/AGENTIC_PIPELINE.md).
+  1. **Drafting** — the Guide asks one short question at a time (what, roughly where, since when,
+     how serious, is anyone in danger) and drafts category, title, description, approximate
+     zone and urgency. An emergency phrase shows the verified emergency number (911)
+     immediately and marks the draft urgent. A privacy filter removes phones, emails, ID
+     numbers, house numbers and names *before* the resident confirms, and again on the server.
+  2. **Routing** — after submission, the **Routing Agent** (real tool calling:
+     `searchSimilarCases`, `getCase`, then `proposeRouting`) picks the responsible office from a
+     configurable list of **placeholder** offices (`src/data/referral-offices.ts`), with a reason,
+     a priority (low/medium/high/urgent), a confidence score and likely duplicates to merge. Low
+     confidence or several fitting offices → it asks the moderator to decide.
+  3. **Sending (dry-run)** — once routing is approved, the **Referral Agent** drafts a formal
+     Spanish message (+ the moderator's language); code adds the exact facts (case number, days
+     open, residents who reported it, public link). The moderator edits and approves it into the
+     **outbox**: "Ready to send – demo mode (not sent)". `SENDING_ENABLED` is off by default, and
+     there is no delivery channel at all — even turned on, nothing could be sent. The public case
+     page only says "Referral prepared – sending is paused in this demo."
+  4. **Follow-up** — a daily Vercel cron (protected by `CRON_SECRET`) runs the **Follow-up
+     Agent**: cases with no progress for 2/4/7/14 days (urgent/high/medium/low) get a drafted
+     reminder (outbox, dry-run), a short public update in all seven languages, and an escalation
+     suggestion; a weekly community summary is drafted too. Moderators approve or dismiss each
+     part. "Run follow-up now" on `/admin/pipeline` runs it on demand.
+
+  A **Critic Agent** reviews every agent output (mistakes, bias, missing info, personal data)
+  before a moderator sees it. Every output is a strict Zod schema; invalid output is retried
+  once, then a rule-based fallback is used and the moderator is told why. Residents' text is
+  always passed as untrusted data, never instructions (prompt-injection tests included). Every
+  step lands in a private **audit log / agent timeline** on the case, and `/admin/pipeline` shows
+  cases by stage, the outbox, pending suggestions and overdue cases.
 
 ## Stack
 
