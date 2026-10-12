@@ -74,7 +74,7 @@ export function GuideChat() {
         description: draft.description,
         approximateArea,
         consent,
-      });
+      }, { title: draft.title });
       router.push(
         `/cases/${created.publicCaseNumber}?new=1&manage=${encodeURIComponent(created.managementToken)}`,
       );

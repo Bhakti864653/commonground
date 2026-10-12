@@ -38,6 +38,23 @@ const EMERGENCY_MESSAGE = {
   it: "Sembra un’emergenza. CommonGround non è un servizio di emergenza e non può aiutarti adesso: contatta direttamente i servizi di emergenza ufficiali della tua zona.",
 };
 
+/** Added to the emergency message when the community has a verified emergency number. */
+const CALL_NOW = {
+  es: "Si alguien está en peligro, llama al {phone} ahora mismo.",
+  en: "If anyone is in danger, call {phone} right now.",
+  pt: "Se alguém estiver em perigo, ligue agora para o {phone}.",
+  fr: "Si quelqu’un est en danger, appelez le {phone} immédiatement.",
+  zh: "如果有人处于危险中，请立即拨打 {phone}。",
+  hi: "अगर कोई खतरे में है, तो अभी {phone} पर कॉल करें।",
+  it: "Se qualcuno è in pericolo, chiama subito il {phone}.",
+};
+
+/** The community's verified emergency number (911 in Santiago de Veraguas), never an invented one. */
+function verifiedEmergencyPhone(community: Awaited<ReturnType<typeof getCommunityById>>): string | null {
+  const lines = (community?.officialContacts ?? []).filter((c) => c.isEmergencyService && c.verified && c.phone && c.channel === "phone");
+  return (lines.find((c) => c.phone === "911") ?? lines[0])?.phone ?? null;
+}
+
 const UNAVAILABLE_MESSAGE = {
   es: "La Guía no está disponible en este momento.",
   en: "The Guide isn't available right now.",
@@ -76,12 +93,19 @@ an area choice or "prefer not to say") — draft a report or proposal with draft
 for the resident to review. Ask clarifying questions first if you don't have enough yet; never
 draft from a single vague message.
 
+When something is missing, ask ONE short question at a time, only about what you still need:
+what is happening; roughly where (which area); since when; how serious it is; and whether anyone
+is in danger right now. Skip anything the resident already told you. Usually two or three
+questions are enough. The draft also needs a short title and an urgency (urgent only if someone
+may be in danger right now).
+
 Location privacy: CommonGround only ever records an approximate area. The only location you may
 ask about is which of these configured areas it's in — ${areaNames || "none configured"} — or
 let them say they'd prefer not to say. Never ask for, or invite them to share, a street name,
 intersection, house or building number, exact address, a landmark precise enough to identify a
 home, GPS coordinates, or their name or phone number. If they volunteer one, don't repeat it
-back; just ask which area it's in.
+back; just ask which area it's in. Never address the resident by a name they typed, and never
+put a name, phone, email or address in a draft (the privacy filter removes them anyway).
 
 You must never: invent a phone number, address, official, deadline, or government response;
 claim to be a government employee; promise an issue will be fixed; give a medical or legal
@@ -130,8 +154,13 @@ export async function askGuide(
   history: Array<{ role: "user" | "assistant"; content: string }> = [],
 ): Promise<GuideChatResult> {
   if (detectEmergencyPhrase(message)) {
-    return { emergency: true, answer: EMERGENCY_MESSAGE[language] };
+    // Shown immediately, before any AI call. The resident can still describe it afterwards; a
+    // draft from this conversation is then marked urgent.
+    const phone = verifiedEmergencyPhone(await getCommunityById(communityId));
+    const callNow = phone ? ` ${CALL_NOW[language].replace("{phone}", phone)}` : "";
+    return { emergency: true, answer: `${EMERGENCY_MESSAGE[language]}${callNow}` };
   }
+  const emergencyInConversation = history.some((turn) => turn.role === "user" && detectEmergencyPhrase(turn.content));
 
   const client = getGroqClient();
   if (!client) {
@@ -178,7 +207,7 @@ export async function askGuide(
 
     for (const call of toolCalls) {
       if (call.function.name === "draft_case_submission" && community) {
-        const parsed = parseDraftSubmissionArgs(call.function.arguments, community);
+        const parsed = parseDraftSubmissionArgs(call.function.arguments, community, { language, emergencyInConversation });
         if (parsed.ok) {
           return {
             emergency: false,

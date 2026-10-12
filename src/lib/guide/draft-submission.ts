@@ -2,6 +2,12 @@ import type Groq from "groq-sdk";
 import { z } from "zod";
 import type { CommunityConfig } from "@/lib/schema/community";
 import { MAX_DESCRIPTION_LENGTH } from "@/lib/schema/report";
+import type { Language } from "@/lib/i18n/languages";
+import { redactPersonalInfo, type PiiKind } from "@/lib/pipeline/redact";
+import { detectEmergencyPhrase } from "./emergency";
+
+export const DRAFT_URGENCIES = ["low", "medium", "high", "urgent"] as const;
+export type DraftUrgency = (typeof DRAFT_URGENCIES)[number];
 
 export type GuideDraftSubmission = {
   type: "report" | "proposal";
@@ -9,6 +15,12 @@ export type GuideDraftSubmission = {
   description: string;
   /** `null` means the resident (via the model, on their behalf) chose "prefer not to say". */
   areaId: string | null;
+  /** A short title in the resident's language (private to moderators; helps them scan cases). */
+  title: string;
+  /** How serious it sounds; always "urgent" when the conversation matched an emergency phrase. */
+  urgency: DraftUrgency;
+  /** Personal details the privacy filter removed from the description/title (never stored). */
+  redacted: PiiKind[];
 };
 
 const PREFER_NOT_TO_SAY = "prefer_not_to_say";
@@ -50,8 +62,19 @@ export function buildDraftSubmissionTool(
             enum: areaIds,
             description: `One of the community's real area ids, or "${PREFER_NOT_TO_SAY}".`,
           },
+          title: {
+            type: "string",
+            description: "A short title (under 80 characters) in the resident's language, e.g. 'Blocked drain on the main street'. No names or addresses.",
+          },
+          urgency: {
+            type: "string",
+            enum: [...DRAFT_URGENCIES],
+            description:
+              "urgent: someone may be in danger right now (injury, fire, collapse, live wires, flooding with people at risk). " +
+              "high: a real risk to safety or health. medium: a real problem that has lasted a while. low: everything else, including proposals.",
+          },
         },
-        required: ["type", "categoryId", "description", "areaId"],
+        required: ["type", "categoryId", "description", "areaId", "title", "urgency"],
         additionalProperties: false,
       },
     },
@@ -63,6 +86,8 @@ const RawDraftArgsSchema = z.object({
   categoryId: z.string(),
   description: z.string().min(1).max(MAX_DESCRIPTION_LENGTH),
   areaId: z.string(),
+  title: z.string().max(200).optional(),
+  urgency: z.enum(DRAFT_URGENCIES).optional(),
 });
 
 export type ParsedDraftResult =
@@ -78,6 +103,7 @@ export type ParsedDraftResult =
 export function parseDraftSubmissionArgs(
   rawArguments: string,
   community: CommunityConfig,
+  options: { language?: Language; emergencyInConversation?: boolean } = {},
 ): ParsedDraftResult {
   let parsed: unknown;
   try {
@@ -89,20 +115,28 @@ export function parseDraftSubmissionArgs(
   if (!result.success) {
     return { ok: false, error: "Missing or invalid fields" };
   }
-  const { type, categoryId, description, areaId } = result.data;
+  const { type, categoryId, description, areaId, title, urgency } = result.data;
   if (!community.categories.some((c) => c.id === categoryId)) {
     return { ok: false, error: `Unknown categoryId: ${categoryId}` };
   }
   if (areaId !== PREFER_NOT_TO_SAY && !community.areas.some((a) => a.id === areaId)) {
     return { ok: false, error: `Unknown areaId: ${areaId}` };
   }
+  // The privacy filter runs here, so the resident confirms exactly what will be saved.
+  const language = options.language ?? "es";
+  const cleanDescription = redactPersonalInfo(description.trim(), language);
+  const cleanTitle = redactPersonalInfo((title?.trim() || description.trim()).slice(0, 80), language);
+  const emergency = options.emergencyInConversation === true || detectEmergencyPhrase(description);
   return {
     ok: true,
     draft: {
       type,
       categoryId,
-      description: description.trim(),
+      description: cleanDescription.text,
       areaId: areaId === PREFER_NOT_TO_SAY ? null : areaId,
+      title: cleanTitle.text,
+      urgency: emergency ? "urgent" : (urgency ?? (type === "proposal" ? "low" : "medium")),
+      redacted: [...new Set([...cleanDescription.found, ...cleanTitle.found])],
     },
   };
 }

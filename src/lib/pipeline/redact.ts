@@ -34,7 +34,8 @@ const HOUSE_NUMBER =
   /(?<![\p{L}\d])(?:casa|house|apartamento|apartment|apto|apt|depto|departamento|edificio|building|lote|maison|appartement|appartamento|numero|número|no\.|nº|n°|#)\s*#?\s*\d+[a-z]?\b/giu;
 // "my name is X": the next one to three capitalized words (Latin scripts).
 const NAME_LATIN =
-  /\b(?:me llamo|mi nombre es|my name is|i am called|meu nome é|meu nome e|me chamo|je m['’]appelle|mon nom est|mi chiamo|il mio nome è|il mio nome e)\s+((?:[A-ZÁÉÍÓÚÑÀÈÌÒÙÂÊÎÔÛÇ][\p{L}'’-]+)(?:\s+[A-ZÁÉÍÓÚÑÀÈÌÒÙÂÊÎÔÛÇ][\p{L}'’-]+){0,2})/gu;
+  // The trigger may start a sentence ("Me llamo…"); the name itself must be capitalized.
+  /\b(?:[Mm]e llamo|[Mm]i nombre es|[Mm]y name is|[Ii] am called|[Mm]eu nome [ée]|[Mm]e chamo|[Jj]e m['’]appelle|[Mm]on nom est|[Mm]i chiamo|[Ii]l mio nome [èe])\s+((?:[A-ZÁÉÍÓÚÑÀÈÌÒÙÂÊÎÔÛÇ][\p{L}'’-]+)(?:\s+[A-ZÁÉÍÓÚÑÀÈÌÒÙÂÊÎÔÛÇ][\p{L}'’-]+){0,2})/gu;
 // Chinese "我叫X" / "我的名字是X": up to four characters after it.
 const NAME_ZH = /(?:我叫|我的名字是|我的名字叫)\s*([\p{Script=Han}]{1,4})/gu;
 // Hindi "मेरा नाम X है".

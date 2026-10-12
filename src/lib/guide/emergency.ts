@@ -108,5 +108,16 @@ function normalize(text: string): string {
  */
 export function detectEmergencyPhrase(text: string): boolean {
   const normalized = normalize(text);
-  return TRIGGER_PHRASES.some((phrase) => normalized.includes(normalize(phrase)));
+  return TRIGGER_PHRASES.some((phrase) => {
+    const needle = normalize(phrase);
+    // Every occurrence counts unless a negation sits directly before it ("no hay peligro
+    // inmediato", "no one injured", "sin heridos"). Anything else still triggers.
+    for (let at = normalized.indexOf(needle); at !== -1; at = normalized.indexOf(needle, at + 1)) {
+      if (!NEGATED_BEFORE.test(normalized.slice(Math.max(0, at - 16), at))) return true;
+    }
+    return false;
+  });
 }
+
+/** A negation word right before a phrase, in the interface languages (accent-stripped). */
+const NEGATED_BEFORE = /(?:^|[^\p{L}])(?:no|not|no one|nobody|nadie|sin|ningun|ninguna|without|nao|ninguem|sem|pas de|aucun|personne|non|nessun|nessuno|senza)\s+$/u;

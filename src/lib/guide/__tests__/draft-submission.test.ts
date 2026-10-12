@@ -29,7 +29,7 @@ describe("parseDraftSubmissionArgs", () => {
 
   it("accepts valid arguments and trims the description", () => {
     const result = parseDraftSubmissionArgs(validArgs(), SANTIAGO_VERAGUAS);
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       ok: true,
       draft: {
         type: "report",
@@ -101,5 +101,42 @@ describe("parseDraftSubmissionArgs", () => {
       SANTIAGO_VERAGUAS,
     );
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("parseDraftSubmissionArgs — title, urgency and privacy", () => {
+  const args = (over: Record<string, unknown> = {}) =>
+    JSON.stringify({
+      type: "report",
+      categoryId: SANTIAGO_VERAGUAS.categories[0].id,
+      description: "La alcantarilla está tapada desde hace semanas.",
+      areaId: SANTIAGO_VERAGUAS.areas[0].id,
+      title: "Alcantarilla tapada",
+      urgency: "medium",
+      ...over,
+    });
+
+  it("keeps the title and urgency", () => {
+    const result = parseDraftSubmissionArgs(args(), SANTIAGO_VERAGUAS);
+    expect(result).toMatchObject({ ok: true, draft: { title: "Alcantarilla tapada", urgency: "medium", redacted: [] } });
+  });
+
+  it("redacts personal details before the resident confirms", () => {
+    const result = parseDraftSubmissionArgs(
+      args({ description: "Me llamo Ana Pérez, mi teléfono es 6123-4567. La alcantarilla está tapada.", title: "Ana 6123-4567" }),
+      SANTIAGO_VERAGUAS,
+      { language: "es" },
+    );
+    if (!result.ok) throw new Error(result.error);
+    expect(result.draft.description).not.toMatch(/Ana Pérez|6123-4567/);
+    expect(result.draft.title).not.toMatch(/6123-4567/);
+    expect(result.draft.redacted).toEqual(expect.arrayContaining(["name", "phone"]));
+  });
+
+  it("marks the draft urgent when the conversation was an emergency, whatever the model said", () => {
+    const fromHistory = parseDraftSubmissionArgs(args({ urgency: "low" }), SANTIAGO_VERAGUAS, { emergencyInConversation: true });
+    expect(fromHistory.ok && fromHistory.draft.urgency).toBe("urgent");
+    const fromText = parseDraftSubmissionArgs(args({ urgency: "low", description: "Hay un cable eléctrico caído en la calle." }), SANTIAGO_VERAGUAS);
+    expect(fromText.ok && fromText.draft.urgency).toBe("urgent");
   });
 });

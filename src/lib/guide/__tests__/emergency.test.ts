@@ -59,3 +59,31 @@ describe("detectEmergencyPhrase", () => {
     expect(detectEmergencyPhrase("¿Cómo reporto un bache en la calle?")).toBe(false);
   });
 });
+
+describe("detectEmergencyPhrase — negations and the 2026-10 additions", () => {
+  it("ignores a phrase the resident negates", () => {
+    expect(detectEmergencyPhrase("El olor es fuerte, pero no hay peligro inmediato.")).toBe(false);
+    expect(detectEmergencyPhrase("Nobody injured, just a big pothole.")).toBe(false);
+    expect(detectEmergencyPhrase("Sin heridos, solo basura.")).toBe(false);
+  });
+
+  it("still triggers when the same phrase appears un-negated", () => {
+    expect(detectEmergencyPhrase("No sé qué hacer, hay peligro inmediato")).toBe(true);
+    expect(detectEmergencyPhrase("No hay peligro inmediato en la calle, pero en la casa hay peligro inmediato")).toBe(true);
+  });
+
+  it("covers injuries, live wires, collapses and people trapped", () => {
+    for (const text of [
+      "Hay personas heridas",
+      "Un cable eléctrico caído en la acera",
+      "Se derrumbó una pared",
+      "There is a live wire on the road",
+      "Water is rising and people are trapped",
+      "电线掉在地上",
+      "पुल ढह गया",
+      "C'è un crollo",
+    ]) {
+      expect(detectEmergencyPhrase(text), text).toBe(true);
+    }
+  });
+});

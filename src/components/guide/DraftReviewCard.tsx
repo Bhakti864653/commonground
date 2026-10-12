@@ -6,6 +6,7 @@ import { detectEmergencyPhrase } from "@/lib/guide/emergency";
 import type { GuideDraftSubmission } from "@/lib/guide/draft-submission";
 import type { CommunityConfig } from "@/lib/schema/community";
 import { consentTextOf, labelOf } from "@/lib/i18n/labels";
+import { FIELD } from "@/lib/i18n/field-notes";
 
 /**
  * Mirrors ReportWizard's ReviewStep (same field set, same consent gating) so a chat-drafted
@@ -41,7 +42,7 @@ export function DraftReviewCard({
       ? UI_STRINGS.reportFlow.typeStep.report.title[language]
       : UI_STRINGS.reportFlow.typeStep.proposal.title[language];
   const areaLabel = area ? labelOf(area, language) : UI_STRINGS.reportFlow.areaStep.preferNotToSay[language];
-  const isEmergency = detectEmergencyPhrase(draft.description);
+  const isEmergency = detectEmergencyPhrase(draft.description) || draft.urgency === "urgent";
 
   return (
     <section className="cg-arrive flex flex-col gap-4 rounded-[2rem] border-2 border-yellow bg-surface p-5 md:p-6">
@@ -50,7 +51,17 @@ export function DraftReviewCard({
         <p className="mt-1 text-xs text-slate">{t.notSubmittedYet[language]}</p>
       </div>
 
+      {draft.redacted.length > 0 && (
+        <p role="status" className="rounded-lg bg-mint/60 p-3 text-sm text-ink">
+          {FIELD.pipeline.redacted[language]}
+        </p>
+      )}
+
       <dl className="flex flex-col gap-2 text-sm">
+        <div>
+          <dt className="text-slate">{FIELD.pipeline.titleLabel[language]}</dt>
+          <dd className="font-medium text-ink">{draft.title}</dd>
+        </div>
         <div>
           <dt className="text-slate">{UI_STRINGS.reportFlow.typeStep.heading[language]}</dt>
           <dd className="font-medium text-ink">{typeLabel}</dd>
@@ -70,6 +81,13 @@ export function DraftReviewCard({
         <div>
           <dt className="text-slate">{UI_STRINGS.reportFlow.areaStep.heading[language]}</dt>
           <dd className="font-medium text-ink">{areaLabel}</dd>
+        </div>
+        <div>
+          <dt className="text-slate">{FIELD.pipeline.urgencyLabel[language]}</dt>
+          <dd className="font-medium text-ink">
+            {FIELD.pipeline.urgency[draft.urgency][language]}
+            <span className="block text-xs font-normal text-slate">{FIELD.pipeline.urgencyNote[language]}</span>
+          </dd>
         </div>
       </dl>
 

@@ -4,6 +4,8 @@ import { UI_STRINGS, type Language } from "@/lib/i18n/dictionary";
 import type { CategoryConfig, PrivacyConfig } from "@/lib/schema/community";
 import type { ImagePick } from "./types";
 import { consentTextOf, labelOf } from "@/lib/i18n/labels";
+import { FIELD } from "@/lib/i18n/field-notes";
+import { redactPersonalInfo } from "@/lib/pipeline/redact";
 
 export function ReviewStep({
   type,
@@ -32,6 +34,8 @@ export function ReviewStep({
       ? UI_STRINGS.reportFlow.typeStep.report.title[language]
       : UI_STRINGS.reportFlow.typeStep.proposal.title[language];
   const consentText = consentTextOf(privacy, language);
+  // The same privacy filter the server applies on submit, so the resident sees what will be saved.
+  const redaction = redactPersonalInfo(description, language);
 
   return (
     <div className="flex flex-col gap-5">
@@ -56,7 +60,14 @@ export function ReviewStep({
             <dt className="text-slate">
               {UI_STRINGS.reportFlow.descriptionStep.descriptionLabel[language]}
             </dt>
-            <dd className="whitespace-pre-wrap font-medium text-ink">{description}</dd>
+            <dd className="whitespace-pre-wrap font-medium text-ink">
+              {redaction.found.length > 0 && (
+                <span role="status" className="my-1 block rounded-lg bg-mint/60 p-2 text-xs font-normal">
+                  {FIELD.pipeline.redacted[language]}
+                </span>
+              )}
+              {redaction.text}
+            </dd>
           </div>
           <div>
             <dt className="text-slate">{UI_STRINGS.reportFlow.areaStep.heading[language]}</dt>
