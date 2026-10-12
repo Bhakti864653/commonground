@@ -28,14 +28,20 @@ export type AgentCounts = {
   approved: number;
 };
 
-const MODERATOR_KINDS: ReadonlySet<AgentFeedKind> = new Set(["referral_approved", "referral_declined"]);
+/** Steps a moderator takes (everything else in the feed is the agent's own). */
+export const MODERATOR_FEED_KINDS: ReadonlySet<AgentFeedKind> = new Set([
+  "referral_approved",
+  "referral_declined",
+  "referral_queued",
+  "follow_up_update",
+]);
 
 /** The agent's own steps, plus a moderator's decision on a referral. Never a plain status change. */
 export function isAgentFeedEvent(event: ReportStatusEvent): event is ReportStatusEvent & { kind: AgentFeedKind } {
   const kind = event.kind ?? "status";
   if (kind === "status") return false;
-  if (event.actorType === "agent") return !MODERATOR_KINDS.has(kind);
-  return event.actorType === "moderator" && MODERATOR_KINDS.has(kind);
+  if (event.actorType === "agent") return !MODERATOR_FEED_KINDS.has(kind);
+  return event.actorType === "moderator" && MODERATOR_FEED_KINDS.has(kind);
 }
 
 /** Removed cases keep no public content, so they stay out of the feed and the counts. */

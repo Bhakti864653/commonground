@@ -16,6 +16,7 @@ import {
   type AgentSuggestion,
   type Case,
   type ReferralDraft,
+  type ReportStatusEvent,
   type TimelineEventKind,
   type RemovalReason,
   type ReportStatus,
@@ -23,6 +24,8 @@ import {
   type VerifiedSource,
 } from "@/lib/schema/report";
 import { SANTIAGO_VERAGUAS } from "@/data/communities";
+import { DEMO_PIPELINE_RECORDS } from "@/lib/pipeline/store/demo-pipeline-records";
+import { asTimelineNote } from "@/lib/pipeline/store/demo-pipeline-data";
 import { prepareNewCase, type NewCaseInput } from "./new-case";
 import { getCommunity as getMemoryCommunity } from "./memory-community-store";
 
@@ -133,6 +136,25 @@ function seedDemoCases(store: CaseStoreState): void {
           detail: step.contactId,
         });
       }
+    }
+    // The agentic pipeline's public steps (demo-pipeline-data.ts): a referral prepared with sending
+    // paused, and an approved follow-up update. Each carries the status the case had at that moment.
+    const pipeline = DEMO_PIPELINE_RECORDS.find((r) => r.description === seed.description);
+    for (const step of pipeline?.publicEvents ?? []) {
+      const occurredAt = daysAgoIso(step.daysAgo);
+      const statusThen =
+        statusHistory
+          .filter((e) => (e.kind ?? "status") === "status" && e.occurredAt <= occurredAt)
+          .sort((a, b) => a.occurredAt.localeCompare(b.occurredAt))
+          .at(-1)?.status ?? "received";
+      statusHistory.push({
+        id: crypto.randomUUID(),
+        status: statusThen,
+        occurredAt,
+        actorType: "moderator",
+        kind: step.kind,
+        ...(step.notes ? asTimelineNote(step.notes) : {}),
+      });
     }
     statusHistory.sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
     moderationActions.sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
@@ -476,7 +498,15 @@ export function setAgentSuggestionStatus(
  */
 export function addTimelineEvent(
   publicCaseNumber: string,
-  event: { kind: Exclude<TimelineEventKind, "status">; actorType: "agent" | "moderator"; contactId?: string },
+  event: {
+    kind: Exclude<TimelineEventKind, "status">;
+    actorType: "agent" | "moderator";
+    contactId?: string;
+    /** Only a moderator-approved follow-up update carries text. */
+    note?: string;
+    noteEs?: string;
+    notes?: ReportStatusEvent["notes"];
+  },
   now: () => Date = () => new Date(),
 ): boolean {
   const found = getCaseByCaseNumber(publicCaseNumber);
@@ -488,6 +518,9 @@ export function addTimelineEvent(
     actorType: event.actorType,
     kind: event.kind,
     contactId: event.contactId,
+    ...(event.note ? { note: event.note } : {}),
+    ...(event.noteEs ? { noteEs: event.noteEs } : {}),
+    ...(event.notes ? { notes: event.notes } : {}),
   });
   return true;
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, ShieldCheck, Sparkles } from "lucide-react";
-import type { AgentFeedItem as Item } from "@/lib/agent/activity";
+import { MODERATOR_FEED_KINDS, type AgentFeedItem as Item } from "@/lib/agent/activity";
 import type { Language } from "@/lib/i18n/dictionary";
 import { FIELD } from "@/lib/i18n/field-notes";
 import { fill } from "@/lib/i18n/experience";
@@ -32,7 +32,7 @@ export function AgentFeedItem({
   language: Language;
 }) {
   const f = FIELD.caseView;
-  const byAgent = item.kind !== "referral_approved" && item.kind !== "referral_declined";
+  const byAgent = !MODERATOR_FEED_KINDS.has(item.kind);
   const Icon = byAgent ? Sparkles : ShieldCheck;
   return (
     <li className="border-b border-line">

@@ -95,6 +95,11 @@ export const TimelineEventKindSchema = z.enum([
   "awaiting_approval",
   "referral_approved",
   "referral_declined",
+  // The agentic pipeline (2026-10): a moderator approved a referral into the dry-run outbox
+  // ("Referral prepared – sending is paused in this demo"), or published a follow-up update.
+  // Neither names the office publicly.
+  "referral_queued",
+  "follow_up_update",
 ]);
 export type TimelineEventKind = z.infer<typeof TimelineEventKindSchema>;
 

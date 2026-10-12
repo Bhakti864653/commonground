@@ -1,4 +1,5 @@
 import { casePrefix } from "@/lib/case-number/format-case-number";
+import { buildDemoPipelineSql } from "@/lib/pipeline/store/demo-pipeline-sql";
 import { SANTIAGO_VERAGUAS } from "@/data/communities";
 import {
   DEMO_CASE_SEEDS,
@@ -194,5 +195,8 @@ ${DEMO_CASE_SEEDS.map(seedBlock).join("\n\n")}
   raise notice 'Added ${DEMO_CASE_SEEDS.length} demonstration cases.';
 end
 $$;
-`;
+
+-- The demonstration cases' example history in the agentic pipeline (routing, referrals in the
+-- dry-run outbox, follow-ups). Also safe to run again: it skips cases that already have it.
+${buildDemoPipelineSql()}`;
 }

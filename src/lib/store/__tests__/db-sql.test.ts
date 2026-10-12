@@ -15,6 +15,13 @@ import {
 } from "@/lib/schema/report";
 import { CommunityConfigSchema } from "@/lib/schema/community";
 import { LANGUAGE_CODES } from "@/lib/i18n/languages";
+import { AuditEntrySchema, OutboxItemSchema, PrioritySchema, ProposalSchema } from "@/lib/pipeline/types";
+import { DEMO_PIPELINE_RECORDS } from "@/lib/pipeline/store/demo-pipeline-records";
+import { buildPipelineMigrationSql } from "@/lib/pipeline/store/demo-pipeline-sql";
+
+const ProposalKinds = ProposalSchema.options.map((o) => o.shape.kind.value);
+const PIPELINE_MIGRATION_PATH = join(__dirname, "../../../../db/migrations/0007_agentic_pipeline.sql");
+const pipelinePublicEvents = DEMO_PIPELINE_RECORDS.reduce((n, r) => n + r.publicEvents.length, 0);
 
 const ROOT = join(__dirname, "../../../..");
 /** Every migration, in the order db:migrate applies them. */
@@ -28,7 +35,8 @@ const AGENT_MIGRATION_PATH = join(ROOT, "db/migrations/0004_demo_agent_steps.sql
 
 /** The quoted values inside a named CHECK constraint, e.g. cases_status_check → ["received", ...]. */
 function checkValues(constraint: string): string[] {
-  const start = MIGRATION.indexOf(`constraint ${constraint} check`);
+  // The last definition wins: a later migration may drop and re-add a constraint (0007 does).
+  const start = MIGRATION.lastIndexOf(`constraint ${constraint} check`);
   if (start === -1) throw new Error(`No constraint ${constraint}`);
   const body = MIGRATION.slice(start, MIGRATION.indexOf("))", start));
   return [...body.matchAll(/'([^']+)'/g)].map((m) => m[1]).sort();
@@ -57,6 +65,12 @@ describe("migration CHECK constraints match the app's Zod enums", () => {
     ["agent_suggestions_kind_check", AgentSuggestionSchema.shape.kind.options],
     ["moderation_actions_action_check", ModerationActionSchema.shape.action.options],
     ["communities_status_check", CommunityConfigSchema.shape.status.options],
+    ["pipeline_case_state_priority_check", PrioritySchema.options],
+    ["pipeline_proposals_kind_check", ProposalKinds],
+    ["pipeline_proposals_status_check", ["pending", "approved", "rejected"]],
+    ["pipeline_outbox_kind_check", OutboxItemSchema.shape.kind.options],
+    ["pipeline_outbox_status_check", ["dry_run"]],
+    ["agent_audit_actor_type_check", AuditEntrySchema.shape.actorType.options],
     ["community_requests_language_check", LANGUAGE_CODES],
   ])("%s", (constraint, options) => {
     expect(checkValues(constraint)).toEqual(sorted(options));
@@ -117,7 +131,7 @@ describe("migration + seed on a real Postgres (PGlite)", () => {
     const events = await db.query<{ n: number }>("select count(*)::int as n from public.case_events");
     const actions = await db.query<{ n: number }>("select count(*)::int as n from public.moderation_actions");
     const referrals = await db.query<{ status: string }>("select status from public.agent_suggestions order by status");
-    expect(events.rows[0].n).toBe(DEMO_CASE_SEEDS.length + changed + steps.length);
+    expect(events.rows[0].n).toBe(DEMO_CASE_SEEDS.length + changed + steps.length + pipelinePublicEvents);
     expect(actions.rows[0].n).toBe(changed + approvals);
     expect(referrals.rows.map((r) => r.status)).toEqual(
       DEMO_CASE_SEEDS.flatMap((s) => (s.agent?.referral ? [s.agent.referral.approvedAfterDays === undefined ? "pending" : "approved"] : [])).sort(),
@@ -177,8 +191,8 @@ describe("migration + seed on a real Postgres (PGlite)", () => {
       `select relname, relrowsecurity from pg_class
        where relnamespace = 'public'::regnamespace and relkind = 'r'`,
     );
-    // 7 case tables (0001) + 4 community tables (0002) + 2 moderator tables (0005).
-    expect(rows.length).toBe(13);
+    // 7 case tables (0001) + 4 community tables (0002) + 2 moderator tables (0005) + 4 pipeline tables (0007).
+    expect(rows.length).toBe(17);
     expect(rows.filter((r) => !r.relrowsecurity).map((r) => r.relname)).toEqual([]);
   });
 
@@ -212,6 +226,67 @@ describe("migration + seed on a real Postgres (PGlite)", () => {
   }, 60_000);
 });
 
+describe("db/migrations/0007_agentic_pipeline.sql", () => {
+  it("is exactly what the generator produces from the demo pipeline seeds", async () => {
+    await expect(buildPipelineMigrationSql()).toMatchFileSnapshot(PIPELINE_MIGRATION_PATH);
+  });
+});
+
+describe("0007 on a database seeded before the pipeline existed (PGlite)", () => {
+  let db: PGlite;
+  const before0007 = readdirSync(join(ROOT, "db/migrations"))
+    .filter((f) => f.endsWith(".sql") && f < "0007")
+    .sort()
+    .map((f) => readFileSync(join(ROOT, "db/migrations", f), "utf8"))
+    .join("\n");
+
+  beforeAll(async () => {
+    db = new PGlite();
+    await db.exec(`create role anon; create role authenticated; create role visitor;`);
+    await db.exec(before0007);
+    // The seed as it was before the pipeline: only its first DO block (the cases).
+    const seed = readFileSync(SEED_PATH, "utf8");
+    await db.exec(seed.slice(0, seed.indexOf("-- The demonstration cases' example history")));
+  }, 60_000);
+
+  it("adds the example pipeline history to every demo case, once, and never to a resident's case", async () => {
+    await db.exec(`select public.create_case(
+      'santiago-veraguas', 'SV', 'report', 'flooding-drainage', ${"'" + DEMO_CASE_SEEDS[3].description.replace(/'/g, "''") + "'"},
+      '{"kind":"prefer_not_to_say","label":"-"}'::jsonb, now(), 'community_report', 'community', null, '{"consentVersion":"v1"}'::jsonb, 'token')`);
+    const counts = async () =>
+      (
+        await db.query<{ n: string }>(
+          `select (select count(*) from public.pipeline_case_state) || '/' || (select count(*) from public.pipeline_proposals) || '/' ||
+                  (select count(*) from public.pipeline_outbox) || '/' || (select count(*) from public.agent_audit) || '/' ||
+                  (select count(*) from public.case_events where kind in ('referral_queued', 'follow_up_update')) as n`,
+        )
+      ).rows[0].n;
+    const expected = [
+      DEMO_PIPELINE_RECORDS.length,
+      DEMO_PIPELINE_RECORDS.reduce((n, r) => n + r.proposals.length, 0),
+      DEMO_PIPELINE_RECORDS.reduce((n, r) => n + r.outbox.length, 0),
+      DEMO_PIPELINE_RECORDS.reduce((n, r) => n + r.audit.length, 0),
+      pipelinePublicEvents,
+    ].join("/");
+
+    await db.exec(readFileSync(PIPELINE_MIGRATION_PATH, "utf8"));
+    expect(await counts()).toBe(expected);
+    expect(await outOfOrderTimelines(db)).toBe(0);
+    const unfilled = await db.query<{ n: number }>(
+      `select count(*)::int as n from public.pipeline_proposals where payload::text ~ '[{](CASE|URL|DUP[0-9])[}]'`,
+    );
+    expect(unfilled.rows[0].n).toBe(0);
+    const resident = await db.query<{ n: number }>(
+      `select count(*)::int as n from public.pipeline_case_state s join public.cases c on c.case_number = s.case_number where c.source_type = 'community'`,
+    );
+    expect(resident.rows[0].n).toBe(0);
+
+    // The migration's data part is safe to run again.
+    await db.exec(buildPipelineMigrationSql().slice(buildPipelineMigrationSql().indexOf("do $$")));
+    expect(await counts()).toBe(expected);
+  });
+});
+
 describe("0004 on a database seeded before the agent existed (PGlite)", () => {
   let db: PGlite;
 
@@ -242,7 +317,7 @@ describe("0004 on a database seeded before the agent existed (PGlite)", () => {
 
     // Turn the database back into one seeded before the agent: no agent steps, no drafts, no approvals.
     await db.exec(`
-      delete from public.case_events where kind is not null;
+      delete from public.case_events where kind is not null and kind not in ('referral_queued', 'follow_up_update');
       delete from public.agent_suggestions;
       delete from public.moderation_actions where action = 'approve_referral';
       update public.cases c set status = (

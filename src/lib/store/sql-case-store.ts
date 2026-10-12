@@ -354,11 +354,20 @@ export function createSqlCaseRepository(
 
     async addTimelineEvent(caseNumber, event, now = defaultClock) {
       const { rows } = await db.query(
-        `insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id)
-         select id, $2::timestamptz, status, $3, $4, $5 from public.cases
+        `insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id, note, note_es, notes)
+         select id, $2::timestamptz, status, $3, $4, $5, $6, $7, $8::jsonb from public.cases
          where case_number = $1 and deleted_at is null
          returning id`,
-        [caseNumber, now().toISOString(), event.actorType, event.kind, event.contactId ?? null],
+        [
+          caseNumber,
+          now().toISOString(),
+          event.actorType,
+          event.kind,
+          event.contactId ?? null,
+          event.note ?? null,
+          event.noteEs ?? null,
+          json(event.notes),
+        ],
       );
       return rows.length > 0;
     },

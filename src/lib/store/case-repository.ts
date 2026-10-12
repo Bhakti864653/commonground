@@ -4,6 +4,7 @@ import type {
   ReferralDraft,
   RemovalReason,
   ReportStatus,
+  ReportStatusEvent,
   TimelineEventKind,
   VerificationState,
   VerifiedSource,
@@ -73,7 +74,15 @@ export interface CaseRepository {
 
   addTimelineEvent(
     publicCaseNumber: string,
-    event: { kind: Exclude<TimelineEventKind, "status">; actorType: "agent" | "moderator"; contactId?: string },
+    event: {
+      kind: Exclude<TimelineEventKind, "status">;
+      actorType: "agent" | "moderator";
+      contactId?: string;
+      /** Only a moderator-approved follow-up update carries text. */
+      note?: string;
+      noteEs?: string;
+      notes?: ReportStatusEvent["notes"];
+    },
     now?: Clock,
   ): Promise<boolean>;
   addReferralSuggestion(

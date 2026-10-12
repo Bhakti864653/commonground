@@ -21,8 +21,12 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
   follow_up: "Follow-up",
 };
 
-/** Where an output came from: the AI, or the rule-based fallback used when the AI is unavailable. */
-export const OutputSourceSchema = z.enum(["ai", "rules"]);
+/**
+ * Where an output came from: the AI, the rule-based fallback used when the AI is unavailable, or
+ * hand-written example data on the demonstration cases.
+ */
+export const OutputSourceSchema = z.enum(["ai", "rules", "example"]);
+export type OutputSource = z.infer<typeof OutputSourceSchema>;
 
 const LocalizedTextSchema = z.object(
   Object.fromEntries(LANGUAGE_CODES.map((l) => [l, z.string().min(1).max(600)])) as Record<
