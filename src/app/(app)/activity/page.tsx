@@ -17,6 +17,7 @@ import { UnconfiguredPlace } from "@/components/map/UnconfiguredPlace";
 import { CaseLookupForm } from "@/components/case/CaseLookupForm";
 import { CasesLoadError } from "@/components/journey/CasesLoadError";
 import { labelOf } from "@/lib/i18n/labels";
+import { WeeklySummaryCard } from "@/components/journey/WeeklySummaryCard";
 
 const EMPTY_FILTERS: CaseFilters = { query: "", type: "all", status: "all", categoryId: "all", areaId: "all" };
 
@@ -93,6 +94,7 @@ export default function ExplorePage() {
   return (
     <div>
       <PageHead language={language} />
+      <WeeklySummaryCard community={community} language={language} />
 
       <div className="mb-[22px] flex flex-wrap items-center gap-2" role="search">
         <label className="relative min-w-[175px] flex-1 sm:flex-none">

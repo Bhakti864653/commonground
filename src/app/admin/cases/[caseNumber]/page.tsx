@@ -3,6 +3,12 @@ import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { getCaseForAdmin } from "@/lib/store/admin-actions";
 import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 import { ModerationPanel } from "@/components/admin/ModerationPanel";
+import { PipelinePanel } from "@/components/admin/pipeline/PipelinePanel";
+import { getCasePipelineForAdmin } from "@/lib/pipeline/actions";
+import { REFERRAL_OFFICES } from "@/data/referral-offices";
+
+// The agents (several Groq calls) run inside this page's server actions.
+export const maxDuration = 120;
 
 export default async function AdminCasePage({
   params,
@@ -19,6 +25,7 @@ export default async function AdminCasePage({
   if (!foundCase) notFound();
   const community = await getCommunityById(foundCase.communityId);
   const category = community?.categories.find((cat) => cat.id === foundCase.categoryId);
+  const pipeline = await getCasePipelineForAdmin(foundCase.publicCaseNumber);
 
   return (
     <ModerationPanel
@@ -26,6 +33,20 @@ export default async function AdminCasePage({
       communityDisplayName={community?.displayName ?? foundCase.communityId}
       categoryLabel={category ? category.label : foundCase.categoryId}
       contacts={community?.officialContacts ?? []}
+      pipeline={
+        pipeline && (
+          <PipelinePanel
+            key="pipeline"
+            caseNumber={foundCase.publicCaseNumber}
+            stage={pipeline.stage}
+            state={pipeline.state}
+            proposals={pipeline.proposals}
+            outbox={pipeline.outbox}
+            audit={pipeline.audit}
+            offices={REFERRAL_OFFICES.map((o) => ({ id: o.id, name: o.name }))}
+          />
+        )
+      }
     />
   );
 }

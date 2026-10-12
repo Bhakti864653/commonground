@@ -6,6 +6,7 @@ const searchCases = vi.fn();
 vi.mock("@/lib/store/actions", () => ({
   searchCases: (...args: unknown[]) => searchCases(...args),
   getTrendsForActivity: () => Promise.resolve([]),
+  getWeeklySummaryForActivity: () => Promise.resolve(null),
 }));
 vi.mock("@/lib/community/context", () => ({ useCommunity: () => ({ community: SANTIAGO_VERAGUAS }) }));
 vi.mock("@/lib/places/context", () => ({ usePlaces: () => ({ activePlace: { kind: "community" } }) }));

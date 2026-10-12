@@ -19,9 +19,12 @@ export function AdminShell({ children, moderator }: { children: ReactNode; moder
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <nav aria-label="Admin" className="flex items-center gap-1 text-sm font-semibold">
+          <nav aria-label="Admin" className="flex flex-wrap items-center gap-1 text-sm font-semibold">
             <Link href="/admin" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
               Cases
+            </Link>
+            <Link href="/admin/pipeline" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
+              Pipeline
             </Link>
             <Link href="/admin/communities" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
               Communities

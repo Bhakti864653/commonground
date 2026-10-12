@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   adminAddNote,
@@ -45,11 +45,14 @@ export function ModerationPanel({
   communityDisplayName,
   categoryLabel,
   contacts = [],
+  pipeline,
 }: {
   caseData: Case;
   communityDisplayName: string;
   categoryLabel: string;
   contacts?: OfficialContact[];
+  /** The agentic pipeline panel, shown right under the case details. */
+  pipeline?: ReactNode;
 }) {
   const router = useRouter();
   const [selectedStatus, setSelectedStatus] = useState<ReportStatus>(caseData.status);
@@ -112,7 +115,9 @@ export function ModerationPanel({
         )}
       </div>
 
-      {/* AI-prepared referrals */}
+      {pipeline}
+
+      {/* AI-prepared referrals (the earlier one-step pipeline; kept so past decisions stay visible) */}
       {referrals.length > 0 && (
         <section className="rounded-lg border border-teal/30 bg-mint/20 p-4">
           <h2 className="text-sm font-semibold text-ink">Referral</h2>
@@ -231,7 +236,7 @@ export function ModerationPanel({
               setSelectedStatus(next);
               if (statusNoteIsDraft) setStatusNote(draftStatusChangeExplanation(next, "en"));
             }}
-            className="rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
+            className="max-w-full rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
           >
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>
@@ -469,7 +474,7 @@ export function ModerationPanel({
                 aria-label="Reason shown publicly"
                 value={removalReason}
                 onChange={(e) => setRemovalReason(e.target.value as RemovalReason)}
-                className="rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
+                className="max-w-full rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
               >
                 {REMOVAL_REASONS.map((r) => (
                   <option key={r} value={r}>
