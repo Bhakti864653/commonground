@@ -86,13 +86,22 @@ export async function runCriticAgent(
 
   const result = await runToolAgent({
     client,
-    system: `You are the Critic Agent of CommonGround, a community project (student demo). Another
+    system: `You are the Critic Agent of CommonGround, a community project (student demo). ${
+      proposal.kind === "office_note"
+        ? `An office wrote the public note below ("original") about its own work on a case, and an agent
+translated it. The office may describe its own plans and actions — that is fine. Check only for:
+- mistakes: a translation that changes the meaning, adds or drops information, or alters dates/numbers;
+- personal_data: any name, phone, email, ID or exact address in the note or a translation;
+- bias: anything insulting or blaming residents;
+- other: anything unsuitable to publish on a public page.`
+        : `Another
 agent produced the ${proposal.kind.replace("_", " ")} below. Before a human moderator sees it, check it for:
 - mistakes: facts not in the case, a wrong office or priority, wrong numbers;
 - bias: judging the resident or a neighborhood, assumptions about people, unfair priority;
 - missing_info: something the moderator needs that is missing;
 - personal_data: any name, phone, email, ID or exact address;
-- other: promising results, sounding like a government office, claiming something was sent.
+- other: promising results, sounding like a government office, claiming something was sent.`
+    }
 Report "ok" with no issues if it is fine. Each issue: one short sentence in English.
 
 ${UNTRUSTED_DATA_RULE}

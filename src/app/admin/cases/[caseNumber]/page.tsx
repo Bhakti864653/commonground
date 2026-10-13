@@ -43,6 +43,8 @@ export default async function AdminCasePage({
             proposals={pipeline.proposals}
             outbox={pipeline.outbox}
             audit={pipeline.audit}
+            officeReferrals={pipeline.officeReferrals}
+            officeNotes={pipeline.officeNotes}
             offices={REFERRAL_OFFICES.map((o) => ({ id: o.id, name: o.name }))}
           />
         )

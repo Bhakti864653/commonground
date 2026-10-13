@@ -12,7 +12,11 @@ import {
   rejectProposalAction,
   rerunRoutingAction,
   setRoutingAction,
+  approveOfficeNoteAction,
+  confirmOfficeResolutionAction,
+  rejectOfficeResolutionAction,
 } from "@/lib/pipeline/actions";
+import { OFFICE_STATUS_LABELS, type OfficeNote, type OfficeReferral } from "@/lib/office/types";
 import { LANGUAGES, type Language } from "@/lib/i18n/languages";
 import { PrioritySchema, type CasePipelineState, type Priority, type Proposal } from "@/lib/pipeline/types";
 import type { PipelineStage, AuditEntry, OutboxItem } from "@/lib/pipeline/types";
@@ -30,6 +34,8 @@ type Props = {
   outbox: OutboxItem[];
   audit: AuditEntry[];
   offices: OfficeOption[];
+  officeReferrals?: OfficeReferral[];
+  officeNotes?: OfficeNote[];
 };
 
 const PRIORITIES = PrioritySchema.options;
@@ -44,7 +50,7 @@ const select = "max-w-full rounded-md border border-ink/15 bg-cream px-2 py-1.5 
  * propose (with the Critic's review), the dry-run outbox, and the full agent timeline.
  * Every button here is a moderator decision; agents never change anything by themselves.
  */
-export function PipelinePanel({ caseNumber, stage, state, proposals, outbox, audit, offices }: Props) {
+export function PipelinePanel({ caseNumber, stage, state, proposals, outbox, audit, offices, officeReferrals = [], officeNotes = [] }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [result, setResult] = useState<PipelineResult | null>(null);
@@ -66,6 +72,8 @@ export function PipelinePanel({ caseNumber, stage, state, proposals, outbox, aud
   const routing = pending.find((p): p is Extract<Proposal, { kind: "routing" }> => p.kind === "routing");
   const referral = pending.find((p): p is Extract<Proposal, { kind: "referral" }> => p.kind === "referral");
   const followUp = pending.find((p): p is Extract<Proposal, { kind: "follow_up" }> => p.kind === "follow_up");
+  const officeNoteProposals = pending.filter((p): p is Extract<Proposal, { kind: "office_note" }> => p.kind === "office_note");
+  const resolution = pending.find((p): p is Extract<Proposal, { kind: "office_resolution" }> => p.kind === "office_resolution");
   const canDraft = !!state?.officeId && !referral && !outbox.some((o) => o.kind === "referral");
 
   return (
@@ -102,6 +110,73 @@ export function PipelinePanel({ caseNumber, stage, state, proposals, outbox, aud
       {routing && <RoutingCard proposal={routing} caseNumber={caseNumber} offices={offices} busy={busy} run={run} officeName={officeName} />}
       {referral && <ReferralCardNew proposal={referral} busy={busy} run={run} officeName={officeName} />}
       {followUp && <FollowUpCard proposal={followUp} busy={busy} run={run} />}
+      {resolution && (
+        <CardShell title={`${officeName(resolution.payload.officeId)} says the problem is resolved`} source="office">
+          <p className="mt-2 text-sm text-ink">Confirm to close the case (residents see it as Closed), or send it back to the office as “In progress”.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" className={primary} disabled={busy !== null} onClick={() => run("confirm-resolution", () => confirmOfficeResolutionAction(resolution.id))}>
+              Confirm and close the case
+            </button>
+            <button type="button" className={secondary} disabled={busy !== null} onClick={() => run("reject-resolution", () => rejectOfficeResolutionAction(resolution.id))}>
+              Not yet
+            </button>
+          </div>
+        </CardShell>
+      )}
+      {officeNoteProposals.map((p) => (
+        <CardShell key={p.id} title={`${officeName(p.payload.officeId)} wrote a public note`} source={p.payload.source}>
+          <p className="mt-2 rounded bg-surface p-2 text-sm text-ink">“{p.payload.original}”</p>
+          <details className="mt-2 text-xs" open>
+            <summary className="cursor-pointer text-slate">Translations to check (all 7 languages)</summary>
+            <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
+              {Object.entries(p.payload.translations).map(([lang, text]) => (
+                <div key={lang} className="contents">
+                  <dt className="font-semibold text-slate">{lang}</dt>
+                  <dd className="text-ink/85">{text}</dd>
+                </div>
+              ))}
+            </dl>
+          </details>
+          <CritiqueView critique={p.critique} />
+          <FailureNote note={p.failureNote} />
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" className={primary} disabled={busy !== null} onClick={() => run(`note-${p.id}`, () => approveOfficeNoteAction(p.id))}>
+              Publish on the case page
+            </button>
+            <button type="button" className={secondary} disabled={busy !== null} onClick={() => run(`note-x-${p.id}`, () => rejectProposalAction(p.id))}>
+              Dismiss
+            </button>
+          </div>
+        </CardShell>
+      ))}
+
+      {officeReferrals.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-ink">Office side</h3>
+          <ul className="mt-1 flex flex-col gap-1 text-sm">
+            {officeReferrals.map((r) => (
+              <li key={r.id} className="flex flex-wrap items-center gap-2">
+                <span className="font-medium text-ink">{officeName(r.officeId)}</span>
+                <span className="rounded-full bg-ink/5 px-2 py-0.5 text-xs font-semibold text-ink">{OFFICE_STATUS_LABELS[r.status]}</span>
+                {r.isDemo && <span className="text-xs text-slate">(simulated demo office)</span>}
+                <span className="text-xs text-slate">since {new Date(r.statusChangedAt).toLocaleString()}</span>
+                {r.declineReason && <span className="text-xs text-coral">Reason: {r.declineReason}</span>}
+              </li>
+            ))}
+          </ul>
+          {officeNotes.filter((n) => n.kind === "private").length > 0 && (
+            <ul className="mt-2 flex flex-col gap-1 rounded-md bg-ink/5 p-2 text-xs text-ink/85">
+              {officeNotes
+                .filter((n) => n.kind === "private")
+                .map((n) => (
+                  <li key={n.id}>
+                    <span className="font-semibold">Private note from {officeName(n.officeId)}</span> · {new Date(n.createdAt).toLocaleString()}: {n.text}
+                  </li>
+                ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2">
         <button type="button" className={secondary} disabled={busy !== null} onClick={() => run("rerun", () => rerunRoutingAction(caseNumber))}>

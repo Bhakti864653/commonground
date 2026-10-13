@@ -32,10 +32,18 @@ export function AdminShell({ children, moderator }: { children: ReactNode; moder
             <Link href="/admin/sources" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
               Sources &amp; contacts
             </Link>
+            <Link href="/demo/office" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
+              Demo office
+            </Link>
             {moderator.role === "owner" && (
-              <Link href="/admin/moderators" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
-                Moderators
-              </Link>
+              <>
+                <Link href="/admin/moderators" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
+                  Moderators
+                </Link>
+                <Link href="/admin/offices" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
+                  Offices
+                </Link>
+              </>
             )}
           </nav>
           <ThemeToggle />

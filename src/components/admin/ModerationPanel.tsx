@@ -380,7 +380,7 @@ export function ModerationPanel({
             onChange={(e) => setDuplicateOf(e.target.value)}
             aria-label="Original case number this is a duplicate of"
             placeholder="Original case number, e.g. SV-2026-0001"
-            className="flex-1 rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
+            className="min-w-0 flex-1 rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
           />
           <button
             type="button"
@@ -556,7 +556,7 @@ export function ModerationPanel({
             onChange={(e) => setNote(e.target.value)}
             aria-label="Add a private note"
             placeholder="Add a private note (never shown publicly)"
-            className="flex-1 rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
+            className="min-w-0 flex-1 rounded-md border border-ink/15 bg-cream px-2 py-1.5 text-sm text-ink"
           />
           <button
             type="button"
