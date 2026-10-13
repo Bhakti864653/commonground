@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminLogoutButton } from "./AdminLogoutButton";
+import { AdminNav, BackToPipeline } from "./AdminNav";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import type { CurrentModerator } from "@/lib/admin/auth";
 
@@ -10,47 +11,24 @@ export function AdminShell({ children, moderator }: { children: ReactNode; moder
     <div className="min-h-screen bg-cream">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-coral/30 bg-coral/5 px-4 py-3">
         <div>
-          <Link href="/admin" className="text-sm font-semibold text-ink">
-            CommonGround — Admin
+          <Link href="/admin/pipeline" className="text-sm font-semibold text-ink">
+            CommonGround — Moderator
           </Link>
           <p className="text-xs text-slate">
-            Never forwards anything externally. Every action is recorded
+            Nothing is ever sent outside CommonGround. Every action is recorded
             {moderator.email ? ` under your name. Signed in as ${moderator.email}${moderator.role === "owner" ? " (owner)" : ""}.` : ". Signed in with the shared access code."}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <nav aria-label="Admin" className="flex flex-wrap items-center gap-1 text-sm font-semibold">
-            <Link href="/admin" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
-              Cases
-            </Link>
-            <Link href="/admin/pipeline" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
-              Pipeline
-            </Link>
-            <Link href="/admin/communities" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
-              Communities
-            </Link>
-            <Link href="/admin/sources" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
-              Sources &amp; contacts
-            </Link>
-            <Link href="/demo/office" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
-              Demo office
-            </Link>
-            {moderator.role === "owner" && (
-              <>
-                <Link href="/admin/moderators" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
-                  Moderators
-                </Link>
-                <Link href="/admin/offices" className="rounded-full px-3 py-1.5 text-ink hover:bg-mint">
-                  Offices
-                </Link>
-              </>
-            )}
-          </nav>
+          <AdminNav />
           <ThemeToggle />
           <AdminLogoutButton />
         </div>
       </header>
-      <main className="mx-auto max-w-4xl px-4 py-8">{children}</main>
+      <main className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-6">
+        <BackToPipeline />
+        <div>{children}</div>
+      </main>
     </div>
   );
 }

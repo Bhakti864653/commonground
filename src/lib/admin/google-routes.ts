@@ -19,7 +19,8 @@ const secure = () => process.env.NODE_ENV === "production";
 const redirectUri = (request: NextRequest) => `${request.nextUrl.origin}${CALLBACK_PATH}`;
 
 function backToAdmin(request: NextRequest, problem?: LoginProblem): NextResponse {
-  const url = new URL("/admin", request.nextUrl.origin);
+  // Signed in: straight to Home (the pipeline). A problem: back to the sign-in page, which explains it.
+  const url = new URL(problem ? "/admin" : "/admin/pipeline", request.nextUrl.origin);
   if (problem) url.searchParams.set("login", problem);
   const response = NextResponse.redirect(url);
   response.cookies.delete({ name: ATTEMPT_COOKIE, path: "/api/auth/google" });

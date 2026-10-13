@@ -6,12 +6,27 @@ Never open SV-2026-0011 or SV-2026-0012.
 
 ## Before you start
 - Go to /admin. Sign in with Google.
-- Click "Pipeline".
-- Click "Start demo (resets the example cases)".
+  You land on Home.
+- Menu: Home · All cases · Demo office ·
+  Settings. Every other screen has
+  "← Back to Pipeline".
+- On Home, in "Demo tools", click
+  "Start demo (resets the example cases)".
 - The guide opens at step 1 (bottom right,
   or bottom of the screen on a phone).
 - In the guide: "Take me there", "Next",
   "Back", "Hide", "Exit guide".
+
+## How a case page works
+- Step bar: Drafted → Routed →
+  Referral ready → Office → Follow-up.
+- One big "Next action" button: it jumps
+  to what needs you.
+- Each agent card: Suggests, Why,
+  Second check, then
+  Approve · Change · Dismiss.
+- Everything else is folded in
+  "More tools".
 
 ## Side 1 – The resident
 
@@ -39,54 +54,64 @@ Never open SV-2026-0011 or SV-2026-0012.
 
 ## Side 2 – The agents and the moderator
 
-3. The pipeline
+3. Home
    URL: /admin/pipeline
-   Point at "Cases by stage" and
+   Point at "What needs your attention"
+   (each line has a Review button),
+   then "Cases by step", then
    "Sending: OFF (demo mode)".
-   Say: "Four agent steps. Agents only
-   propose; a person approves every step;
-   nothing is ever sent."
+   Say: "Agents only suggest; I approve
+   every step; nothing is ever sent."
 
 4. Routing
    URL: /admin/cases/SV-2026-0007
-   In "Routing Agent suggests": office,
-   priority, confidence 52%, reason,
-   "The agent isn't sure", Critic's concern.
-   Pick an office. Click "Approve routing"
-   (or "Approve with my changes").
+   Step bar is at "Drafted". Next action:
+   "Review the routing suggestion".
+   In the "Routing Agent" card: Suggests
+   (office, priority, 52%), Why,
+   "The agent isn't sure", Second check.
+   The choices are already open: pick an
+   office. Click "Approve with my changes".
    Wait about 10 seconds.
    Say: "When two offices fit, it asks a
    human instead of guessing."
 
 5. Referral → outbox
    URL: /admin/cases/SV-2026-0007
-   In "Referral Agent drafted a message…":
-   change one word.
-   Click "Approve → outbox (not sent)".
-   Open the item under "Outbox for this case":
-   "Ready to send – demo mode (not sent)".
+   Next action: "Review the message to
+   the office". In the "Referral Agent"
+   card, click "Change", change one word,
+   click "Approve with my changes".
+   Open the item under "Outbox for this
+   case": "Ready to send – demo mode
+   (not sent)". Step bar: "Office".
    Say: "Code adds the facts. The outbox is
    a dry run: there's no sending code."
 
 6. Duplicate
    URL: /admin/cases/SV-2026-0002
-   Show "Possible duplicates nearby" and
+   In the Routing Agent card, show
+   "Possible duplicate" and
    "Merge into SV-2026-0001". Don't click.
    Say: "Two neighbors reported the same
    streetlight."
 
 7. Follow-up
    URL: /admin/pipeline
-   Click "Run follow-up now
-   (example cases only)". Wait up to 1 min.
+   In "Demo tools", click "Run follow-up
+   now (example cases only)".
+   Wait up to 1 min.
    Show "Flagged 1 overdue case
-   (SV-2026-0001)".
+   (SV-2026-0001)", then the new line in
+   "What needs your attention".
    Say: "This runs every morning by itself."
 
-8. Agent timeline
+8. History
    URL: /admin/cases/SV-2026-0001
-   Show the follow-up card.
-   Open "Agent timeline / audit log".
+   Step bar is at "Follow-up". Show the
+   "Follow-up Agent" card (don't approve).
+   Open "History: everything agents and
+   people did".
    Say: "Every step is logged: who, what,
    when, why, and what a person approved."
 
@@ -112,9 +137,11 @@ Never open SV-2026-0011 or SV-2026-0012.
     First, in the Demo office:
     "Mark resolved" on SV-2026-0001.
     Then URL: /admin/cases/SV-2026-0001
-    Click "Publish on the case page"
-    (check the 7 translations).
-    Click "Confirm and close the case".
+    Next action: "Confirm the office's fix".
+    In the note card, check the 7
+    translations, click "Approve and
+    publish". Then click "Approve and
+    close the case". Step bar: "Closed".
     Say: "An office can say it's fixed, but a
     person confirms before it closes."
 
@@ -137,7 +164,7 @@ Never open SV-2026-0011 or SV-2026-0012.
       approves every step. No sending code.
       Personal details are removed.
       Real cases show only statuses.
-    - 672 automated tests, including ones
+    - 692 automated tests, including ones
       that block the network.
     - After my flyers, two real residents
       sent reports.
@@ -146,5 +173,6 @@ Never open SV-2026-0011 or SV-2026-0012.
       then switch the portal on.
 
 ## After the demo
-- Pipeline → "Start demo" again
-  (or "Reset demo") to reset the examples.
+- Home → "Demo tools" → "Reset demo"
+  (or "Start demo" again) to reset the
+  examples.

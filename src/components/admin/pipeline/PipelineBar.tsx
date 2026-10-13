@@ -1,16 +1,16 @@
 import { Check } from "lucide-react";
-import { PIPELINE_STAGES, STAGE_LABELS, type PipelineStage } from "@/lib/pipeline/types";
+import { DISPLAY_STEPS, DISPLAY_STEP_LABELS, type DisplayStep } from "@/lib/pipeline/display";
 
 /**
- * Drafted → Routed → Reviewed by agents → Referral prepared (sending paused) → Follow-up, with the
- * current step highlighted. Each step says in words whether it's done, current, or still to come
- * (never color alone). Wraps onto several lines on a phone.
+ * Drafted → Routed → Referral ready → Office → Follow-up, with the current step highlighted (or
+ * every step done once the case is closed). Each step says in words whether it's done, current,
+ * or still to come (never color alone). Wraps onto several lines on a phone.
  */
-export function PipelineBar({ stage }: { stage: PipelineStage }) {
-  const current = PIPELINE_STAGES.indexOf(stage);
+export function PipelineBar({ step, closed = false }: { step: DisplayStep; closed?: boolean }) {
+  const current = closed ? DISPLAY_STEPS.length : DISPLAY_STEPS.indexOf(step);
   return (
-    <ol aria-label="Pipeline progress" className="flex flex-wrap items-center gap-1.5 text-xs">
-      {PIPELINE_STAGES.map((s, i) => {
+    <ol aria-label="Case progress" className="flex flex-wrap items-center gap-1.5 text-xs">
+      {DISPLAY_STEPS.map((s, i) => {
         const state = i < current ? "done" : i === current ? "current" : "next";
         return (
           <li key={s} className="flex items-center gap-1.5">
@@ -26,12 +26,17 @@ export function PipelineBar({ stage }: { stage: PipelineStage }) {
             >
               {state === "done" && <Check aria-hidden="true" className="h-3 w-3" />}
               <span className="sr-only">{state === "done" ? "Done: " : state === "current" ? "Current step: " : "Not yet: "}</span>
-              {i + 1}. {STAGE_LABELS[s]}
+              {i + 1}. {DISPLAY_STEP_LABELS[s]}
             </span>
-            {i < PIPELINE_STAGES.length - 1 && <span aria-hidden="true" className="text-slate">→</span>}
+            {i < DISPLAY_STEPS.length - 1 && <span aria-hidden="true" className="text-slate">→</span>}
           </li>
         );
       })}
+      {closed && (
+        <li className="inline-flex items-center gap-1 rounded-full bg-ink px-2.5 py-1 font-semibold text-cream">
+          <Check aria-hidden="true" className="h-3 w-3" /> Closed
+        </li>
+      )}
     </ol>
   );
 }

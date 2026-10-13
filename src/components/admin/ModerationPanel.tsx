@@ -46,13 +46,16 @@ export function ModerationPanel({
   categoryLabel,
   contacts = [],
   pipeline,
+  pipelineTools,
 }: {
   caseData: Case;
   communityDisplayName: string;
   categoryLabel: string;
   contacts?: OfficialContact[];
-  /** The agentic pipeline panel, shown right under the case details. */
+  /** The agentic pipeline panel (step bar, next action, suggestions), right under the case details. */
   pipeline?: ReactNode;
+  /** The less common pipeline tools, shown first under "More tools". */
+  pipelineTools?: ReactNode;
 }) {
   const router = useRouter();
   const [selectedStatus, setSelectedStatus] = useState<ReportStatus>(caseData.status);
@@ -97,7 +100,10 @@ export function ModerationPanel({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-sm text-slate">{communityDisplayName}</p>
+        <p className="text-sm text-slate">
+          One case: where it is, and the one thing to do next. {communityDisplayName}
+          {caseData.sourceType === "demonstration" && " · example case"}
+        </p>
         <h1 className="text-xl font-semibold text-ink">{caseData.publicCaseNumber}</h1>
         <p className="mt-1 text-sm text-ink/80">{categoryLabel}</p>
         <p className="mt-2 whitespace-pre-wrap text-sm text-ink/80">{caseData.description}</p>
@@ -117,10 +123,19 @@ export function ModerationPanel({
 
       {pipeline}
 
+      <details id="more-tools" data-demo="more-tools" className="rounded-lg border border-ink/15 p-4">
+        <summary className="cursor-pointer text-sm font-semibold text-ink">More tools</summary>
+        <p className="mt-1 text-xs text-slate">
+          Everything else you can do on a case: routing by hand, extra checks, status, verification, duplicates, flags, removing
+          content, private notes, and the moderation history.
+        </p>
+        <div className="mt-4 flex flex-col gap-6">
+      {pipelineTools}
+
       {/* AI-prepared referrals (the earlier one-step pipeline; kept so past decisions stay visible) */}
       {referrals.length > 0 && (
         <section className="rounded-lg border border-teal/30 bg-mint/20 p-4">
-          <h2 className="text-sm font-semibold text-ink">Referral</h2>
+          <h2 className="text-sm font-semibold text-ink">Older referrals (before the four-step pipeline)</h2>
           <p className="mt-1 text-xs text-slate">
             Prepared automatically when the case was submitted: the office comes from the community’s verified
             routing, the message only from public case details. Residents see that a referral is waiting for
@@ -146,14 +161,14 @@ export function ModerationPanel({
       {/* Guide suggestions */}
       <section className="rounded-lg border border-teal/30 bg-mint/20 p-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-ink">CommonGround Guide</h2>
+          <h2 className="text-sm font-semibold text-ink">Extra checks (status, verification, duplicates)</h2>
           <button
             type="button"
             disabled={pending === "analyze"}
             onClick={runAnalysis}
             className="shrink-0 rounded-md border border-teal/40 px-3 py-1.5 text-sm font-medium text-teal disabled:opacity-50"
           >
-            {pending === "analyze" ? "Analyzing..." : "Run analysis"}
+            {pending === "analyze" ? "Checking…" : "Run extra checks"}
           </button>
         </div>
         <p className="mt-1 text-xs text-slate">
@@ -207,7 +222,7 @@ export function ModerationPanel({
                         }
                         className="rounded-md border border-ink/15 px-2 py-1 text-xs font-medium text-ink disabled:opacity-50"
                       >
-                        Reject
+                        Dismiss
                       </button>
                     </div>
                   )}
@@ -595,6 +610,8 @@ export function ModerationPanel({
           </ul>
         )}
       </section>
+        </div>
+      </details>
     </div>
   );
 }

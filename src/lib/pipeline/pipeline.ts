@@ -10,6 +10,7 @@ import type { Case } from "@/lib/schema/report";
 import type { OfficeReferral } from "@/lib/office/types";
 import { asTimelineNote } from "./store/demo-pipeline-data";
 import { getPipelineRepository } from "./store";
+import { displayStepOf } from "./display";
 import { getOfficeRepository } from "@/lib/office/store";
 import { deliverOutboxItem, OUTBOX_STATUS_LABEL } from "./sending";
 import { findOverdueCases, MAX_FOLLOW_UPS_PER_RUN, weekStartOf, type FollowUpCandidate } from "./schedule";
@@ -480,20 +481,23 @@ export async function getCasePipeline(caseNumber: string) {
 }
 
 export async function getPipelineDashboard(now = new Date()) {
-  const [cases, states, proposals, outbox, recentAudit] = await Promise.all([
+  const [cases, states, proposals, outbox, recentAudit, officeReferrals] = await Promise.all([
     listAllCasesForAdmin(),
     repo().listStates(),
     repo().listProposals(),
     repo().listOutbox(),
     repo().listAudit({ limit: 25 }),
+    getOfficeRepository().listAll(),
   ]);
   const stateByCase = new Map(states.map((s) => [s.caseNumber, s]));
+  const withOfficeReferral = new Set(officeReferrals.map((r) => r.caseNumber));
   const live = cases.filter((c) => !c.removal);
   const rows = live.map((c) => {
     const s = stateByCase.get(c.publicCaseNumber);
     const own = proposals.filter((p) => p.caseNumber === c.publicCaseNumber);
     const stage = stageOf(s, own, outbox.filter((o) => o.caseNumber === c.publicCaseNumber).length);
-    return { caseNumber: c.publicCaseNumber, communityId: c.communityId, status: c.status, isDemo: c.sourceType === "demonstration", isDuplicateOf: c.isDuplicateOf, stage, state: s, lastProgressAt: lastProgress(c, s) };
+    const displayStep = displayStepOf(stage, withOfficeReferral.has(c.publicCaseNumber));
+    return { caseNumber: c.publicCaseNumber, communityId: c.communityId, status: c.status, isDemo: c.sourceType === "demonstration", isDuplicateOf: c.isDuplicateOf, stage, displayStep, state: s, lastProgressAt: lastProgress(c, s) };
   });
   const overdue = findOverdueCases(
     rows.flatMap((r) =>

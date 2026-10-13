@@ -13,7 +13,7 @@ import "server-only";
  */
 
 /** The number of automated tests (npm test), stated on the closing screen. Update it when it changes. */
-export const TEST_COUNT = 672;
+export const TEST_COUNT = 692;
 
 export type DemoStep = {
   n: number;
@@ -58,12 +58,16 @@ export const DEMO_STEPS: DemoStep[] = [
   {
     n: 3,
     side: "Side 2 · The agents and the moderator",
-    title: "The pipeline dashboard",
-    where: "Pipeline (/admin/pipeline)",
+    title: "Home: what needs your attention",
+    where: "Home (/admin/pipeline)",
     href: "/admin/pipeline",
-    target: "pipeline-stages",
-    click: ["Point at “Cases by stage”: Drafted → Routed → Reviewed by agents → Referral prepared (sending paused) → Follow-up.", "Point at “Sending: OFF (demo mode)”."],
-    say: "Every case moves through four agent steps. Agents only propose; a moderator approves every step, and nothing is ever sent.",
+    target: "attention",
+    click: [
+      "Point at “What needs your attention”: the suggestions waiting for approval (each with a Review button), and the outbox.",
+      "Scroll to “Cases by step”: Drafted → Routed → Referral ready → Office → Follow-up.",
+      "Point at “Sending: OFF (demo mode)” at the top.",
+    ],
+    say: "Every case moves through the same steps. Agents only suggest; I approve every step, and nothing is ever sent.",
   },
   {
     n: 4,
@@ -73,22 +77,23 @@ export const DEMO_STEPS: DemoStep[] = [
     href: "/admin/cases/SV-2026-0007",
     target: "routing-card",
     click: [
-      "In “Routing Agent suggests”, show the office, priority, confidence (52%) and reason, “The agent isn’t sure”, and the Critic’s concern.",
-      "Pick an office (Street lighting or Parks), then click “Approve with my changes” / “Approve routing”. Wait ~10 s.",
+      "Point at the step bar (at “Drafted”) and the Next action button: “Review the routing suggestion”.",
+      "In the “Routing Agent” card, show Suggests (office, priority, confidence 52%), Why, “The agent isn’t sure”, and the Second check’s concern.",
+      "The office choices are already open: pick Street lighting or Parks, then click “Approve with my changes” (or “Approve”). Wait ~10 s.",
     ],
     say: "The agent looked up similar cases with real tool calls. When two offices fit, it asks a human instead of guessing.",
   },
   {
     n: 5,
     side: "Side 2 · The agents and the moderator",
-    title: "The Referral Agent’s draft → the outbox",
+    title: "The Referral Agent’s message → the outbox",
     where: "Case SV-2026-0007 (/admin/cases/SV-2026-0007)",
     href: "/admin/cases/SV-2026-0007",
     target: "referral-card",
     click: [
-      "In “Referral Agent drafted a message…”, show the formal Spanish message and the facts code added.",
-      "Change one word. Click “Approve → outbox (not sent)”.",
-      "Under “Outbox for this case”, open the item: “Ready to send – demo mode (not sent)” and the .invalid address.",
+      "The Next action is now “Review the message to the office”. In the “Referral Agent” card, show the formal Spanish message (Suggests) and the facts code added (Why).",
+      "Click “Change”, change one word, then click “Approve with my changes”.",
+      "Under “Outbox for this case”, open the item: “Ready to send – demo mode (not sent)” and the .invalid address. The step bar is now at “Office”.",
     ],
     say: "Code adds the exact facts, so the AI can’t get them wrong. The outbox is a dry run: there is no sending code at all.",
   },
@@ -99,30 +104,33 @@ export const DEMO_STEPS: DemoStep[] = [
     where: "Case SV-2026-0002 (/admin/cases/SV-2026-0002)",
     href: "/admin/cases/SV-2026-0002",
     target: "duplicates",
-    click: ["Show “Possible duplicates nearby: SV-2026-0001 · similarity 67%” and the “Merge into SV-2026-0001” button. Don’t click it."],
+    click: ["In the Routing Agent card, show “Possible duplicate”: SV-2026-0001 · similarity 67%, and the “Merge into SV-2026-0001” button. Don’t click it."],
     say: "Two neighbors reported the same streetlight. Merging would count them as two residents on one case.",
   },
   {
     n: 7,
     side: "Side 2 · The agents and the moderator",
     title: "The Follow-up Agent",
-    where: "Pipeline (/admin/pipeline)",
+    where: "Home (/admin/pipeline)",
     href: "/admin/pipeline",
     target: "run-follow-up-examples",
     click: [
-      "Click “Run follow-up now (example cases only)”. Wait up to a minute.",
-      "Show “Flagged 1 overdue case (SV-2026-0001)” and the new item under “Waiting for a moderator”.",
+      "In “Demo tools”, click “Run follow-up now (example cases only)”. Wait up to a minute.",
+      "Show “Flagged 1 overdue case (SV-2026-0001)”, then scroll up: “What needs your attention” now lists “Follow-up Agent: no progress for … days”.",
     ],
-    say: "This runs every morning by itself. It finds cases that stalled and drafts a reminder, a public update in 7 languages, and whether to escalate.",
+    say: "This runs every morning by itself. It finds cases that stalled and drafts a reminder, a public update in 7 languages, and whether to raise the priority.",
   },
   {
     n: 8,
     side: "Side 2 · The agents and the moderator",
-    title: "The agent timeline",
+    title: "The history of every step",
     where: "Case SV-2026-0001 (/admin/cases/SV-2026-0001)",
     href: "/admin/cases/SV-2026-0001",
     target: "audit-log",
-    click: ["Show the follow-up card (reminder, public update, escalate).", "Open “Agent timeline / audit log”."],
+    click: [
+      "Show the step bar (at “Follow-up”) and the “Follow-up Agent” card: Suggests (reminder, public update, raise priority) and Why. Don’t approve it.",
+      "Open “History: everything agents and people did”.",
+    ],
     say: "Every step is logged: which agent did what, when and why, and what a moderator approved or changed.",
   },
   {
@@ -151,14 +159,14 @@ export const DEMO_STEPS: DemoStep[] = [
   {
     n: 11,
     side: "Side 3 · The office",
-    title: "Resolved, then a human confirms",
+    title: "Resolved, then a person confirms",
     where: "Demo office, then case SV-2026-0001 (/admin/cases/SV-2026-0001)",
     href: "/admin/cases/SV-2026-0001",
     target: "office-decisions",
     click: [
-      "First, in the Demo office, click “Mark resolved” on SV-2026-0001.",
-      "Then here: in the note card, show the 7 translations and click “Publish on the case page”.",
-      "In “…says the problem is resolved”, click “Confirm and close the case”.",
+      "First, in the Demo office, click “Mark resolved” on SV-2026-0001. Then come here (“Take me there”).",
+      "The Next action is “Confirm the office’s fix”. In “…wrote a public note”, check the 7 translations and click “Approve and publish”.",
+      "In “…says the problem is resolved”, click “Approve and close the case”. The step bar now ends in “Closed”.",
     ],
     say: "The AI translated the office’s note into 7 languages for me to check. An office can say it’s fixed, but a person confirms before the case closes.",
   },

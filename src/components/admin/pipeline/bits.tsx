@@ -29,15 +29,18 @@ export function SourceBadge({ source }: { source: OutputSource }) {
   );
 }
 
+/** The Critic Agent's review of a suggestion, in plain words: "Second check". */
 export function CritiqueView({ critique }: { critique?: Critique }) {
   if (!critique) return null;
-  const by = critique.source === "rules" ? "Critic Agent (rule checks only)" : critique.source === "example" ? "Critic Agent (example data)" : "Critic Agent";
+  const by = critique.source === "rules" ? "Second check (rule checks only)" : critique.source === "example" ? "Second check (example data)" : "Second check (Critic Agent)";
   if (critique.verdict === "ok") {
     return <p className="mt-2 text-xs text-teal">✓ {by}: no problems found.</p>;
   }
   return (
     <div className="mt-2 rounded-md border border-coral/30 bg-coral/5 p-2 text-xs">
-      <p className="font-semibold text-coral">⚠ {by} raised concerns:</p>
+      <p className="font-semibold text-coral">
+        ⚠ {by}: {critique.issues.length === 1 ? "one concern" : `${critique.issues.length} concerns`}
+      </p>
       <ul className="mt-1 list-disc pl-4 text-ink/80">
         {critique.issues.map((issue, i) => (
           <li key={i}>
@@ -60,7 +63,7 @@ export function OutboxItemView({ item, showCase = false }: { item: OutboxItem; s
       <summary className="cursor-pointer list-none">
         <span className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-ink/5 px-2 py-0.5 text-xs font-semibold text-ink">{OUTBOX_STATUS_LABEL}</span>
-          <span className="font-medium text-ink">{item.kind === "referral" ? "Referral" : "Follow-up reminder"}</span>
+          <span className="font-medium text-ink">{item.kind === "referral" ? "Message to the office" : "Reminder to the office"}</span>
           {showCase && item.caseNumber && <span className="text-xs text-slate">{item.caseNumber}</span>}
           <span className="text-xs text-slate">{new Date(item.createdAt).toLocaleString()}</span>
         </span>

@@ -40,11 +40,11 @@ export default async function DemoOfficePage({ searchParams }: { searchParams: P
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-xs text-slate">Office portal · demo</p>
+          <p className="text-xs text-slate">Demo office: a pretend city office, so you can show the other side. Not a real office.</p>
           <h1 className="text-xl font-semibold">{getReferralOffice(officeId)?.name}</h1>
         </div>
-        <Link href="/admin/pipeline" className="text-sm font-medium text-teal underline">
-          Back to the moderator pipeline
+        <Link href="/admin/pipeline" className="text-sm font-semibold text-teal underline">
+          ← Back to Pipeline
         </Link>
       </div>
       <nav aria-label="Act as office" className="flex flex-wrap gap-2 text-sm">

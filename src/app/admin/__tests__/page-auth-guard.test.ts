@@ -6,11 +6,14 @@ vi.mock("@/lib/store/admin-actions", () => ({
   getAdminDuplicateClusters: vi.fn(),
   getCaseForAdmin: vi.fn(),
 }));
+vi.mock("@/lib/pipeline/actions", () => ({ getPipelineDashboardForAdmin: vi.fn() }));
 
 import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { getAdminDuplicateClusters, getCaseForAdmin, listCasesForAdmin } from "@/lib/store/admin-actions";
 import AdminPage from "@/app/admin/page";
 import AdminCasePage from "@/app/admin/cases/[caseNumber]/page";
+import PipelineDashboardPage from "@/app/admin/pipeline/page";
+import { getPipelineDashboardForAdmin } from "@/lib/pipeline/actions";
 
 /**
  * The layout's own auth check does NOT stop these page components from being invoked — Next.js
@@ -37,5 +40,11 @@ describe("admin page-level auth guards", () => {
     const result = await AdminCasePage({ params: Promise.resolve({ caseNumber: "SV-2026-0001" }) });
     expect(result).toBeNull();
     expect(getCaseForAdmin).not.toHaveBeenCalled();
+  });
+
+  it("Home (the pipeline) never fetches protected data when unauthenticated", async () => {
+    vi.mocked(isAdminAuthenticated).mockResolvedValue(false);
+    expect(await PipelineDashboardPage()).toBeNull();
+    expect(getPipelineDashboardForAdmin).not.toHaveBeenCalled();
   });
 });

@@ -70,7 +70,10 @@ export default async function AdminPage() {
       )}
 
       <section className="flex flex-col gap-4">
-        <h1 className="text-xl font-semibold text-ink">All cases</h1>
+        <div>
+          <h1 className="text-xl font-semibold text-ink">All cases</h1>
+          <p className="mt-1 text-sm text-slate">Every report, newest first. Example cases are labelled; the rest are real residents’ reports.</p>
+        </div>
         {cases.length === 0 ? (
           <p className="text-sm text-slate">No cases yet.</p>
         ) : (
@@ -87,6 +90,7 @@ export default async function AdminPage() {
                   <div>
                     <p className="font-medium text-ink">
                       {c.publicCaseNumber}
+                      {c.sourceType === "demonstration" && <span className="ml-2 text-xs font-normal text-slate">example</span>}
                       {c.isDuplicateOf && (
                         <span className="ml-2 text-xs font-normal text-slate">
                           dup of {c.isDuplicateOf}

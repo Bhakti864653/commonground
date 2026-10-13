@@ -94,7 +94,7 @@ describe("Google sign-in routes", () => {
 
   it("lets the owner in, making them the owner, with a 7-day httpOnly session", async () => {
     const { response, fakeGoogle } = await signInAs("owner@example.com");
-    expect(response.headers.get("location")).toBe(`${ORIGIN}/admin`);
+    expect(response.headers.get("location")).toBe(`${ORIGIN}/admin/pipeline`);
     const session = response.cookies.get("cg_session")!;
     expect(session.httpOnly).toBe(true);
     expect(session.maxAge).toBe(7 * 24 * 60 * 60);
@@ -112,7 +112,7 @@ describe("Google sign-in routes", () => {
   it("lets in a moderator the owner added", async () => {
     await memoryModeratorRepository.addModerator({ email: "ana@example.com" }, "owner@example.com");
     const { response } = await signInAs("Ana@Example.com");
-    expect(response.headers.get("location")).toBe(`${ORIGIN}/admin`);
+    expect(response.headers.get("location")).toBe(`${ORIGIN}/admin/pipeline`);
     expect(response.cookies.get("cg_session")).toBeDefined();
   });
 

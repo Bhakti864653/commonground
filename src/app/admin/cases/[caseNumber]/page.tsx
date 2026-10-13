@@ -3,7 +3,7 @@ import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { getCaseForAdmin } from "@/lib/store/admin-actions";
 import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 import { ModerationPanel } from "@/components/admin/ModerationPanel";
-import { PipelinePanel } from "@/components/admin/pipeline/PipelinePanel";
+import { PipelinePanel, PipelineTools } from "@/components/admin/pipeline/PipelinePanel";
 import { getCasePipelineForAdmin } from "@/lib/pipeline/actions";
 import { REFERRAL_OFFICES } from "@/data/referral-offices";
 
@@ -26,6 +26,7 @@ export default async function AdminCasePage({
   const community = await getCommunityById(foundCase.communityId);
   const category = community?.categories.find((cat) => cat.id === foundCase.categoryId);
   const pipeline = await getCasePipelineForAdmin(foundCase.publicCaseNumber);
+  const offices = REFERRAL_OFFICES.map((o) => ({ id: o.id, name: o.name }));
 
   return (
     <ModerationPanel
@@ -45,7 +46,21 @@ export default async function AdminCasePage({
             audit={pipeline.audit}
             officeReferrals={pipeline.officeReferrals}
             officeNotes={pipeline.officeNotes}
-            offices={REFERRAL_OFFICES.map((o) => ({ id: o.id, name: o.name }))}
+            offices={offices}
+            closed={foundCase.status === "closed"}
+            isDuplicate={!!foundCase.isDuplicateOf}
+          />
+        )
+      }
+      pipelineTools={
+        pipeline && (
+          <PipelineTools
+            key="pipeline-tools"
+            caseNumber={foundCase.publicCaseNumber}
+            state={pipeline.state}
+            proposals={pipeline.proposals}
+            outbox={pipeline.outbox}
+            offices={offices}
           />
         )
       }

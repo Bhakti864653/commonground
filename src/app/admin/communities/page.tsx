@@ -25,7 +25,7 @@ export default async function AdminCommunitiesPage() {
       <section>
         <h1 className="text-3xl text-ink">Communities</h1>
         <p className="mt-2 max-w-2xl text-sm text-slate">
-          Every community residents can choose in the place selector. A community you set up here gets its own
+          <span className="font-semibold text-ink">The places CommonGround covers.</span> Every community residents can choose in the place selector. A community you set up here gets its own
           areas, categories, and case-number prefix, and works everywhere: map, Explore, submissions, the Guide, and
           moderation. Communities &ldquo;started by a visitor&rdquo; were created automatically when someone added
           a place; they accept reports but say they are not reviewed until you mark them reviewed.

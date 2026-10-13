@@ -13,7 +13,10 @@ export default async function OfficeAccountsPage() {
   const enabled = isOfficePortalEnabled();
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-ink">Office accounts</h1>
+      <div>
+        <h1 className="text-xl font-semibold text-ink">Office accounts</h1>
+        <p className="mt-1 text-sm text-slate">Sign-ins for real city offices, for when the office portal is switched on.</p>
+      </div>
       <p className={`rounded-md p-3 text-sm ${enabled ? "bg-mint/50 text-ink" : "bg-coral/10 text-coral"}`}>
         The office portal is <span className="font-semibold">{enabled ? "ON" : "OFF"}</span>.{" "}
         {enabled ? "Invited offices can sign in at /office." : "Nobody can sign in at /office until it is turned on — see docs/GO_LIVE_CHECKLIST.md."}

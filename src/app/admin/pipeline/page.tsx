@@ -3,7 +3,8 @@ import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { getPipelineDashboardForAdmin } from "@/lib/pipeline/actions";
 import { getReferralOffice } from "@/data/referral-offices";
 import { listCommunities } from "@/lib/store/community-store";
-import { PIPELINE_STAGES, STAGE_LABELS, type Proposal } from "@/lib/pipeline/types";
+import type { Proposal } from "@/lib/pipeline/types";
+import { CARD_IDS, DISPLAY_STEPS, DISPLAY_STEP_HINTS, DISPLAY_STEP_LABELS } from "@/lib/pipeline/display";
 import { isSendingEnabled } from "@/lib/pipeline/sending";
 import { AuditTimeline, OutboxItemView, PriorityBadge } from "@/components/admin/pipeline/bits";
 import { ResetDemoButton, RunFollowUpButton, StartDemoButton, SummaryCard } from "@/components/admin/pipeline/DashboardControls";
@@ -12,14 +13,27 @@ import { FOLLOW_UP_AFTER_DAYS } from "@/lib/pipeline/schedule";
 // "Run follow-up now" runs the Follow-up Agent (several Groq calls) inside this page's action.
 export const maxDuration = 120;
 
-const KIND_LABELS: Record<Proposal["kind"], string> = {
-  routing: "Routing",
-  referral: "Referral draft",
-  follow_up: "Follow-up",
-  weekly_summary: "Weekly summary",
-  office_note: "Office public note",
-  office_resolution: "Office says resolved",
-};
+type CaseProposal = Exclude<Proposal, { kind: "weekly_summary" }>;
+
+/** One line in "What needs your attention": what the agent wants, in plain words. */
+function describe(p: CaseProposal): string {
+  switch (p.kind) {
+    case "routing":
+      return `Routing Agent suggests ${getReferralOffice(p.payload.officeId)?.name ?? "an office"}${p.payload.needsModeratorDecision ? " (not sure, needs you)" : ""}${
+        p.payload.possibleDuplicates.length > 0 ? " · possible duplicate" : ""
+      }`;
+    case "referral":
+      return "Referral Agent drafted a message to the office";
+    case "follow_up":
+      return `Follow-up Agent: no progress for ${p.payload.daysWithoutProgress} days`;
+    case "office_note":
+      return "The office wrote a public note for you to check";
+    case "office_resolution":
+      return "The office says it’s fixed: confirm to close";
+  }
+}
+
+const btn = "shrink-0 rounded-md bg-teal px-3 py-1.5 text-sm font-semibold text-cream";
 
 export default async function PipelineDashboardPage() {
   // Same page-level guard as every admin page (see admin/page.tsx).
@@ -28,68 +42,113 @@ export default async function PipelineDashboardPage() {
   const { rows, pending, outbox, overdue, recentAudit } = dashboard;
   const areaName: Record<string, string> = Object.fromEntries(communities.flatMap((c) => c.areas.map((a) => [a.id, a.label])));
   const summaries = pending.filter((p): p is Extract<Proposal, { kind: "weekly_summary" }> => p.kind === "weekly_summary");
-  const casePending = pending.filter((p) => p.kind !== "weekly_summary");
+  const casePending = pending.filter((p): p is CaseProposal => p.kind !== "weekly_summary");
+  const isExample = new Map(rows.map((r) => [r.caseNumber, r.isDemo]));
+  const tag = (caseNumber?: string) => (caseNumber && isExample.get(caseNumber) ? "example" : "resident report");
+  const nothing = casePending.length === 0 && summaries.length === 0 && overdue.length === 0 && outbox.length === 0;
 
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Agentic pipeline</h1>
-          <p className="mt-1 text-sm text-slate">
-            Drafted → Routed → Reviewed by agents → Referral prepared (sending paused) → Follow-up. Agents propose; moderators decide.
-          </p>
+          <h1 className="text-xl font-semibold text-ink">Home</h1>
+          <p className="mt-1 text-sm text-slate">What needs you today. Agents only suggest; you decide every step. Nothing is ever sent.</p>
         </div>
         <p className="w-max max-w-full rounded-md border border-ink/15 bg-cream px-3 py-2 text-sm text-ink">
-          Sending: <span className="font-semibold">{isSendingEnabled() ? "flag on, but there is no delivery channel — nothing is sent" : "OFF (demo mode)"}</span>. The outbox only
-          shows what would be sent.
+          Sending: <span className="font-semibold">{isSendingEnabled() ? "flag on, but there is no delivery channel — nothing is sent" : "OFF (demo mode)"}</span>
         </p>
-        <div className="rounded-lg border-2 border-[#f5c542] p-4">
-          <h2 className="text-sm font-semibold text-ink">Demo guide</h2>
-          <p className="mb-3 mt-1 text-xs text-slate">
-            A step-by-step guide through the whole loop (resident → agents → office → resident), shown only to you. It uses example cases only.
-          </p>
-          <StartDemoButton />
-        </div>
-        <div className="rounded-lg border border-teal/40 bg-mint/10 p-4">
-          <h2 className="text-sm font-semibold text-ink">Follow-up Agent</h2>
-          <p className="mb-3 mt-1 text-xs text-slate">
-            Runs every day on a schedule. It flags cases with no progress for {FOLLOW_UP_AFTER_DAYS.urgent} days (urgent), {FOLLOW_UP_AFTER_DAYS.high} (high),{" "}
-            {FOLLOW_UP_AFTER_DAYS.medium} (medium) or {FOLLOW_UP_AFTER_DAYS.low} (low), drafts the weekly summary, and routes older cases that were never routed.
-          </p>
-          <div className="flex flex-col gap-3">
-            <RunFollowUpButton />
-            <RunFollowUpButton onlyExamples />
+      </section>
+
+      <section aria-labelledby="attention" data-demo="attention" className="flex flex-col gap-4 rounded-lg border-2 border-teal p-4">
+        <h2 id="attention" className="text-base font-semibold text-ink">
+          What needs your attention
+        </h2>
+        {nothing && <p className="text-sm text-ink">✓ All caught up. Nothing is waiting for you.</p>}
+
+        {(casePending.length > 0 || summaries.length > 0) && (
+          <div className="flex flex-col gap-2">
+            <h3 className="text-sm font-semibold text-ink">Suggestions waiting for approval ({casePending.length + summaries.length})</h3>
+            <ul className="flex flex-col gap-2">
+              {casePending.map((p) => (
+                <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-ink/10 bg-cream p-3 text-sm">
+                  <span className="min-w-0">
+                    <span className="font-semibold text-ink">{p.caseNumber}</span> <span className="text-xs text-slate">({tag(p.caseNumber)})</span>
+                    <span className="block text-ink/85">{describe(p)}</span>
+                  </span>
+                  <Link href={`/admin/cases/${p.caseNumber}#${CARD_IDS[p.kind]}`} className={btn}>
+                    Review
+                  </Link>
+                </li>
+              ))}
+              {summaries.map((s) => (
+                <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-ink/10 bg-cream p-3 text-sm">
+                  <span className="text-ink/85">Weekly summary for the week of {s.payload.weekStart} is ready to publish</span>
+                  <a href="#weekly-summaries" className={btn}>
+                    Review
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
-        <div className="rounded-lg border border-coral/30 p-4">
-          <h2 className="text-sm font-semibold text-ink">Reset demo</h2>
-          <p className="mb-3 mt-1 text-xs text-slate">
-            Puts the 8 example cases back to their starting state (stages, suggestions, outbox, timeline, audit log), so you can show the demo
-            again. Resident cases are never touched.
-          </p>
-          <ResetDemoButton />
-        </div>
+        )}
+
+        {overdue.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <h3 className="text-sm font-semibold text-ink">Overdue cases ({overdue.length})</h3>
+            <ul className="flex flex-col gap-2">
+              {overdue.map((o) => (
+                <li key={o.caseNumber} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-coral/30 bg-cream p-3 text-sm">
+                  <span className="min-w-0">
+                    <span className="font-semibold text-ink">{o.caseNumber}</span> <span className="text-xs text-slate">({tag(o.caseNumber)})</span>{" "}
+                    <PriorityBadge priority={o.priority} />
+                    <span className="block text-ink/85">
+                      No progress for {o.daysWithoutProgress} days (the limit is {o.thresholdDays})
+                    </span>
+                  </span>
+                  <Link href={`/admin/cases/${o.caseNumber}`} className={btn}>
+                    Open case
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {outbox.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-ink/10 bg-cream p-3 text-sm">
+            <span className="text-ink/85">
+              <span className="font-semibold text-ink">Outbox:</span> {outbox.length} message{outbox.length === 1 ? "" : "s"} ready (not sent)
+            </span>
+            <a href="#outbox" className={btn}>
+              View outbox
+            </a>
+          </div>
+        )}
       </section>
 
       <section aria-labelledby="stages" data-demo="pipeline-stages" className="flex flex-col gap-3">
-        <h2 id="stages" className="text-sm font-semibold text-ink">
-          Cases by stage
-        </h2>
+        <div>
+          <h2 id="stages" className="text-sm font-semibold text-ink">
+            Cases by step
+          </h2>
+          <p className="text-xs text-slate">Every case moves Drafted → Routed → Referral ready → Office → Follow-up. Click a case to open it.</p>
+        </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
-          {PIPELINE_STAGES.map((stage, i) => {
-            const inStage = rows.filter((r) => r.stage === stage && !r.isDuplicateOf);
+          {DISPLAY_STEPS.map((step, i) => {
+            const inStep = rows.filter((r) => r.displayStep === step && !r.isDuplicateOf);
             return (
-              <div key={stage} className="rounded-lg border border-ink/10 p-3">
+              <div key={step} className="rounded-lg border border-ink/10 p-3">
                 <p className="text-xs font-semibold text-slate">
-                  {i + 1}. {STAGE_LABELS[stage]}
+                  {i + 1}. {DISPLAY_STEP_LABELS[step]}
                 </p>
-                <p className="text-2xl font-semibold text-ink">{inStage.length}</p>
+                <p className="text-2xl font-semibold text-ink">{inStep.length}</p>
+                <p className="text-xs text-slate">{DISPLAY_STEP_HINTS[step]}</p>
                 <ul className="mt-1 flex flex-wrap gap-1">
-                  {inStage.map((r) => (
+                  {inStep.map((r) => (
                     <li key={r.caseNumber}>
-                      <Link href={`/admin/cases/${r.caseNumber}`} className="rounded-full bg-ink/5 px-2 py-0.5 text-xs text-teal underline">
-                        {r.caseNumber}
-                        {r.isDemo && <span className="text-slate no-underline"> (example)</span>}
+                      <Link href={`/admin/cases/${r.caseNumber}`} className="inline-flex flex-col rounded-md bg-ink/5 px-2 py-0.5 text-xs leading-tight text-teal">
+                        <span className="underline">{r.caseNumber}</span>
+                        <span className="text-[11px] text-slate">{r.isDemo ? "example" : "resident report"}</span>
                       </Link>
                     </li>
                   ))}
@@ -100,65 +159,43 @@ export default async function PipelineDashboardPage() {
         </div>
       </section>
 
-      <section aria-labelledby="pending" className="flex flex-col gap-3">
-        <h2 id="pending" className="text-sm font-semibold text-ink">
-          Waiting for a moderator ({pending.length})
-        </h2>
-        {casePending.length === 0 && summaries.length === 0 && <p className="text-sm text-slate">Nothing waiting.</p>}
-        <ul className="flex flex-col gap-2">
-          {casePending.map((p) => (
-            <li key={p.id}>
-              <Link href={`/admin/cases/${p.caseNumber}`} className="flex flex-wrap items-center gap-2 rounded-lg border border-ink/10 p-3 text-sm hover:bg-mint/20">
-                <span className="font-semibold text-ink">{p.caseNumber}</span>
-                <span className="rounded-full bg-teal/10 px-2 py-0.5 text-xs font-medium text-teal">{KIND_LABELS[p.kind]}</span>
-                {p.kind === "routing" && (
-                  <span className="text-xs text-ink/80">
-                    {getReferralOffice(p.payload.officeId)?.name} · {Math.round(p.payload.confidence * 100)}%{p.payload.needsModeratorDecision && " · needs your decision"}
-                    {p.payload.possibleDuplicates.length > 0 && " · possible duplicate"}
-                  </span>
-                )}
-                {p.kind === "follow_up" && <span className="text-xs text-ink/80">no progress for {p.payload.daysWithoutProgress} days</span>}
-                <span className={`text-xs ${p.critique?.verdict === "concerns" ? "text-coral" : "text-teal"}`}>
-                  {p.critique?.verdict === "concerns" ? "⚠ Critic has concerns" : "✓ Critic: OK"}
-                </span>
-                <span className="text-xs text-slate">{new Date(p.createdAt).toLocaleString()}</span>
-              </Link>
-            </li>
+      <section aria-labelledby="demo-tools" className="flex flex-col gap-4 rounded-lg border-2 border-[#f5c542] p-4">
+        <div>
+          <h2 id="demo-tools" className="text-sm font-semibold text-ink">
+            Demo tools
+          </h2>
+          <p className="mt-1 text-xs text-slate">These only ever touch the 8 example cases (SV-2026-0001 to 0008). Resident reports are never changed.</p>
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-slate">Start demo: resets the example cases and opens the step-by-step guide (only you see it).</p>
+          <StartDemoButton />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-slate">Run follow-up now: the Follow-up Agent normally runs every morning by itself. This runs it now, on example cases only.</p>
+          <RunFollowUpButton onlyExamples />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-slate">Reset demo: puts the example cases back to the start, for another run or recording.</p>
+          <ResetDemoButton />
+        </div>
+      </section>
+
+      {summaries.length > 0 && (
+        <section id="weekly-summaries" aria-labelledby="summaries-title" className="flex scroll-mt-4 flex-col gap-3">
+          <h2 id="summaries-title" className="text-sm font-semibold text-ink">
+            Weekly summaries to publish
+          </h2>
+          {summaries.map((s) => (
+            <SummaryCard key={s.id} proposal={s} areaName={areaName} />
           ))}
-        </ul>
-        {summaries.map((s) => (
-          <SummaryCard key={s.id} proposal={s} areaName={areaName} />
-        ))}
-      </section>
+        </section>
+      )}
 
-      <section aria-labelledby="overdue" className="flex flex-col gap-3">
-        <h2 id="overdue" className="text-sm font-semibold text-ink">
-          Overdue cases ({overdue.length})
+      <section id="outbox" aria-labelledby="outbox-title" className="flex scroll-mt-4 flex-col gap-3">
+        <h2 id="outbox-title" className="text-sm font-semibold text-ink">
+          Outbox ({outbox.length})
         </h2>
-        {overdue.length === 0 ? (
-          <p className="text-sm text-slate">No case is past its follow-up limit.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {overdue.map((o) => (
-              <li key={o.caseNumber} className="flex flex-wrap items-center gap-2 rounded-lg border border-coral/30 p-3 text-sm">
-                <Link href={`/admin/cases/${o.caseNumber}`} className="font-semibold text-teal underline">
-                  {o.caseNumber}
-                </Link>
-                <PriorityBadge priority={o.priority} />
-                <span className="text-ink/80">
-                  no progress for {o.daysWithoutProgress} days (limit {o.thresholdDays})
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section aria-labelledby="outbox" className="flex flex-col gap-3">
-        <h2 id="outbox" className="text-sm font-semibold text-ink">
-          Outbox — dry run ({outbox.length})
-        </h2>
-        <p className="text-xs text-slate">Exactly what would be sent, and to which office. Every item is “Ready to send – demo mode (not sent)”.</p>
+        <p className="text-xs text-slate">Messages that would go to offices. Nothing is sent in this demo: every item says “Ready to send – demo mode (not sent)”.</p>
         {outbox.length === 0 ? (
           <p className="text-sm text-slate">Empty.</p>
         ) : (
@@ -170,12 +207,25 @@ export default async function PipelineDashboardPage() {
         )}
       </section>
 
-      <section aria-labelledby="activity" className="flex flex-col gap-3">
-        <h2 id="activity" className="text-sm font-semibold text-ink">
-          Recent agent activity
-        </h2>
-        <AuditTimeline entries={recentAudit} showCase />
-      </section>
+      <details className="rounded-lg border border-ink/10 p-4">
+        <summary className="cursor-pointer text-sm font-semibold text-ink">Recent activity (agents and people)</summary>
+        <div className="mt-3">
+          <AuditTimeline entries={recentAudit} showCase />
+        </div>
+      </details>
+
+      <details className="rounded-lg border border-ink/10 p-4">
+        <summary className="cursor-pointer text-sm font-semibold text-ink">More tools</summary>
+        <div className="mt-3 flex flex-col gap-2">
+          <p className="text-xs text-slate">
+            Run follow-up on <span className="font-semibold">all</span> cases, including resident reports, exactly like the daily schedule does. It
+            flags cases with no progress for {FOLLOW_UP_AFTER_DAYS.urgent} days (urgent), {FOLLOW_UP_AFTER_DAYS.high} (high), {FOLLOW_UP_AFTER_DAYS.medium}{" "}
+            (medium) or {FOLLOW_UP_AFTER_DAYS.low} (low), drafts the weekly summary, and routes older cases that were never routed. Everything still waits
+            for you.
+          </p>
+          <RunFollowUpButton />
+        </div>
+      </details>
     </div>
   );
 }

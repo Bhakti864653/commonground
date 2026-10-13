@@ -82,27 +82,33 @@ Part B – the public case page (about 1 minute)
 14. Point out: no office name is shown publicly.
 
 Part C – the moderator side (about 5 minutes)
-15. Go to /admin/pipeline.
-16. Show "Cases by stage" (all 5 stages have examples),
-    the outbox, and "Waiting for a moderator".
+15. Go to Home (/admin/pipeline).
+16. Show "What needs your attention" (suggestions, overdue,
+    outbox, each with one button) and "Cases by step".
 17. Open SV-2026-0007 (the solar lamps proposal).
-18. Show: confidence 52%, "the agent isn't sure",
-    lighting or parks, and the Critic agrees.
-19. Pick an office, then click "Approve routing".
+18. Show the step bar and the "Next action" button. In the
+    Routing Agent card: Suggests (52%), Why, "the agent
+    isn't sure", lighting or parks, and the Second check.
+19. Pick an office, then click "Approve with my changes".
 20. Wait about 10 seconds: the Referral Agent drafts live.
-21. Edit one word in the message.
-22. Click "Approve → outbox (not sent)".
+21. In the Referral Agent card, click "Change" and edit
+    one word in the message.
+22. Click "Approve with my changes" (it goes to the
+    outbox; nothing is sent).
 23. Open the outbox item: show the placeholder address
     and "Ready to send – demo mode (not sent)".
-24. Open SV-2026-0002: show "Possible duplicates nearby"
+24. Open SV-2026-0002: show "Possible duplicate"
     and the "Merge into SV-2026-0001" button.
 25. Open SV-2026-0003: show the waiting follow-up card
     (reminder, public update, escalate to urgent).
-26. Go back to Pipeline. Click "Run follow-up now".
+26. Click "← Back to Pipeline". In "Demo tools", click
+    "Run follow-up now (example cases only)".
 27. Wait up to a minute. It flags SV-2026-0001.
-28. Open SV-2026-0001, approve the follow-up.
+28. Open SV-2026-0001, click "Approve" on the
+    Follow-up Agent card.
 29. Open /cases/SV-2026-0001 to show the new public update.
-30. On any case, open "Agent timeline / audit log".
+30. On any case, open "History: everything agents and
+    people did".
 
 Part D – the office side (about 4 minutes)
 31. Click "Demo office" at the top of /admin.
@@ -119,14 +125,14 @@ Part D – the office side (about 4 minutes)
 37. Open /admin/cases/SV-2026-0001 (moderator view).
 38. Show the note card: the AI translated it
     into all 7 languages. The Critic checked it.
-39. Click "Publish on the case page".
+39. Click "Approve and publish".
 40. Open /cases/SV-2026-0001 (public page).
 41. Show the timeline: "received", "working on it",
     the note, each labelled "Simulated office".
 42. Back in Demo office, click "Mark resolved".
 43. In the moderator view, show the card
     "says the problem is resolved".
-    Click "Confirm and close the case".
+    Click "Approve and close the case".
 44. Optional: pick "Drainage and flooding",
     open SV-2026-0003, click "Not our department…",
     type a reason, and send it back.
