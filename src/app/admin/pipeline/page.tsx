@@ -9,6 +9,7 @@ import { isSendingEnabled } from "@/lib/pipeline/sending";
 import { AuditTimeline, OutboxItemView, PriorityBadge } from "@/components/admin/pipeline/bits";
 import { ResetDemoButton, RunFollowUpButton, StartDemoButton, SummaryCard } from "@/components/admin/pipeline/DashboardControls";
 import { FOLLOW_UP_AFTER_DAYS } from "@/lib/pipeline/schedule";
+import { isDemoGuideOn, onlyExamples } from "@/lib/demo-guide/demo-mode";
 
 // "Run follow-up now" runs the Follow-up Agent (several Groq calls) inside this page's action.
 export const maxDuration = 120;
@@ -38,12 +39,19 @@ const btn = "shrink-0 rounded-md bg-teal px-3 py-1.5 text-sm font-semibold text-
 export default async function PipelineDashboardPage() {
   // Same page-level guard as every admin page (see admin/page.tsx).
   if (!(await isAdminAuthenticated())) return null;
-  const [dashboard, communities] = await Promise.all([getPipelineDashboardForAdmin(), listCommunities()]);
-  const { rows, pending, outbox, overdue, recentAudit } = dashboard;
+  const [dashboard, communities, demoOn] = await Promise.all([getPipelineDashboardForAdmin(), listCommunities(), isDemoGuideOn()]);
+  const isExample = new Map(dashboard.rows.map((r) => [r.caseNumber, r.isDemo]));
+  const example = (caseNumber?: string) => !!caseNumber && isExample.get(caseNumber) === true;
+  // While the demo guide is on, only example cases (see demo-mode.ts): a recording never shows a resident's report.
+  const rows = onlyExamples(dashboard.rows, (r) => r.isDemo, demoOn);
+  const pending = onlyExamples(dashboard.pending, (p) => p.kind !== "weekly_summary" && example(p.caseNumber), demoOn);
+  const outbox = onlyExamples(dashboard.outbox, (o) => example(o.caseNumber), demoOn);
+  const overdue = onlyExamples(dashboard.overdue, (o) => example(o.caseNumber), demoOn);
+  const recentAudit = onlyExamples(dashboard.recentAudit, (e) => example(e.caseNumber), demoOn);
+  const hiddenResidentCases = demoOn ? dashboard.rows.filter((r) => !r.isDemo).length : 0;
   const areaName: Record<string, string> = Object.fromEntries(communities.flatMap((c) => c.areas.map((a) => [a.id, a.label])));
   const summaries = pending.filter((p): p is Extract<Proposal, { kind: "weekly_summary" }> => p.kind === "weekly_summary");
   const casePending = pending.filter((p): p is CaseProposal => p.kind !== "weekly_summary");
-  const isExample = new Map(rows.map((r) => [r.caseNumber, r.isDemo]));
   const tag = (caseNumber?: string) => (caseNumber && isExample.get(caseNumber) ? "example" : "resident report");
   const nothing = casePending.length === 0 && summaries.length === 0 && overdue.length === 0 && outbox.length === 0;
 
@@ -58,6 +66,13 @@ export default async function PipelineDashboardPage() {
           Sending: <span className="font-semibold">{isSendingEnabled() ? "flag on, but there is no delivery channel — nothing is sent" : "OFF (demo mode)"}</span>
         </p>
       </section>
+
+      {hiddenResidentCases > 0 && (
+        <p role="note" className="rounded-md border border-[#f5c542] bg-[#f5c542]/10 px-3 py-2 text-sm text-ink">
+          Demo guide is on: {hiddenResidentCases} resident report{hiddenResidentCases === 1 ? " is" : "s are"} hidden, so only example cases show. Exit the guide
+          to see {hiddenResidentCases === 1 ? "it" : "them"}.
+        </p>
+      )}
 
       <section aria-labelledby="attention" data-demo="attention" className="flex flex-col gap-4 rounded-lg border-2 border-teal p-4">
         <h2 id="attention" className="text-base font-semibold text-ink">

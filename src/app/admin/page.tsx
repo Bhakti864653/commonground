@@ -5,6 +5,7 @@ import { listCommunities } from "@/lib/store/community-store";
 import { STATUS_LABELS, VERIFICATION_LABELS } from "@/lib/schema/report";
 import { DuplicateClusterCard } from "@/components/admin/DuplicateClusterCard";
 import { BriefingPanel } from "@/components/admin/BriefingPanel";
+import { isDemoGuideOn, onlyExamples } from "@/lib/demo-guide/demo-mode";
 
 export default async function AdminPage() {
   // The layout's own auth check does NOT stop this page from being invoked to produce its
@@ -13,11 +14,18 @@ export default async function AdminPage() {
   // own guard, checked before any protected data fetch, not just the layout's UI swap.
   if (!(await isAdminAuthenticated())) return null;
 
-  const [cases, clusters, communityList] = await Promise.all([
+  const [allCases, allClusters, communityList, demoOn] = await Promise.all([
     listCasesForAdmin(),
     getAdminDuplicateClusters(),
     listCommunities(),
+    isDemoGuideOn(),
   ]);
+  // While the demo guide is on, only example cases (see demo-mode.ts), and no AI briefing, which
+  // could mention any case.
+  const cases = onlyExamples(allCases, (c) => c.sourceType === "demonstration", demoOn);
+  const exampleNumbers = new Set(allCases.filter((c) => c.sourceType === "demonstration").map((c) => c.publicCaseNumber));
+  const clusters = onlyExamples(allClusters, (cl) => cl.caseNumbers.every((n) => exampleNumbers.has(n)), demoOn);
+  const hiddenResidentCases = allCases.length - cases.length;
   const communities = new Map(communityList.map((c) => [c.id, c]));
   const getCommunityById = (id: string) => communities.get(id);
   const caseByNumber = new Map(cases.map((c) => [c.publicCaseNumber, c]));
@@ -25,7 +33,14 @@ export default async function AdminPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {communityIds.length > 0 && (
+      {hiddenResidentCases > 0 && (
+        <p role="note" className="rounded-md border border-[#f5c542] bg-[#f5c542]/10 px-3 py-2 text-sm text-ink">
+          Demo guide is on: {hiddenResidentCases} resident report{hiddenResidentCases === 1 ? " is" : "s are"} hidden, so only example cases show. Exit the guide
+          to see {hiddenResidentCases === 1 ? "it" : "them"}.
+        </p>
+      )}
+
+      {!demoOn && communityIds.length > 0 && (
         <section className="flex flex-col gap-2">
           {communityIds.map((id) => (
             <BriefingPanel

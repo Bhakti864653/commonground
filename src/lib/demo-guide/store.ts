@@ -42,6 +42,21 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
+/**
+ * While the guide is on, a cookie tells the server to leave residents' reports out of the
+ * moderator screens (demo-mode.ts), so a recording only ever shows example cases. It only hides
+ * things from this browser's own view; it can never reveal anything.
+ */
+export const DEMO_GUIDE_COOKIE = "cg_demo_guide";
+
+function setGuideCookie(on: boolean): void {
+  try {
+    document.cookie = on ? `${DEMO_GUIDE_COOKIE}=1; path=/; max-age=86400; samesite=lax` : `${DEMO_GUIDE_COOKIE}=; path=/; max-age=0; samesite=lax`;
+  } catch {
+    // Cookies blocked: resident reports simply stay visible.
+  }
+}
+
 export function setGuideState(next: GuideState): void {
   cache = next;
   try {
@@ -49,6 +64,7 @@ export function setGuideState(next: GuideState): void {
   } catch {
     // Not remembered across reloads; the guide still works on this page.
   }
+  setGuideCookie(next.active);
   listeners.forEach((l) => l());
 }
 

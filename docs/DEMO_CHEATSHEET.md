@@ -16,6 +16,10 @@ Never open SV-2026-0011 or SV-2026-0012.
   or bottom of the screen on a phone).
 - In the guide: "Take me there", "Next",
   "Back", "Hide", "Exit guide".
+- While the guide is on, residents' real
+  reports are hidden from Home and
+  All cases (a yellow note says so).
+  "Exit guide" shows them again.
 
 ## How a case page works
 - Step bar: Drafted → Routed →
@@ -164,7 +168,7 @@ Never open SV-2026-0011 or SV-2026-0012.
       approves every step. No sending code.
       Personal details are removed.
       Real cases show only statuses.
-    - 692 automated tests, including ones
+    - 695 automated tests, including ones
       that block the network.
     - After my flyers, two real residents
       sent reports.
