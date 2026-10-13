@@ -30,7 +30,20 @@ vi.mock("@/lib/pipeline/actions", () => ({
   rejectOfficeResolutionAction: vi.fn(),
 }));
 
+vi.mock("@/lib/store/admin-actions", () => ({
+  adminAddNote: vi.fn(),
+  adminChangeStatus: vi.fn(),
+  adminMarkDuplicate: vi.fn(),
+  adminRemoveContent: vi.fn(),
+  adminRestoreContent: vi.fn(),
+  adminReviewInaccuracyFlag: vi.fn(),
+  adminSetVerification: vi.fn(),
+}));
+vi.mock("@/lib/guide/admin-actions", () => ({ runCaseAnalysis: vi.fn(), reviewAgentSuggestion: vi.fn() }));
+
 import { PipelinePanel, PipelineTools } from "../pipeline/PipelinePanel";
+import { ModerationPanel } from "../ModerationPanel";
+import { getCaseByCaseNumber } from "@/lib/store/case-store";
 import { PipelineBar } from "../pipeline/PipelineBar";
 import { AdminNav, BackToPipeline } from "../AdminNav";
 import AdminSettingsPage from "@/app/admin/settings/page";
@@ -153,6 +166,14 @@ describe("agent suggestions: Suggests, Why, Approve · Change · Dismiss", () =>
     render(<PipelineTools caseNumber="SV-2026-0007" state={p.state} proposals={p.proposals} outbox={p.outbox} offices={offices} />);
     expect(screen.getByRole("button", { name: "Ask the Routing Agent again" })).toBeInTheDocument();
     expect(screen.getByText("Choose the office and priority yourself")).toBeInTheDocument();
+  });
+});
+
+describe("the way back to the public side", () => {
+  it("the moderator case page links to what residents see for that case", async () => {
+    const c = (await getCaseByCaseNumber("SV-2026-0001"))!;
+    render(<ModerationPanel caseData={c} communityDisplayName="Santiago de Veraguas" categoryLabel="Road" />);
+    expect(screen.getByRole("link", { name: "Open the public case page →" })).toHaveAttribute("href", "/cases/SV-2026-0001");
   });
 });
 
