@@ -10,6 +10,7 @@ import type { SqlClient } from "@/lib/db/sql-client";
 import type { CommunityConfig } from "@/lib/schema/community";
 import type { CaseRepository } from "./case-repository";
 import { prepareNewCase } from "./new-case";
+import { isPublicTimelineEvent } from "@/lib/schema/public-timeline";
 
 /**
  * The Postgres implementation of CaseRepository (tables: db/migrations/0001_init.sql). It must
@@ -353,8 +354,25 @@ export function createSqlCaseRepository(
     },
 
     async addTimelineEvent(caseNumber, event, now = defaultClock) {
+      const found = await db.query<{ source_type: "community" | "demonstration" }>(
+        "select source_type from public.cases where case_number = $1 and deleted_at is null",
+        [caseNumber],
+      );
+      if (!found.rows[0]) return false;
       if (event.setStatus) {
         await db.query("update public.cases set status = $2 where case_number = $1 and deleted_at is null", [caseNumber, event.setStatus]);
+      }
+      // A step residents may not see (public-timeline.ts) isn't written to the public timeline; the
+      // caller records it in the audit log. A status change it carries is still a status change.
+      if (!isPublicTimelineEvent(event, found.rows[0].source_type)) {
+        if (event.setStatus) {
+          await db.query(
+            `insert into public.case_events (case_id, occurred_at, status, actor_type)
+             select id, $2::timestamptz, status, $3 from public.cases where case_number = $1 and deleted_at is null`,
+            [caseNumber, now().toISOString(), event.actorType],
+          );
+        }
+        return true;
       }
       const { rows } = await db.query(
         `insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id, note, note_es, notes)

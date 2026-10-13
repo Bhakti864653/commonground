@@ -83,9 +83,8 @@ describe("the four-step pipeline, end to end (AI mocked)", () => {
     const outbox = await getPipelineRepository().listOutbox({ caseNumber: n });
     expect(outbox).toHaveLength(1);
     expect(outbox[0]).toMatchObject({ status: "dry_run", officeId: "drainage", toAddress: "drenaje@example.invalid" });
-    const events = (await getCaseByCaseNumber(n))!.statusHistory;
-    expect(events.at(-1)).toMatchObject({ kind: "referral_queued", actorType: "moderator" });
-    expect(events.at(-1)?.contactId).toBeUndefined();
+    // A resident's case: its public timeline shows status changes only.
+    expect((await getCaseByCaseNumber(n))!.statusHistory.map((e) => e.kind ?? "status")).toEqual(["status"]);
     expect((await getCasePipeline(n)).stage).toBe("referral_prepared");
 
     // 4. Follow-up: high = 4 days. Day 5 isn't overdue (3 days since queued); day 7 is.
@@ -103,7 +102,8 @@ describe("the four-step pipeline, end to end (AI mocked)", () => {
     expect(after.stage).toBe("follow_up");
     expect(after.state?.priority).toBe("urgent");
     expect(after.outbox.map((o) => o.kind).sort()).toEqual(["follow_up", "referral"]);
-    expect((await getCaseByCaseNumber(n))!.statusHistory.at(-1)).toMatchObject({ kind: "follow_up_update", note: expect.stringContaining("still open") });
+    // ...and the approved update stays private too (it's in the audit log).
+    expect((await getCaseByCaseNumber(n))!.statusHistory.map((e) => e.kind ?? "status")).toEqual(["status"]);
 
     // Every step is in the audit log.
     const actions = after.audit.map((a) => a.action);

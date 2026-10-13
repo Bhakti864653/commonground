@@ -9,6 +9,7 @@ import { EXPERIENCE, fill } from "@/lib/i18n/experience";
 import { FIELD } from "@/lib/i18n/field-notes";
 import { formatApproximateAreaLabel } from "@/lib/privacy/approximate-area";
 import { STATUS_LABELS, VERIFICATION_LABELS, type PublicCase } from "@/lib/schema/report";
+import { isPublicTimelineEvent } from "@/lib/schema/public-timeline";
 import type { CategoryConfig, OfficialContact } from "@/lib/schema/community";
 import { StatusPill, VerificationPill } from "@/components/journey/Pills";
 import { StageMeter } from "@/components/journey/StageMeter";
@@ -60,7 +61,9 @@ export function CaseView({
     );
   }
 
-  const events = [...caseData.statusHistory].reverse();
+  // Defense in depth: the same rule toPublicCase applies (public-timeline.ts), in case a caller
+  // ever passes an unfiltered timeline.
+  const events = caseData.statusHistory.filter((e) => isPublicTimelineEvent(e, caseData.sourceType)).reverse();
   const officeName = (contactId?: string) => {
     const office = offices.find((o) => o.id === contactId);
     return office ? labelOf({ label: office.name, labelEs: office.nameEs, labels: office.labels }, language) : f.officeFallback[language];

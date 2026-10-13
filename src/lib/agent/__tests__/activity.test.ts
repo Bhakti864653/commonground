@@ -69,27 +69,20 @@ describe("agent feed", () => {
     expectTypeOf<keyof AgentFeedItem>().toEqualTypeOf<"id" | "caseNumber" | "kind" | "contactId" | "occurredAt" | "isDemo">();
   });
 
-  it("shows only agent steps and moderator referral decisions, newest first", () => {
+  it("shows only the pipeline's moderator-approved steps, newest first — never the earlier automatic AI entries", () => {
     const a = newCase();
     const b = newCase("Basura acumulada");
     const idA = prepare(a);
     changeCaseStatus(a, "under_review", "mod-1", "A moderator looked at it", tick);
     approveReferral(a, idA, SECRET, "mod-1", tick);
+    addTimelineEvent(a, { kind: "referral_queued", actorType: "moderator" }, tick);
     const idB = prepare(b);
     rejectReferral(b, idB, "mod-1", tick);
     addAdminNote(b, "private admin note", "mod-1", tick);
+    addTimelineEvent(b, { kind: "follow_up_update", actorType: "moderator", note: "Still open." }, tick);
 
     const feed = buildAgentFeed(publicCases(a, b));
-    expect(feed.map((i) => `${i.caseNumber} ${i.kind}`)).toEqual([
-      `${b} referral_declined`,
-      `${b} awaiting_approval`,
-      `${b} referral_prepared`,
-      `${b} ai_reviewed`,
-      `${a} referral_approved`,
-      `${a} awaiting_approval`,
-      `${a} referral_prepared`,
-      `${a} ai_reviewed`,
-    ]);
+    expect(feed.map((i) => `${i.caseNumber} ${i.kind}`)).toEqual([`${b} follow_up_update`, `${a} referral_queued`]);
     // "received" and the moderator's status change are not agent activity.
     expect(feed.some((i) => (i.kind as string) === "status")).toBe(false);
     const serialized = JSON.stringify(feed);
@@ -99,7 +92,7 @@ describe("agent feed", () => {
     expect(feed.every((i) => i.isDemo)).toBe(true);
   });
 
-  it("labels a real resident's case as not demonstration data", () => {
+  it("shows nothing at all from a resident's (non-example) case", () => {
     const real = createCase(
       {
         type: "report",
@@ -112,26 +105,28 @@ describe("agent feed", () => {
       tick,
     ).publicCaseNumber;
     addTimelineEvent(real, { kind: "ai_reviewed", actorType: "agent" }, tick);
-    expect(buildAgentFeed(publicCases(real)).map((i) => i.isDemo)).toEqual([false]);
+    addTimelineEvent(real, { kind: "referral_queued", actorType: "moderator" }, tick);
+    expect(buildAgentFeed(publicCases(real))).toEqual([]);
   });
 
   it("keeps timeline order for steps recorded at the same moment", () => {
     const a = newCase();
     const same = () => new Date(Date.UTC(2026, 9, 2));
-    addTimelineEvent(a, { kind: "referral_prepared", actorType: "agent", contactId: OFFICE }, same);
-    addTimelineEvent(a, { kind: "awaiting_approval", actorType: "agent", contactId: OFFICE }, same);
-    expect(buildAgentFeed(publicCases(a)).map((i) => i.kind)).toEqual(["awaiting_approval", "referral_prepared"]);
+    addTimelineEvent(a, { kind: "referral_queued", actorType: "moderator" }, same);
+    addTimelineEvent(a, { kind: "follow_up_update", actorType: "moderator" }, same);
+    expect(buildAgentFeed(publicCases(a)).map((i) => i.kind)).toEqual(["follow_up_update", "referral_queued"]);
   });
 
-  it("counts reviewed reports, prepared referrals and approved referrals", () => {
+  it("counts only steps residents can see", () => {
     const a = newCase();
     const b = newCase("Basura acumulada");
     const c = newCase("Hueco en la calle");
     approveReferral(a, prepare(a), "Mensaje final", "mod-1", tick);
+    addTimelineEvent(a, { kind: "referral_queued", actorType: "moderator" }, tick);
     rejectReferral(b, prepare(b), "mod-1", tick);
-    // Reviewed twice still counts as one reviewed report.
-    addTimelineEvent(b, { kind: "ai_reviewed", actorType: "agent" }, tick);
-    expect(countAgentActivity(publicCases(a, b, c))).toEqual({ reviewed: 2, prepared: 2, approved: 1 });
+    addTimelineEvent(b, { kind: "follow_up_update", actorType: "moderator" }, tick);
+    prepare(c);
+    expect(countAgentActivity(publicCases(a, b, c))).toEqual({ reviewed: 2, prepared: 1, approved: 1 });
   });
 
   it("ignores a status change even if it claims to be from the agent", () => {
@@ -157,12 +152,16 @@ describe("listAgentActivity", () => {
   });
 
   it("pages the feed 20 at a time and reports the total", async () => {
-    for (let i = 0; i < 6; i++) prepare(newCase(`Caso ${i}`));
+    const queue = (n: string) => {
+      prepare(n);
+      for (let k = 0; k < 3; k++) addTimelineEvent(n, { kind: k === 0 ? "referral_queued" : "follow_up_update", actorType: "moderator" }, tick);
+    };
+    for (let i = 0; i < 6; i++) queue(newCase(`Caso ${i}`));
     const first = await listAgentActivity(COMMUNITY);
     expect(first.total).toBe(18);
     expect(first.items).toHaveLength(18);
-    expect(first.counts).toEqual({ reviewed: 6, prepared: 6, approved: 0 });
-    for (let i = 0; i < 4; i++) prepare(newCase(`Más ${i}`));
+    expect(first.counts).toEqual({ reviewed: 6, prepared: 6, approved: 6 });
+    for (let i = 0; i < 4; i++) queue(newCase(`Más ${i}`));
     const page1 = await listAgentActivity(COMMUNITY, 0);
     const page2 = await listAgentActivity(COMMUNITY, 20);
     expect(page1.items).toHaveLength(20);
@@ -172,7 +171,8 @@ describe("listAgentActivity", () => {
 
   it("is empty for an unknown community and ignores a bad offset", async () => {
     expect((await listAgentActivity("nowhere")).items).toEqual([]);
-    prepare(newCase());
+    const n = newCase();
+    for (let k = 0; k < 3; k++) addTimelineEvent(n, { kind: "follow_up_update", actorType: "moderator" }, tick);
     expect((await listAgentActivity(COMMUNITY, "abc")).items).toHaveLength(3);
     expect((await listAgentActivity(COMMUNITY, -5)).items).toHaveLength(3);
   });
@@ -187,7 +187,8 @@ describe("demonstration cases", () => {
 
   it("come with agent activity, every item labeled as a demonstration", async () => {
     const page = await listAgentActivity("santiago-veraguas");
-    expect(page.counts).toEqual({ reviewed: 7, prepared: 0, approved: 0 });
+    // The examples whose referral a moderator approved (sending paused): 4 cases.
+    expect(page.counts).toEqual({ reviewed: 4, prepared: 4, approved: 4 });
     expect(page.items.length).toBeGreaterThan(0);
     expect(page.items.every((i) => i.isDemo)).toBe(true);
   });

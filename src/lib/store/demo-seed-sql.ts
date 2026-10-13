@@ -1,6 +1,7 @@
 import { casePrefix } from "@/lib/case-number/format-case-number";
 import { buildDemoPipelineSql } from "@/lib/pipeline/store/demo-pipeline-sql";
 import { BACKFILL_OFFICE_REFERRALS_SQL } from "@/lib/office/store/sql-office-store";
+import { movePrivateTimelineSql } from "@/lib/schema/public-timeline";
 import { SANTIAGO_VERAGUAS } from "@/data/communities";
 import {
   DEMO_CASE_SEEDS,
@@ -202,5 +203,7 @@ $$;
 ${buildDemoPipelineSql()}
 -- The office side: each approved example referral arrives in its (simulated) office's inbox.
 ${BACKFILL_OFFICE_REFERRALS_SQL};
-`;
+
+-- Timeline entries residents may not see go to the private audit log (src/lib/schema/public-timeline.ts).
+${movePrivateTimelineSql()}`;
 }

@@ -21,6 +21,8 @@ import { buildPipelineMigrationSql } from "@/lib/pipeline/store/demo-pipeline-sq
 import { buildOfficeMigrationSql } from "@/lib/office/store/office-sql";
 import { OfficeNoteSchema, OfficeStatusSchema } from "@/lib/office/types";
 const OFFICE_MIGRATION_PATH = join(__dirname, "../../../../db/migrations/0008_office_portal.sql");
+import { buildPrivateTimelineMigrationSql, LEGACY_PRIVATE_KINDS, movePrivateTimelineSql } from "@/lib/schema/public-timeline";
+const PRIVATE_TIMELINE_MIGRATION_PATH = join(__dirname, "../../../../db/migrations/0009_private_timeline_entries.sql");
 
 const ProposalKinds = ProposalSchema.options.map((o) => o.shape.kind.value);
 const PIPELINE_MIGRATION_PATH = join(__dirname, "../../../../db/migrations/0007_agentic_pipeline.sql");
@@ -136,7 +138,9 @@ describe("migration + seed on a real Postgres (PGlite)", () => {
     const events = await db.query<{ n: number }>("select count(*)::int as n from public.case_events");
     const actions = await db.query<{ n: number }>("select count(*)::int as n from public.moderation_actions");
     const referrals = await db.query<{ status: string }>("select status from public.agent_suggestions order by status");
-    expect(events.rows[0].n).toBe(DEMO_CASE_SEEDS.length + changed + steps.length + pipelinePublicEvents);
+    // The earlier pipeline's automatic entries are moved to the private audit log (migration 0009).
+    const publicSteps = steps.filter((s) => !LEGACY_PRIVATE_KINDS.has(s.kind)).length;
+    expect(events.rows[0].n).toBe(DEMO_CASE_SEEDS.length + changed + publicSteps + pipelinePublicEvents);
     expect(actions.rows[0].n).toBe(changed + approvals);
     expect(referrals.rows.map((r) => r.status)).toEqual(
       DEMO_CASE_SEEDS.flatMap((s) => (s.agent?.referral ? [s.agent.referral.approvedAfterDays === undefined ? "pending" : "approved"] : [])).sort(),
@@ -244,6 +248,12 @@ describe("db/migrations/0008_office_portal.sql", () => {
   });
 });
 
+describe("db/migrations/0009_private_timeline_entries.sql", () => {
+  it("is exactly what the generator produces", async () => {
+    await expect(buildPrivateTimelineMigrationSql()).toMatchFileSnapshot(PRIVATE_TIMELINE_MIGRATION_PATH);
+  });
+});
+
 describe("0007 on a database seeded before the pipeline existed (PGlite)", () => {
   let db: PGlite;
   const before0007 = readdirSync(join(ROOT, "db/migrations"))
@@ -339,14 +349,17 @@ describe("0004 on a database seeded before the agent existed (PGlite)", () => {
     await db.exec(`select public.create_case(
       'santiago-veraguas', 'SV', 'report', 'flooding-drainage', ${"'" + DEMO_CASE_SEEDS[3].description.replace(/'/g, "''") + "'"},
       '{"kind":"prefer_not_to_say","label":"-"}'::jsonb, now(), 'community_report', 'community', null, '{"consentVersion":"v1"}'::jsonb, 'token')`);
-    expect(await snapshot()).not.toEqual(seeded);
-
+    // 0004 adds the agent's steps back; 0009 (which runs after it) then makes them private again.
     await db.exec(readFileSync(AGENT_MIGRATION_PATH, "utf8"));
+    const added = await db.query<{ n: number }>("select count(*)::int as n from public.case_events where kind = 'ai_reviewed'");
+    expect(added.rows[0].n).toBeGreaterThan(0);
+    await db.exec(movePrivateTimelineSql());
     expect(await snapshot()).toEqual(seeded);
     expect(await counts()).toBe(seededCounts);
     expect(await outOfOrderTimelines(db)).toBe(0);
 
     await db.exec(readFileSync(AGENT_MIGRATION_PATH, "utf8"));
+    await db.exec(movePrivateTimelineSql());
     expect(await snapshot()).toEqual(seeded);
     expect(await counts()).toBe(seededCounts);
     const real = await db.query<{ n: number }>(

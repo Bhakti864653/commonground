@@ -32,17 +32,12 @@ const draft: ReferralDraft = {
 describe("addTimelineEvent", () => {
   beforeEach(() => __resetMemoryCaseStore());
 
-  it("appends a non-status entry that keeps the case's current status", () => {
+  it("never writes an AI or referral entry onto a resident's public timeline", () => {
     const c = newCase();
     expect(addTimelineEvent(c.publicCaseNumber, { kind: "referral_prepared", actorType: "agent", contactId: draft.contactId })).toBe(true);
     const updated = getCaseByCaseNumber(c.publicCaseNumber)!;
     expect(updated.status).toBe("received");
-    expect(updated.statusHistory.at(-1)).toMatchObject({
-      kind: "referral_prepared",
-      actorType: "agent",
-      status: "received",
-      contactId: draft.contactId,
-    });
+    expect(updated.statusHistory.map((e) => e.kind ?? "status")).toEqual(["status"]);
   });
 
   it("returns false for an unknown case", () => {

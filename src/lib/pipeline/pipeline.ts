@@ -266,7 +266,13 @@ export async function approveReferral(proposalId: string, moderator: string, edi
   // Public, and fixed text: "Referral prepared – sending is paused in this demo". No office named.
   await addTimelineEvent(c.publicCaseNumber, { kind: "referral_queued", actorType: "moderator" }, () => now);
   await repo().upsertState(c.publicCaseNumber, c.communityId, { referralQueuedAt: now.toISOString(), lastProgressAt: now.toISOString() });
-  return { ok: true, message: "Added to the outbox: Ready to send – demo mode (not sent)." };
+  return {
+    ok: true,
+    message:
+      c.sourceType === "demonstration"
+        ? "Added to the outbox: Ready to send – demo mode (not sent)."
+        : "Added to the outbox: Ready to send – demo mode (not sent). This is a resident's case, so nothing about it is shown publicly.",
+  };
 }
 
 // ---- 4. Follow-up (scheduled) --------------------------------------------------------------
@@ -420,7 +426,8 @@ export async function approveFollowUp(
   }
   if (choices.publicUpdate) {
     await addTimelineEvent(c.publicCaseNumber, { kind: "follow_up_update", actorType: "moderator", ...asTimelineNote(p.publicUpdate) }, () => now);
-    done.push("public update published");
+    // A resident's case shows status changes only (public-timeline.ts).
+    done.push(c.sourceType === "demonstration" ? "public update published" : "update kept private (a resident's case shows only status changes)");
   }
   if (choices.escalate && p.escalateTo) {
     await setRouting(c, office.id, p.escalateTo, moderator, now, `Escalated the priority from ${state!.priority} on the Follow-up Agent's suggestion.`);

@@ -103,6 +103,13 @@ After a case is submitted, the AI prepares a referral to a verified local office
 - **Never to emergency services.** Emergency lines can't be referral targets. A report that
   matches an emergency phrase shows the resident the verified emergency number (911) at once and
   is marked urgent for moderators; the agentic pipeline never contacts emergency services.
+- **Residents' cases show status changes only.** On a resident's (non-example) case, the public
+  timeline shows statuses ("Recibido", "En revisión", …) and nothing else: every AI, referral,
+  pipeline or office step stays in the private audit log (src/lib/schema/public-timeline.ts,
+  enforced when a case is made public, when a step is written, and on the page itself). Migration
+  0009 (2026-10-13) moved the earlier pipeline's entries — including one that named the Alcaldía on
+  SV-2026-0011 — from the public timeline into the audit log; nothing was deleted. Example cases
+  also show the pipeline's moderator-approved steps, so the demo can show the whole loop.
 - **Transparent.** Since the agentic pipeline (2026-10, [AGENTIC_PIPELINE.md](AGENTIC_PIPELINE.md)),
   agents' steps are recorded in a private audit log, and the public timeline changes only when a
   moderator approves: "Referral prepared – sending is paused in this demo" (no office named) or a

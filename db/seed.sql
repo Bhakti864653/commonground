@@ -484,3 +484,22 @@ from public.pipeline_outbox o
 join public.cases c on c.case_number = o.case_number
 where o.kind = 'referral' and c.deleted_at is null and c.status <> 'closed'
   and not exists (select 1 from public.office_referrals r where r.outbox_id = o.id);
+
+-- Timeline entries residents may not see go to the private audit log (src/lib/schema/public-timeline.ts).
+insert into public.agent_audit (case_number, community_id, occurred_at, actor_type, actor, action, summary)
+select c.case_number, c.community_id, e.occurred_at,
+  case e.actor_type when 'agent' then 'agent' when 'office' then 'office' when 'moderator' then 'moderator' else 'system' end,
+  case e.actor_type when 'agent' then 'CommonGround AI (earlier pipeline)' when 'moderator' then 'moderator' when 'office' then 'office' else 'system' end,
+  'timeline_made_private',
+  'Earlier public timeline entry, now private: ' || e.kind || ' (status ' || e.status || ')'
+    || coalesce(' — office: ' || e.contact_id, '')
+    || coalesce(' — note: ' || coalesce(e.note_es, e.note), '')
+from public.case_events e
+join public.cases c on c.id = e.case_id
+where e.kind is not null and e.kind <> 'status'
+      and (c.source_type <> 'demonstration' or e.kind in ('ai_reviewed', 'referral_prepared', 'awaiting_approval', 'referral_approved', 'referral_declined'));
+
+delete from public.case_events e
+using public.cases c
+where c.id = e.case_id and e.kind is not null and e.kind <> 'status'
+      and (c.source_type <> 'demonstration' or e.kind in ('ai_reviewed', 'referral_prepared', 'awaiting_approval', 'referral_approved', 'referral_declined'));

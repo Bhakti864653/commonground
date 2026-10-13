@@ -4,6 +4,7 @@ import { buildDemoCase } from "@/lib/store/demo-history";
 import { publicCaseUrl } from "@/lib/site-url";
 import { DEMO_PIPELINE_RECORDS, materializeDemoPipeline } from "./demo-pipeline-records";
 import { BACKFILL_OFFICE_REFERRALS_SQL } from "@/lib/office/store/sql-office-store";
+import { movePrivateTimelineStatements } from "@/lib/schema/public-timeline";
 
 /**
  * "Reset demo" on Postgres, in ONE transaction (all or nothing). Selects only cases that are
@@ -115,6 +116,8 @@ export async function resetDemoCasesSql(db: SqlClient, now: Date = new Date()): 
     }
     // The example referrals arrive in their simulated offices' inboxes again — only these cases.
     await tx.query(`${BACKFILL_OFFICE_REFERRALS_SQL} and o.case_number = any($1::text[])`, [numbers]);
+    // Entries residents may not see go to the private audit log, as everywhere else (migration 0009).
+    for (const statement of movePrivateTimelineStatements(true)) await tx.query(statement, [numbers]);
     return numbers;
   });
 }

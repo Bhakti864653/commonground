@@ -274,21 +274,20 @@ describe.each(harnesses)("CaseRepository contract: $name", (h) => {
       expect(after).toMatchObject({ status: "approved", reviewedAt: at(9)().toISOString() });
     });
 
-    it("adds public timeline steps that keep the case's current status", async () => {
+    it("keeps AI and referral steps off a resident's public timeline; a status change still counts", async () => {
       const c = await repo.createCase(input());
       await repo.changeCaseStatus(c.publicCaseNumber, "under_review", "admin");
       expect(
         await repo.addTimelineEvent(c.publicCaseNumber, { kind: "referral_prepared", actorType: "agent", contactId: draft.contactId }, at(20)),
       ).toBe(true);
       expect(await repo.addTimelineEvent("SV-1999-0001", { kind: "ai_reviewed", actorType: "agent" })).toBe(false);
-      expect((await repo.getCaseByCaseNumber(c.publicCaseNumber))!.statusHistory.at(-1)).toEqual({
-        id: expect.any(String),
-        status: "under_review",
-        occurredAt: at(20)().toISOString(),
-        actorType: "agent",
-        kind: "referral_prepared",
-        contactId: draft.contactId,
-      });
+      expect((await repo.getCaseByCaseNumber(c.publicCaseNumber))!.statusHistory.map((e) => e.kind ?? "status")).toEqual(["status", "status"]);
+      // An office moving the case to "in progress" changes the status, shown as a plain status entry.
+      await repo.addTimelineEvent(c.publicCaseNumber, { kind: "office_in_progress", actorType: "moderator", setStatus: "in_progress" }, at(21));
+      const after = (await repo.getCaseByCaseNumber(c.publicCaseNumber))!;
+      expect(after.status).toBe("in_progress");
+      expect(after.statusHistory.at(-1)).toMatchObject({ status: "in_progress", actorType: "moderator" });
+      expect(after.statusHistory.at(-1)?.kind).toBeUndefined();
     });
 
     it("stores a referral draft, replacing an older pending one, and rejects invalid drafts", async () => {

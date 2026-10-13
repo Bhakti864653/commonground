@@ -2,6 +2,7 @@ import { formatCaseNumber } from "@/lib/case-number/format-case-number";
 import type { CaseRepository } from "./case-repository";
 import { DEMO_CASE_SEEDS, DEMO_COMMUNITY_ID } from "./demo-seed";
 import { buildDemoCase } from "./demo-history";
+import { isPublicTimelineEvent } from "@/lib/schema/public-timeline";
 import {
   ReferralDraftSchema,
   type AgentSuggestion,
@@ -382,6 +383,14 @@ export function addTimelineEvent(
   const found = getCaseByCaseNumber(publicCaseNumber);
   if (!found) return false;
   if (event.setStatus) found.status = event.setStatus;
+  // A step residents may not see (public-timeline.ts) isn't written to the public timeline; the
+  // caller records it in the audit log. A status change it carries is still a status change.
+  if (!isPublicTimelineEvent(event, found.sourceType)) {
+    if (event.setStatus) {
+      found.statusHistory.push({ id: crypto.randomUUID(), status: found.status, occurredAt: now().toISOString(), actorType: event.actorType });
+    }
+    return true;
+  }
   found.statusHistory.push({
     id: crypto.randomUUID(),
     status: found.status,

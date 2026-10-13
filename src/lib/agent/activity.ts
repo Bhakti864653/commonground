@@ -76,9 +76,12 @@ export function countAgentActivity(cases: PublicCase[]): AgentCounts {
   const counts: AgentCounts = { reviewed: 0, prepared: 0, approved: 0 };
   for (const c of visible(cases)) {
     const events = c.statusHistory.filter(isAgentFeedEvent);
-    if (events.some((e) => e.kind === "ai_reviewed")) counts.reviewed += 1;
-    counts.prepared += events.filter((e) => e.kind === "referral_prepared").length;
-    counts.approved += events.filter((e) => e.kind === "referral_approved").length;
+    // Only steps residents can see count (public-timeline.ts): on example cases, the pipeline's
+    // moderator-approved steps. Each "referral prepared" entry is a moderator's approval.
+    if (events.length) counts.reviewed += 1;
+    const queued = events.filter((e) => e.kind === "referral_queued").length;
+    counts.prepared += queued;
+    counts.approved += queued;
   }
   return counts;
 }

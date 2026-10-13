@@ -191,7 +191,8 @@ export async function approveOfficeNote(proposalId: string, moderator: string, n
   if (!(await pipeline().reviewProposal(p.id, "approved", moderator, undefined, now))) return { ok: false, reason: "This note is no longer pending." };
   await addTimelineEvent(p.caseNumber, { kind: "office_note", actorType: "office", ...asTimelineNote(p.payload.translations) }, () => now);
   await pipeline().addAudit({ caseNumber: p.caseNumber, communityId: p.communityId, actorType: "moderator", actor: moderator, action: "office_note_published", summary: "Approved the office's public note (7 languages) and published it on the case page." }, now);
-  return { ok: true, message: "Published on the case page." };
+  const c = await getCaseByCaseNumber(p.caseNumber);
+  return { ok: true, message: c?.sourceType === "demonstration" ? "Published on the case page." : "Approved. This is a resident's case, so it stays private (their page shows only status changes)." };
 }
 
 /** Confirm: the case closes (the same status change the manual Status control makes). */

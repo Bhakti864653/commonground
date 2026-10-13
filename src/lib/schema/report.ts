@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { LANGUAGE_CODES, type LocalizedText } from "@/lib/i18n/languages";
 import { ExtraTranslationsSchema, HttpUrlSchema } from "./community";
+import { isPublicTimelineEvent } from "./public-timeline";
 
 export const ReportTypeSchema = z.enum(["report", "proposal"]);
 export type ReportTypeValue = z.infer<typeof ReportTypeSchema>;
@@ -348,7 +349,10 @@ export type PublicCase = Omit<
 
 export function toPublicCase(c: Case): PublicCase {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deliberately omitting these fields
-  const { managementToken, adminNotes, moderationActions, agentSuggestions, inaccuracyFlags, ...rest } = c;
+  const { managementToken, adminNotes, moderationActions, agentSuggestions, inaccuracyFlags, ...all } = c;
+  // Only the timeline entries residents may see (public-timeline.ts): status changes on a
+  // resident's case; on an example case also the moderator-approved pipeline steps.
+  const rest = { ...all, statusHistory: all.statusHistory.filter((e) => isPublicTimelineEvent(e, all.sourceType)) };
   // Removed content never leaves the server again, even if a caller forgets to check `removal`.
   if (rest.removal) return { ...rest, description: "", image: undefined };
   return rest;
