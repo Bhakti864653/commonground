@@ -1,0 +1,102 @@
+import { BACKFILL_OFFICE_REFERRALS_SQL } from "./sql-office-store";
+
+/** The office side's tables (db/migrations/0008_office_portal.sql is generated from this). */
+export const OFFICE_SCHEMA_SQL = `-- ---------------------------------------------------------------------------------------------
+-- Offices as actors on the public timeline, and their five timeline steps.
+-- ---------------------------------------------------------------------------------------------
+alter table public.case_events drop constraint case_events_kind_check;
+alter table public.case_events add constraint case_events_kind_check check (kind is null or kind in (
+  'status', 'ai_reviewed', 'referral_prepared', 'awaiting_approval', 'referral_approved', 'referral_declined',
+  'referral_queued', 'follow_up_update',
+  'office_received', 'office_in_progress', 'office_resolved', 'office_declined', 'office_note'
+));
+alter table public.case_events drop constraint case_events_actor_type_check;
+alter table public.case_events add constraint case_events_actor_type_check check (actor_type in ('system', 'moderator', 'verified_source', 'agent', 'office'));
+
+alter table public.pipeline_proposals drop constraint pipeline_proposals_kind_check;
+alter table public.pipeline_proposals add constraint pipeline_proposals_kind_check check (kind in ('routing', 'referral', 'follow_up', 'weekly_summary', 'office_note', 'office_resolution'));
+
+alter table public.agent_audit drop constraint agent_audit_actor_type_check;
+alter table public.agent_audit add constraint agent_audit_actor_type_check check (actor_type in ('agent', 'moderator', 'system', 'office'));
+
+-- ---------------------------------------------------------------------------------------------
+-- Referrals as an office sees them. is_demo: example cases, only the simulated demo office.
+-- ---------------------------------------------------------------------------------------------
+create table public.office_referrals (
+  id                uuid primary key default gen_random_uuid(),
+  seq               bigint generated always as identity,
+  case_number       text not null references public.cases (case_number) on delete cascade,
+  community_id      text not null,
+  office_id         text not null,
+  status            text not null default 'new',
+  decline_reason    text,
+  is_demo           boolean not null,
+  created_at        timestamptz not null default now(),
+  status_changed_at timestamptz not null default now(),
+  outbox_id         uuid references public.pipeline_outbox (id) on delete set null,
+
+  constraint office_referrals_status_check check (status in ('new', 'received', 'in_progress', 'resolved', 'not_our_department'))
+);
+
+create index office_referrals_office_idx on public.office_referrals (office_id, is_demo, created_at desc);
+create index office_referrals_case_idx on public.office_referrals (case_number);
+
+create table public.office_notes (
+  id           uuid primary key default gen_random_uuid(),
+  seq          bigint generated always as identity,
+  referral_id  uuid not null references public.office_referrals (id) on delete cascade,
+  case_number  text not null references public.cases (case_number) on delete cascade,
+  office_id    text not null,
+  kind         text not null,
+  text         text not null,
+  author       text not null,
+  created_at   timestamptz not null default now(),
+
+  constraint office_notes_kind_check check (kind in ('public', 'private')),
+  constraint office_notes_text_length check (char_length(text) between 1 and 1000)
+);
+
+-- ---------------------------------------------------------------------------------------------
+-- Invite-only office accounts (an admin adds them; there is no sign-up) and their sessions.
+-- Nobody can sign in while OFFICE_PORTAL_ENABLED is off.
+-- ---------------------------------------------------------------------------------------------
+create table public.office_accounts (
+  email       text primary key,
+  office_id   text not null,
+  name        text not null default '',
+  invited_by  text not null,
+  created_at  timestamptz not null default now(),
+  disabled_at timestamptz,
+
+  constraint office_accounts_email_lowercase check (email = lower(email))
+);
+
+-- Only a hash of each session token is stored, like moderator sessions.
+create table public.office_sessions (
+  token_hash  text primary key,
+  email       text not null references public.office_accounts (email) on delete cascade,
+  created_at  timestamptz not null default now(),
+  expires_at  timestamptz not null
+);
+
+alter table public.office_referrals enable row level security;
+alter table public.office_notes enable row level security;
+alter table public.office_accounts enable row level security;
+alter table public.office_sessions enable row level security;
+`;
+
+export function buildOfficeMigrationSql(): string {
+  return `-- CommonGround: the office side (built, but switched off by OFFICE_PORTAL_ENABLED).
+--
+-- GENERATED by src/lib/office/store/office-sql.ts — don't edit by hand. Regenerate with:
+-- npx vitest run src/lib/store/__tests__/db-sql.test.ts -u
+--
+-- Four private tables, five public timeline steps, an "office" actor. Then (data only) every
+-- approved referral already in the outbox arrives in its office's inbox as "new"; example cases'
+-- referrals are marked is_demo, so only the simulated demo office can see them.
+-- To undo: db/rollback/0008_office_portal_down.sql.
+
+${OFFICE_SCHEMA_SQL}
+${BACKFILL_OFFICE_REFERRALS_SQL};
+`;
+}

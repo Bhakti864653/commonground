@@ -100,6 +100,13 @@ export const TimelineEventKindSchema = z.enum([
   // Neither names the office publicly.
   "referral_queued",
   "follow_up_update",
+  // The office side (2026-10): the responsible office's own steps. Example cases show them as a
+  // simulated office.
+  "office_received",
+  "office_in_progress",
+  "office_resolved",
+  "office_declined",
+  "office_note",
 ]);
 export type TimelineEventKind = z.infer<typeof TimelineEventKindSchema>;
 
@@ -108,7 +115,7 @@ export const ReportStatusEventSchema = z.object({
   /** For a "status" entry, the new status; for any other kind, the case's status at that moment. */
   status: ReportStatusSchema,
   occurredAt: z.string(),
-  actorType: z.enum(["system", "moderator", "verified_source", "agent"]),
+  actorType: z.enum(["system", "moderator", "verified_source", "agent", "office"]),
   kind: TimelineEventKindSchema.optional(),
   /** The office (an `officialContacts` id) a referral entry is about. */
   contactId: z.string().optional(),

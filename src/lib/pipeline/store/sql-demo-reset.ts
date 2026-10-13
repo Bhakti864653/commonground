@@ -3,6 +3,7 @@ import { DEMO_CASE_SEEDS, DEMO_COMMUNITY_ID } from "@/lib/store/demo-seed";
 import { buildDemoCase } from "@/lib/store/demo-history";
 import { publicCaseUrl } from "@/lib/site-url";
 import { DEMO_PIPELINE_RECORDS, materializeDemoPipeline } from "./demo-pipeline-records";
+import { BACKFILL_OFFICE_REFERRALS_SQL } from "@/lib/office/store/sql-office-store";
 
 /**
  * "Reset demo" on Postgres, in ONE transaction (all or nothing). Selects only cases that are
@@ -28,6 +29,8 @@ export async function resetDemoCasesSql(db: SqlClient, now: Date = new Date()): 
     const ids = targets.map((t) => t.id);
     const numbers = targets.map((t) => t.case_number);
 
+    // Office side first (its notes go with it): it points at outbox rows deleted below.
+    await tx.query("delete from public.office_referrals where case_number = any($1::text[])", [numbers]);
     for (const table of ["pipeline_proposals", "pipeline_outbox", "agent_audit", "pipeline_case_state"]) {
       await tx.query(`delete from public.${table} where case_number = any($1::text[])`, [numbers]);
     }
@@ -110,6 +113,8 @@ export async function resetDemoCasesSql(db: SqlClient, now: Date = new Date()): 
         );
       }
     }
+    // The example referrals arrive in their simulated offices' inboxes again — only these cases.
+    await tx.query(`${BACKFILL_OFFICE_REFERRALS_SQL} and o.case_number = any($1::text[])`, [numbers]);
     return numbers;
   });
 }

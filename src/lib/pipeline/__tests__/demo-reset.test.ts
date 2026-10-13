@@ -17,6 +17,9 @@ import { memoryPipelineRepository, resetDemoPipelineInMemory } from "../store/me
 import { createSqlPipelineRepository } from "../store/sql-pipeline-store";
 import { resetDemoCasesSql } from "../store/sql-demo-reset";
 import type { PipelineRepository } from "../store/pipeline-repository";
+import type { OfficeRepository } from "@/lib/office/store/office-repository";
+import { memoryOfficeRepository, resetDemoOfficeInMemory } from "@/lib/office/store/memory-office-store";
+import { createSqlOfficeRepository } from "@/lib/office/store/sql-office-store";
 
 /**
  * "Reset demo" must put the eight example cases back to their starting state and must never
@@ -39,6 +42,7 @@ type Harness = {
   teardown?: () => Promise<void>;
   cases: () => CaseRepository;
   pipeline: () => PipelineRepository;
+  office: () => OfficeRepository;
   reset: (now: Date) => Promise<string[]>;
 };
 
@@ -51,14 +55,17 @@ const harnesses: Harness[] = [
       const g = globalThis as Record<string, unknown>;
       delete g.__commonGroundCaseStore__;
       delete g.__commonGroundPipelineStore__;
+      delete g.__commonGroundOfficeStore__;
       await memoryCaseRepository.listAllCasesForAdmin();
       await memoryPipelineRepository.listStates();
     },
     cases: () => memoryCaseRepository,
     pipeline: () => memoryPipelineRepository,
+    office: () => memoryOfficeRepository,
     reset: async (now) => {
       const reset = resetDemoCasesInMemory(now);
       resetDemoPipelineInMemory(reset.map((n) => memoryCase(n)).filter((c): c is Case => !!c));
+      resetDemoOfficeInMemory(new Set(reset));
       return reset;
     },
   },
@@ -73,6 +80,7 @@ const harnesses: Harness[] = [
     teardown: async () => pg.close(),
     cases: () => createSqlCaseRepository(fromPglite(pg), async (id) => getMemoryCommunity(id)),
     pipeline: () => createSqlPipelineRepository(fromPglite(pg)),
+    office: () => createSqlOfficeRepository(fromPglite(pg)),
     reset: (now) => resetDemoCasesSql(fromPglite(pg), now),
   },
 ];
@@ -83,11 +91,13 @@ const minutesAfter = (from: string, to: string) => Math.round((Date.parse(to) - 
 async function snapshot(h: Harness, caseNumber: string, relative: boolean) {
   const c = (await h.cases().getCaseByCaseNumber(caseNumber))!;
   const t = (iso?: string) => (iso === undefined ? null : relative ? minutesAfter(c.createdAt, iso) : iso);
-  const [state, proposals, outbox, audit] = await Promise.all([
+  const [state, proposals, outbox, audit, officeReferrals, officeNotes] = await Promise.all([
     h.pipeline().getState(caseNumber),
     h.pipeline().listProposals({ caseNumber }),
     h.pipeline().listOutbox({ caseNumber }),
     h.pipeline().listAudit({ caseNumber }),
+    h.office().listForCase(caseNumber),
+    h.office().listNotesForCase(caseNumber),
   ]);
   return {
     case: {
@@ -109,6 +119,8 @@ async function snapshot(h: Harness, caseNumber: string, relative: boolean) {
     proposals: proposals.map((p) => [p.kind, p.status, t(p.createdAt), t(p.reviewedAt), JSON.stringify(p.payload), p.critique?.verdict ?? null]).sort(),
     outbox: outbox.map((o) => [o.kind, o.officeId, o.subject, o.bodyEs, t(o.createdAt)]).sort(),
     audit: audit.map((a) => [a.actor, a.action, a.summary, t(a.occurredAt)]).sort(),
+    office: officeReferrals.map((r) => [r.officeId, r.status, r.isDemo, r.declineReason ?? null, t(r.statusChangedAt)]).sort(),
+    officeNotes: officeNotes.map((n) => [n.kind, n.text, n.officeId]).sort(),
   };
 }
 
@@ -151,6 +163,10 @@ describe.each(harnesses)("Reset demo: $name", (h) => {
     await h.pipeline().reviewProposal(p.id, "approved", "mod");
     await h.pipeline().addOutboxItem({ caseNumber: realNumber, communityId: SANTIAGO_VERAGUAS.id, officeId: "lighting", kind: "referral", toLabel: "x", toAddress: "x@example.invalid", subject: "s", bodyEs: "b", approvedBy: "mod" });
     await h.pipeline().addAudit({ caseNumber: realNumber, communityId: SANTIAGO_VERAGUAS.id, actorType: "moderator", actor: "mod", action: "routing_approved", summary: "real" });
+    // ...and it reached a (real) office, which acted on it.
+    const realReferral = await h.office().createReferral({ caseNumber: realNumber, communityId: SANTIAGO_VERAGUAS.id, officeId: "lighting", isDemo: false });
+    await h.office().setStatus(realReferral.id, "lighting", "in_progress", undefined);
+    await h.office().addNote({ referralId: realReferral.id, caseNumber: realNumber, officeId: "lighting", kind: "private", text: "real office note", author: "staff" });
 
     // A moderator "uses up" the demo: approvals, status changes, merges, notes, flags.
     await h.cases().changeCaseStatus(demoNumbers[0], "closed", "mod");
@@ -163,6 +179,13 @@ describe.each(harnesses)("Reset demo: $name", (h) => {
     }
     await h.pipeline().addOutboxItem({ caseNumber: demoNumbers[5], communityId: SANTIAGO_VERAGUAS.id, officeId: "sanitation", kind: "follow_up", toLabel: "x", toAddress: "x@example.invalid", subject: "s", bodyEs: "b", approvedBy: "mod" });
     await h.pipeline().upsertState(demoNumbers[6], SANTIAGO_VERAGUAS.id, { officeId: "parks", priority: "urgent" });
+    // The simulated demo office acted on the example referrals.
+    for (const office of ["lighting", "drainage", "sanitation"]) {
+      for (const r of await h.office().listForOffice(office, true)) {
+        await h.office().setStatus(r.id, office, "not_our_department", "demo reason");
+        await h.office().addNote({ referralId: r.id, caseNumber: r.caseNumber, officeId: office, kind: "public", text: "demo note", author: "demo" });
+      }
+    }
   }, 120_000);
   afterAll(async () => h.teardown?.());
 
@@ -170,6 +193,8 @@ describe.each(harnesses)("Reset demo: $name", (h) => {
     const before = await snapshot(h, realNumber, false);
     expect(before.case.events.length).toBeGreaterThan(1);
     expect(before.outbox).toHaveLength(1);
+    expect(before.office).toHaveLength(1);
+    expect(before.officeNotes).toHaveLength(1);
 
     const reset = await h.reset(new Date(NOW.getTime() + 60_000));
 

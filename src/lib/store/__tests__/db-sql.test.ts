@@ -18,6 +18,9 @@ import { LANGUAGE_CODES } from "@/lib/i18n/languages";
 import { AuditEntrySchema, OutboxItemSchema, PrioritySchema, ProposalSchema } from "@/lib/pipeline/types";
 import { DEMO_PIPELINE_RECORDS } from "@/lib/pipeline/store/demo-pipeline-records";
 import { buildPipelineMigrationSql } from "@/lib/pipeline/store/demo-pipeline-sql";
+import { buildOfficeMigrationSql } from "@/lib/office/store/office-sql";
+import { OfficeNoteSchema, OfficeStatusSchema } from "@/lib/office/types";
+const OFFICE_MIGRATION_PATH = join(__dirname, "../../../../db/migrations/0008_office_portal.sql");
 
 const ProposalKinds = ProposalSchema.options.map((o) => o.shape.kind.value);
 const PIPELINE_MIGRATION_PATH = join(__dirname, "../../../../db/migrations/0007_agentic_pipeline.sql");
@@ -71,6 +74,8 @@ describe("migration CHECK constraints match the app's Zod enums", () => {
     ["pipeline_outbox_kind_check", OutboxItemSchema.shape.kind.options],
     ["pipeline_outbox_status_check", ["dry_run"]],
     ["agent_audit_actor_type_check", AuditEntrySchema.shape.actorType.options],
+    ["office_referrals_status_check", OfficeStatusSchema.options],
+    ["office_notes_kind_check", OfficeNoteSchema.shape.kind.options],
     ["community_requests_language_check", LANGUAGE_CODES],
   ])("%s", (constraint, options) => {
     expect(checkValues(constraint)).toEqual(sorted(options));
@@ -191,8 +196,9 @@ describe("migration + seed on a real Postgres (PGlite)", () => {
       `select relname, relrowsecurity from pg_class
        where relnamespace = 'public'::regnamespace and relkind = 'r'`,
     );
-    // 7 case tables (0001) + 4 community tables (0002) + 2 moderator tables (0005) + 4 pipeline tables (0007).
-    expect(rows.length).toBe(17);
+    // 7 case tables (0001) + 4 community tables (0002) + 2 moderator tables (0005) + 4 pipeline tables (0007)
+    // + 4 office tables (0008).
+    expect(rows.length).toBe(21);
     expect(rows.filter((r) => !r.relrowsecurity).map((r) => r.relname)).toEqual([]);
   });
 
@@ -229,6 +235,12 @@ describe("migration + seed on a real Postgres (PGlite)", () => {
 describe("db/migrations/0007_agentic_pipeline.sql", () => {
   it("is exactly what the generator produces from the demo pipeline seeds", async () => {
     await expect(buildPipelineMigrationSql()).toMatchFileSnapshot(PIPELINE_MIGRATION_PATH);
+  });
+});
+
+describe("db/migrations/0008_office_portal.sql", () => {
+  it("is exactly what the generator produces", async () => {
+    await expect(buildOfficeMigrationSql()).toMatchFileSnapshot(OFFICE_MIGRATION_PATH);
   });
 });
 

@@ -36,8 +36,8 @@ export function caseBlock(c: Case, community: CommunityConfig | undefined, now: 
   return `Case (public fields): ${JSON.stringify(rest)}\nDescription:\n${untrustedBlock("resident's description", description)}`;
 }
 
-export function officeListForPrompt(): string {
-  return REFERRAL_OFFICES.map((o) => `- ${o.id}: ${o.name}. Handles: ${o.handles}`).join("\n");
+export function officeListForPrompt(offices = REFERRAL_OFFICES): string {
+  return offices.map((o) => `- ${o.id}: ${o.name}. Handles: ${o.handles}`).join("\n");
 }
 
 /** How many residents reported this problem: the case itself plus cases merged into it. */

@@ -25,7 +25,7 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
  * Where an output came from: the AI, the rule-based fallback used when the AI is unavailable, or
  * hand-written example data on the demonstration cases.
  */
-export const OutputSourceSchema = z.enum(["ai", "rules", "example"]);
+export const OutputSourceSchema = z.enum(["ai", "rules", "example", "office"]);
 export type OutputSource = z.infer<typeof OutputSourceSchema>;
 
 const LocalizedTextSchema = z.object(
@@ -107,6 +107,23 @@ export const WeeklySummaryPayloadSchema = z.object({
 });
 export type WeeklySummaryPayload = z.infer<typeof WeeklySummaryPayloadSchema>;
 
+/** An office's public note, with AI translations for the moderator to check before publishing. */
+export const OfficeNotePayloadSchema = z.object({
+  referralId: z.string(),
+  officeId: z.string(),
+  original: z.string().min(1).max(1000),
+  translations: LocalizedTextSchema,
+  source: OutputSourceSchema,
+});
+export type OfficeNotePayload = z.infer<typeof OfficeNotePayloadSchema>;
+
+/** An office says the problem is resolved; a moderator confirms before the case closes. */
+export const OfficeResolutionPayloadSchema = z.object({
+  referralId: z.string(),
+  officeId: z.string(),
+  source: OutputSourceSchema,
+});
+
 const proposalBase = {
   id: z.string(),
   caseNumber: z.string().optional(),
@@ -125,6 +142,8 @@ export const ProposalSchema = z.discriminatedUnion("kind", [
   z.object({ ...proposalBase, kind: z.literal("referral"), payload: ReferralPayloadSchema }),
   z.object({ ...proposalBase, kind: z.literal("follow_up"), payload: FollowUpPayloadSchema }),
   z.object({ ...proposalBase, kind: z.literal("weekly_summary"), payload: WeeklySummaryPayloadSchema }),
+  z.object({ ...proposalBase, kind: z.literal("office_note"), payload: OfficeNotePayloadSchema }),
+  z.object({ ...proposalBase, kind: z.literal("office_resolution"), payload: OfficeResolutionPayloadSchema }),
 ]);
 export type Proposal = z.infer<typeof ProposalSchema>;
 export type ProposalKind = Proposal["kind"];
@@ -182,7 +201,7 @@ export const AuditEntrySchema = z.object({
   caseNumber: z.string().optional(),
   communityId: z.string(),
   occurredAt: z.string(),
-  actorType: z.enum(["agent", "moderator", "system"]),
+  actorType: z.enum(["agent", "moderator", "system", "office"]),
   /** An agent's name, a moderator's id, or "scheduler". */
   actor: z.string(),
   action: z.string(),

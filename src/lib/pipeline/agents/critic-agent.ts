@@ -52,7 +52,13 @@ export function ruleChecks(proposal: Pick<NewProposal, "kind" | "payload" | "cas
       }
       break;
     }
+    case "office_note": {
+      const r = p as Extract<NewProposal, { kind: "office_note" }>["payload"];
+      if (LANGUAGE_CODES.some((l) => containsPersonalInfo(r.translations[l]))) issues.push({ type: "personal_data", note: "A translation of the office's note contains personal information." });
+      break;
+    }
     case "weekly_summary":
+    case "office_resolution":
       break;
   }
   return issues;

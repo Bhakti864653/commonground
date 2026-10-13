@@ -52,15 +52,17 @@ export function needsModeratorDecision(confidence: number, alternativeOfficeIds:
 }
 
 /** The fallback route when the AI can't run: the top-scoring office, with a confidence from the margin. */
-export function ruleBasedRoute(description: string, categoryId: string): {
+export function ruleBasedRoute(description: string, categoryId: string, offices: ReferralOffice[] = REFERRAL_OFFICES): {
   officeId: string;
   confidence: number;
   alternatives: string[];
   matched: string[];
 } {
-  const scores = scoreOffices(description, categoryId);
+  const scores = scoreOffices(description, categoryId, offices);
   const top = scores[0];
-  if (!top) return { officeId: FALLBACK_OFFICE_ID, confidence: 0.3, alternatives: [], matched: [] };
+  // Nothing matches: general services, or (if that office is excluded) the first one left.
+  const fallback = offices.some((o) => o.id === FALLBACK_OFFICE_ID) ? FALLBACK_OFFICE_ID : (offices[0]?.id ?? FALLBACK_OFFICE_ID);
+  if (!top) return { officeId: fallback, confidence: 0.3, alternatives: [], matched: [] };
   const margin = top.score - (scores[1]?.score ?? 0);
   const confidence = Math.min(0.9, 0.4 + 0.15 * margin + 0.05 * top.matched.length);
   return {

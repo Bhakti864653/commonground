@@ -7,8 +7,10 @@ import { getCommunity } from "@/lib/store/community-store";
 import { publicCaseUrl } from "@/lib/site-url";
 import { isLanguage, LANGUAGE_CODES, type Language } from "@/lib/i18n/languages";
 import type { Case } from "@/lib/schema/report";
+import type { OfficeReferral } from "@/lib/office/types";
 import { asTimelineNote } from "./store/demo-pipeline-data";
 import { getPipelineRepository } from "./store";
+import { getOfficeRepository } from "@/lib/office/store";
 import { deliverOutboxItem, OUTBOX_STATUS_LABEL } from "./sending";
 import { findOverdueCases, MAX_FOLLOW_UPS_PER_RUN, weekStartOf, type FollowUpCandidate } from "./schedule";
 import { containsPersonalInfo, type PiiKind } from "./redact";
@@ -51,7 +53,7 @@ function describeTools(toolCalls: string[]): string {
 }
 
 /** Runs the Critic on a proposal, logs it, and stores the proposal for a moderator. */
-async function proposeWithCritique(client: Groq | null, proposal: NewProposal, c: Case | undefined, now: Date): Promise<Proposal> {
+export async function proposeWithCritique(client: Groq | null, proposal: NewProposal, c: Case | undefined, now: Date): Promise<Proposal> {
   const community = c ? await getCommunity(c.communityId) : await getCommunity(proposal.communityId);
   const review = await runCriticAgent(client, proposal, c, community, now);
   const critique = review.critique;
@@ -93,12 +95,16 @@ export async function runIntake(caseNumber: string, intake: IntakeInfo = {}, now
 }
 
 /** Routing Agent + Critic → a pending routing proposal. Also what "Re-run routing" calls. */
-export async function runRouting(caseNumber: string, now = new Date()): Promise<PipelineResult> {
+export async function runRouting(
+  caseNumber: string,
+  now = new Date(),
+  excluded: Array<{ officeId: string; reason: string }> = [],
+): Promise<PipelineResult> {
   const c = await getCaseByCaseNumber(caseNumber);
   if (!c) return { ok: false, reason: "Case not found." };
   const community = await getCommunity(c.communityId);
   const client = getGroqClient();
-  const outcome = await runRoutingAgent(client, c, community, now);
+  const outcome = await runRoutingAgent(client, c, community, now, excluded);
   const office = getReferralOffice(outcome.payload.officeId);
   const p = outcome.payload;
   await audit(
@@ -253,7 +259,10 @@ export async function approveReferral(proposalId: string, moderator: string, edi
   const reviewed = await repo().reviewProposal(proposal.id, "approved", moderator, { ...proposal.payload, messageEs }, now);
   if (!reviewed) return { ok: false, reason: "This referral is no longer pending." };
   await audit(c, c.communityId, "moderator", moderator, "referral_approved", `Approved the referral${edited ? " after editing it" : ""}.`);
-  await addToOutbox(c, office, "referral", messageEs, moderator, edited ? undefined : proposal.payload.translation, now);
+  const item = await addToOutbox(c, office, "referral", messageEs, moderator, edited ? undefined : proposal.payload.translation, now);
+  // It also arrives in the office's inbox (inside CommonGround). Real offices can only see it once
+  // OFFICE_PORTAL_ENABLED is on; example cases go to the simulated demo office.
+  await getOfficeRepository().createReferral({ caseNumber: c.publicCaseNumber, communityId: c.communityId, officeId: office.id, isDemo: c.sourceType === "demonstration", outboxId: item.id }, now);
   // Public, and fixed text: "Referral prepared – sending is paused in this demo". No office named.
   await addTimelineEvent(c.publicCaseNumber, { kind: "referral_queued", actorType: "moderator" }, () => now);
   await repo().upsertState(c.publicCaseNumber, c.communityId, { referralQueuedAt: now.toISOString(), lastProgressAt: now.toISOString() });
@@ -278,6 +287,16 @@ export type FollowUpRunReport = {
 const TIME_BUDGET_MS = 90_000;
 const MAX_CATCH_UP_ROUTING = 3;
 
+/** The most recent office referral per case (a case re-routed to another office has several). */
+function latestOfficeReferrals(referrals: OfficeReferral[]): Map<string, OfficeReferral> {
+  const latest = new Map<string, OfficeReferral>();
+  for (const r of referrals) {
+    const current = latest.get(r.caseNumber);
+    if (!current || r.createdAt > current.createdAt) latest.set(r.caseNumber, r);
+  }
+  return latest;
+}
+
 function lastProgress(c: Case, state: CasePipelineState | undefined): string {
   const statusTimes = c.statusHistory.filter((e) => (e.kind ?? "status") === "status").map((e) => e.occurredAt);
   return [c.createdAt, state?.lastProgressAt, ...statusTimes].filter((t): t is string => !!t).sort().at(-1)!;
@@ -296,6 +315,7 @@ export async function runFollowUp(trigger: "cron" | "manual", now = new Date()):
   const proposals = await repo().listProposals();
   const pendingFollowUp = new Set(proposals.filter((p) => p.kind === "follow_up" && p.status === "pending").map((p) => p.caseNumber));
   const hasRouting = new Set(proposals.filter((p) => p.kind === "routing").map((p) => p.caseNumber));
+  const officeByCase = latestOfficeReferrals(await getOfficeRepository().listAll());
 
   // Follow-ups first (the reason for the run), then the weekly summary, then catch-up routing.
   const candidates: FollowUpCandidate[] = cases.flatMap((c) => {
@@ -309,6 +329,7 @@ export async function runFollowUp(trigger: "cron" | "manual", now = new Date()):
       isDuplicate: !!c.isDuplicateOf,
       removed: !!c.removal,
       hasPendingFollowUp: pendingFollowUp.has(c.publicCaseNumber),
+      officeStatus: officeByCase.get(c.publicCaseNumber)?.status,
     }];
   });
   const overdue = findOverdueCases(candidates, now);
@@ -431,13 +452,15 @@ export function stageOf(state: CasePipelineState | undefined, proposals: Proposa
 }
 
 export async function getCasePipeline(caseNumber: string) {
-  const [state, proposals, outbox, auditLog] = await Promise.all([
+  const [state, proposals, outbox, auditLog, officeReferrals, officeNotes] = await Promise.all([
     repo().getState(caseNumber),
     repo().listProposals({ caseNumber }),
     repo().listOutbox({ caseNumber }),
     repo().listAudit({ caseNumber }),
+    getOfficeRepository().listForCase(caseNumber),
+    getOfficeRepository().listNotesForCase(caseNumber),
   ]);
-  return { state, proposals, outbox, audit: auditLog, stage: stageOf(state, proposals, outbox.length) };
+  return { state, proposals, outbox, audit: auditLog, officeReferrals, officeNotes, stage: stageOf(state, proposals, outbox.length) };
 }
 
 export async function getPipelineDashboard(now = new Date()) {

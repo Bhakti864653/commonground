@@ -1,6 +1,7 @@
 import { getSqlClient } from "@/lib/db/pool";
 import { getCaseByCaseNumber, resetDemoCasesInMemory } from "@/lib/store/memory-case-store";
 import { resetDemoPipelineInMemory } from "./store/memory-pipeline-store";
+import { resetDemoOfficeInMemory } from "@/lib/office/store/memory-office-store";
 import { resetDemoCasesSql } from "./store/sql-demo-reset";
 import { getPipelineRepository } from "./store";
 import { DEMO_COMMUNITY_ID } from "@/lib/store/demo-seed";
@@ -20,13 +21,14 @@ export async function resetDemo(moderator: string, now: Date = new Date()): Prom
   } else {
     reset = resetDemoCasesInMemory(now);
     resetDemoPipelineInMemory(reset.map((n) => getCaseByCaseNumber(n)).filter((c): c is Case => !!c));
+    resetDemoOfficeInMemory(new Set(reset));
   }
   await getPipelineRepository().addAudit({
     communityId: DEMO_COMMUNITY_ID,
     actorType: "moderator",
     actor: moderator,
     action: "demo_reset",
-    summary: `Reset the example cases to their demo starting state: ${reset.join(", ") || "none found"}. No resident case was touched.`,
+    summary: `Reset the example cases (and the simulated office side) to their demo starting state: ${reset.join(", ") || "none found"}. No resident case was touched.`,
   });
   return { reset };
 }

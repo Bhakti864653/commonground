@@ -76,7 +76,9 @@ export interface CaseRepository {
     publicCaseNumber: string,
     event: {
       kind: Exclude<TimelineEventKind, "status">;
-      actorType: "agent" | "moderator";
+      actorType: "agent" | "moderator" | "office";
+      /** An office moving the case forward ("in progress") also changes its status. */
+      setStatus?: ReportStatus;
       contactId?: string;
       /** Only a moderator-approved follow-up update carries text. */
       note?: string;

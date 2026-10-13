@@ -476,3 +476,11 @@ begin
   raise notice 'Added example pipeline history to % demonstration cases.', v_added;
 end
 $$;
+
+-- The office side: each approved example referral arrives in its (simulated) office's inbox.
+insert into public.office_referrals (case_number, community_id, office_id, status, is_demo, created_at, status_changed_at, outbox_id)
+select o.case_number, o.community_id, o.office_id, 'new', c.source_type = 'demonstration', o.created_at, o.created_at, o.id
+from public.pipeline_outbox o
+join public.cases c on c.case_number = o.case_number
+where o.kind = 'referral' and c.deleted_at is null and c.status <> 'closed'
+  and not exists (select 1 from public.office_referrals r where r.outbox_id = o.id);

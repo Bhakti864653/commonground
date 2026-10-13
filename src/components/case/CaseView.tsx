@@ -144,7 +144,16 @@ export function CaseView({
                     </div>
                   ) : (
                     <p className="mt-1 text-[0.85rem] text-slate">
-                      {event.actorType === "moderator" ? f.byModerator[language] : event.actorType === "verified_source" ? f.bySource[language] : f.bySystem[language]}
+                      {event.actorType === "office"
+                        ? // Example cases are only ever touched by the simulated demo office.
+                          caseData.sourceType === "demonstration"
+                          ? f.bySimulatedOffice[language]
+                          : f.byOffice[language]
+                        : event.actorType === "moderator"
+                          ? f.byModerator[language]
+                          : event.actorType === "verified_source"
+                            ? f.bySource[language]
+                            : f.bySystem[language]}
                     </p>
                   )}
                 </li>

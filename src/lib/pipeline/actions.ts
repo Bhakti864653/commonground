@@ -24,6 +24,7 @@ import {
 } from "./pipeline";
 import { PrioritySchema } from "./types";
 import { resetDemo } from "./demo-reset";
+import { approveOfficeNote, confirmOfficeResolution, rejectOfficeResolution } from "@/lib/office/service";
 
 /**
  * Moderator-only entry points to the pipeline. Every one checks the session first and validates
@@ -135,4 +136,24 @@ export async function resetDemoAction(): Promise<PipelineResult> {
   return reset.length
     ? { ok: true, message: `Reset ${reset.length} example cases (${reset.join(", ")}). Resident cases were not touched.` }
     : { ok: false, reason: "No example cases were found." };
+}
+
+// ---- What offices sent (moderator decisions) -----------------------------------------------
+
+export async function approveOfficeNoteAction(proposalId: unknown): Promise<PipelineResult> {
+  const actor = actorIdOf(await requireAdmin());
+  const id = Id.safeParse(proposalId);
+  return id.success ? approveOfficeNote(id.data, actor) : invalid;
+}
+
+export async function confirmOfficeResolutionAction(proposalId: unknown): Promise<PipelineResult> {
+  const actor = actorIdOf(await requireAdmin());
+  const id = Id.safeParse(proposalId);
+  return id.success ? confirmOfficeResolution(id.data, actor) : invalid;
+}
+
+export async function rejectOfficeResolutionAction(proposalId: unknown): Promise<PipelineResult> {
+  const actor = actorIdOf(await requireAdmin());
+  const id = Id.safeParse(proposalId);
+  return id.success ? rejectOfficeResolution(id.data, actor) : invalid;
 }

@@ -368,7 +368,9 @@ export function addTimelineEvent(
   publicCaseNumber: string,
   event: {
     kind: Exclude<TimelineEventKind, "status">;
-    actorType: "agent" | "moderator";
+    actorType: "agent" | "moderator" | "office";
+    /** An office moving the case forward ("in progress") also changes its status. */
+    setStatus?: ReportStatus;
     contactId?: string;
     /** Only a moderator-approved follow-up update carries text. */
     note?: string;
@@ -379,6 +381,7 @@ export function addTimelineEvent(
 ): boolean {
   const found = getCaseByCaseNumber(publicCaseNumber);
   if (!found) return false;
+  if (event.setStatus) found.status = event.setStatus;
   found.statusHistory.push({
     id: crypto.randomUUID(),
     status: found.status,

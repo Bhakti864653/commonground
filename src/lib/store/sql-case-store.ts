@@ -353,6 +353,9 @@ export function createSqlCaseRepository(
     },
 
     async addTimelineEvent(caseNumber, event, now = defaultClock) {
+      if (event.setStatus) {
+        await db.query("update public.cases set status = $2 where case_number = $1 and deleted_at is null", [caseNumber, event.setStatus]);
+      }
       const { rows } = await db.query(
         `insert into public.case_events (case_id, occurred_at, status, actor_type, kind, contact_id, note, note_es, notes)
          select id, $2::timestamptz, status, $3, $4, $5, $6, $7, $8::jsonb from public.cases

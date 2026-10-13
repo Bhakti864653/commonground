@@ -1,5 +1,6 @@
 import { casePrefix } from "@/lib/case-number/format-case-number";
 import { buildDemoPipelineSql } from "@/lib/pipeline/store/demo-pipeline-sql";
+import { BACKFILL_OFFICE_REFERRALS_SQL } from "@/lib/office/store/sql-office-store";
 import { SANTIAGO_VERAGUAS } from "@/data/communities";
 import {
   DEMO_CASE_SEEDS,
@@ -198,5 +199,8 @@ $$;
 
 -- The demonstration cases' example history in the agentic pipeline (routing, referrals in the
 -- dry-run outbox, follow-ups). Also safe to run again: it skips cases that already have it.
-${buildDemoPipelineSql()}`;
+${buildDemoPipelineSql()}
+-- The office side: each approved example referral arrives in its (simulated) office's inbox.
+${BACKFILL_OFFICE_REFERRALS_SQL};
+`;
 }

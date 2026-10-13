@@ -17,6 +17,8 @@ const KIND_LABELS: Record<Proposal["kind"], string> = {
   referral: "Referral draft",
   follow_up: "Follow-up",
   weekly_summary: "Weekly summary",
+  office_note: "Office public note",
+  office_resolution: "Office says resolved",
 };
 
 export default async function PipelineDashboardPage() {

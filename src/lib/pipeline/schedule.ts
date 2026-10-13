@@ -30,7 +30,16 @@ export type FollowUpCandidate = {
   removed: boolean;
   /** A follow-up suggestion is already waiting for a moderator. */
   hasPendingFollowUp: boolean;
+  /** The office's own status on its latest referral, if any. */
+  officeStatus?: "new" | "received" | "in_progress" | "resolved" | "not_our_department";
 };
+
+/**
+ * An office that reported the problem resolved (waiting for a moderator to confirm), or said
+ * it's not its department (waiting for re-routing), isn't chased. "Received" or "In progress"
+ * that stall are, like any other case.
+ */
+const OFFICE_DONE = new Set(["resolved", "not_our_department"]);
 
 const FINISHED_STATUSES = new Set(["closed", "not_verifiable"]);
 
@@ -39,7 +48,7 @@ export type OverdueCase = FollowUpCandidate & { daysWithoutProgress: number; thr
 /** The cases that are overdue for a follow-up, longest-waiting (relative to their limit) first. */
 export function findOverdueCases(candidates: FollowUpCandidate[], now: Date): OverdueCase[] {
   return candidates
-    .filter((c) => !FINISHED_STATUSES.has(c.status) && !c.isDuplicate && !c.removed && !c.hasPendingFollowUp)
+    .filter((c) => !FINISHED_STATUSES.has(c.status) && !c.isDuplicate && !c.removed && !c.hasPendingFollowUp && !OFFICE_DONE.has(c.officeStatus ?? ""))
     .map((c) => ({
       ...c,
       daysWithoutProgress: daysBetween(c.lastProgressAt, now),

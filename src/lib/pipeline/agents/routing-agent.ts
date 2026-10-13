@@ -2,11 +2,11 @@ import type Groq from "groq-sdk";
 import { z } from "zod";
 import type { Case } from "@/lib/schema/report";
 import type { CommunityConfig } from "@/lib/schema/community";
-import { getReferralOffice, REFERRAL_OFFICE_IDS } from "@/data/referral-offices";
+import { getReferralOffice, REFERRAL_OFFICES } from "@/data/referral-offices";
 import { detectEmergencyPhrase } from "@/lib/guide/emergency";
 import { runToolAgent, type AgentRunResult } from "../agent-runner";
 import { closeAlternatives, needsModeratorDecision, ruleBasedPriority, ruleBasedRoute, scoreOffices } from "../routing-rules";
-import { UNTRUSTED_DATA_RULE, looksLikePromptInjection } from "../untrusted";
+import { UNTRUSTED_DATA_RULE, looksLikePromptInjection, untrustedBlock } from "../untrusted";
 import { PrioritySchema, RoutingPayloadSchema, type Priority, type RoutingPayload } from "../types";
 import { caseBlock, caseReadTools, DUPLICATE_THRESHOLD, findSimilarCases, officeListForPrompt } from "./context";
 
@@ -38,22 +38,40 @@ export type RoutingOutcome = {
   failureNote?: string;
 };
 
-export async function runRoutingAgent(client: Groq | null, c: Case, community: CommunityConfig | undefined, now: Date): Promise<RoutingOutcome> {
+export async function runRoutingAgent(
+  client: Groq | null,
+  c: Case,
+  community: CommunityConfig | undefined,
+  now: Date,
+  /** Offices that already said "not our department" for this case, with their reason. */
+  excluded: Array<{ officeId: string; reason: string }> = [],
+): Promise<RoutingOutcome> {
+  const offices = REFERRAL_OFFICES.filter((o) => !excluded.some((e) => e.officeId === o.id));
+  const OFFICE_IDS = offices.map((o) => o.id);
+  const isAllowed = (id: string) => OFFICE_IDS.includes(id);
   const emergency = detectEmergencyPhrase(c.description);
   const injectionSuspected = looksLikePromptInjection(c.description);
-  const rules = ruleBasedRoute(c.description, c.categoryId);
+  const rules = ruleBasedRoute(c.description, c.categoryId, offices);
   const rulesPriority = ruleBasedPriority(c.description, emergency, c.type === "proposal");
   const similar = await findSimilarCases(c, now);
   const realDuplicates = similar.filter((s) => s.score >= DUPLICATE_THRESHOLD);
 
   let result: AgentRunResult<ProposeRoutingArgs> | null = null;
   if (client) {
-    const scores = scoreOffices(c.description, c.categoryId);
+    const scores = scoreOffices(c.description, c.categoryId, offices);
     result = await runToolAgent({
       client,
       system: `You are the Routing Agent of CommonGround, an independent community project (a student
 demo). Decide which office would be responsible for a resident's report, from this fixed list only:
-${officeListForPrompt()}
+${officeListForPrompt(offices)}
+${
+  excluded.length
+    ? `
+These offices already said the case is NOT their department, so they are not options: ${excluded
+        .map((e) => `${e.officeId} (${untrustedBlock("office's reason", e.reason)})`)
+        .join("; ")}.`
+    : ""
+}
 
 Also set a priority: "urgent" only if people may be in danger right now (injury, fire, collapse,
 live wires, flooding with people at risk); "high" for a real risk to safety or health, or a
@@ -78,12 +96,12 @@ Finish by calling proposeRouting.`,
         parameters: {
           type: "object",
           properties: {
-            officeId: { type: "string", enum: REFERRAL_OFFICE_IDS },
+            officeId: { type: "string", enum: OFFICE_IDS },
             reason: { type: "string", description: "One sentence: why this office." },
             priority: { type: "string", enum: PrioritySchema.options },
             priorityReason: { type: "string", description: "One sentence: why this priority." },
             confidence: { type: "number", minimum: 0, maximum: 1 },
-            alternativeOfficeIds: { type: "array", items: { type: "string", enum: REFERRAL_OFFICE_IDS } },
+            alternativeOfficeIds: { type: "array", items: { type: "string", enum: OFFICE_IDS } },
             possibleDuplicates: {
               type: "array",
               items: {
@@ -99,8 +117,8 @@ Finish by calling proposeRouting.`,
         },
         schema: ProposeRoutingArgs,
         validate: (v) => {
-          if (!getReferralOffice(v.officeId)) return `officeId must be one of ${REFERRAL_OFFICE_IDS.join(", ")}`;
-          const unknown = v.alternativeOfficeIds.find((id) => !getReferralOffice(id));
+          if (!isAllowed(v.officeId)) return `officeId must be one of ${OFFICE_IDS.join(", ")}`;
+          const unknown = v.alternativeOfficeIds.find((id) => !isAllowed(id));
           return unknown ? `unknown alternative office ${unknown}` : null;
         },
       },
@@ -146,7 +164,7 @@ Finish by calling proposeRouting.`,
   }
 
   const office = getReferralOffice(rules.officeId)!;
-  const alternatives = closeAlternatives(scoreOffices(c.description, c.categoryId), rules.officeId);
+  const alternatives = closeAlternatives(scoreOffices(c.description, c.categoryId, offices), rules.officeId);
   return {
     payload: RoutingPayloadSchema.parse({
       officeId: rules.officeId,

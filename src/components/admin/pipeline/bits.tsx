@@ -18,6 +18,7 @@ const SOURCE_LABELS: Record<OutputSource, string> = {
   ai: "AI",
   rules: "Rule-based fallback",
   example: "Example data (written by hand)",
+  office: "From the office",
 };
 
 export function SourceBadge({ source }: { source: OutputSource }) {
@@ -85,7 +86,7 @@ export function OutboxItemView({ item, showCase = false }: { item: OutboxItem; s
   );
 }
 
-const ACTOR_DOT: Record<AuditEntry["actorType"], string> = { agent: "bg-teal", moderator: "bg-ink", system: "bg-slate" };
+const ACTOR_DOT: Record<AuditEntry["actorType"], string> = { agent: "bg-teal", moderator: "bg-ink", system: "bg-slate", office: "bg-coral" };
 
 export function AuditTimeline({ entries, showCase = false }: { entries: AuditEntry[]; showCase?: boolean }) {
   if (entries.length === 0) return <p className="text-sm text-slate">No agent activity yet.</p>;

@@ -162,7 +162,19 @@ async function rollback0007() {
   console.log("Migration 0007 undone.");
 }
 
-const commands = { backup, verify: () => verify(folderArg), restore: () => restore(folderArg), "rollback-0007": rollback0007 };
+/** Undo 0008 (the office side). Run this before rollback-0007 when going back further. */
+async function rollback0008() {
+  await client.query(readFileSync(join(root, "db/rollback/0008_office_portal_down.sql"), "utf8"));
+  console.log("Migration 0008 undone.");
+}
+
+const commands = {
+  backup,
+  verify: () => verify(folderArg),
+  restore: () => restore(folderArg),
+  "rollback-0007": rollback0007,
+  "rollback-0008": rollback0008,
+};
 if (!commands[command]) {
   console.error(`Usage: node scripts/db-backup.mjs <${Object.keys(commands).join("|")}> [folder]`);
   process.exit(1);

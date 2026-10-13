@@ -157,3 +157,8 @@ export function __resetMemoryPipelineStore(): void {
   const g = globalThis as typeof globalThis & { __commonGroundPipelineStore__?: State };
   g.__commonGroundPipelineStore__ = { states: new Map(), proposals: [], outbox: [], audit: [] };
 }
+
+/** The in-memory outbox, synchronously (the office side's demo seed reads it). */
+export function memoryOutboxSnapshot(): OutboxItem[] {
+  return copy(getStore().outbox);
+}
