@@ -2,7 +2,6 @@ import { getCaseByCaseNumber } from "@/lib/store/case-store";
 import { getCommunity as getCommunityById } from "@/lib/store/community-store";
 import { toPublicCase } from "@/lib/schema/report";
 import { CaseView } from "@/components/case/CaseView";
-import { timelineOfficeNames } from "@/lib/guide/referral/route";
 import { CaseNotFound } from "@/components/case/CaseNotFound";
 import { CaseRemoved } from "@/components/case/CaseRemoved";
 
@@ -41,7 +40,9 @@ export default async function CasePage({
       communityDisplayName={community.displayName}
       isNew={isNewParam === "1"}
       managementToken={validManagementToken}
-      offices={timelineOfficeNames(community)}
+      // No office names reach a case page: the only entries that named an office (the earlier
+      // pipeline's) are never public now (public-timeline.ts).
+      offices={[]}
     />
   );
 }
