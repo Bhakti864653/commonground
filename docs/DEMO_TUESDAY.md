@@ -5,7 +5,7 @@ Moderator area: /admin (sign in with Google)
 
 ## 1. One-minute explanation
 
-CommonGround has five AI agents.
+CommonGround has five AI agents, plus an office side.
 They only suggest. A human moderator approves everything.
 Nothing ever leaves the system: it's a student demo.
 
@@ -38,6 +38,13 @@ A daily scheduled job finds cases that stopped moving.
 It drafts a reminder, a public update in 7 languages,
 and a suggestion to raise the priority.
 It also drafts a weekly community summary.
+
+Step 5 – Offices (demo only).
+The referral arrives in the office's inbox.
+The office marks it Received, In progress, Resolved,
+or "Not our department", which sends it back for re-routing.
+A moderator confirms before a case closes.
+The real office portal is built but switched off.
 
 A Critic Agent checks every output first.
 Every step is saved in an audit log.
@@ -97,8 +104,38 @@ Part C – the moderator side (about 5 minutes)
 29. Open /cases/SV-2026-0001 to show the new public update.
 30. On any case, open "Agent timeline / audit log".
 
+Part D – the office side (about 4 minutes)
+31. Click "Demo office" at the top of /admin.
+32. Point out the red banner:
+    "Simulated office – demo only, not a real government office."
+33. Say: real offices would use this same screen,
+    but the real portal is switched OFF.
+34. Pick "Street lighting and electricity".
+35. On SV-2026-0001 click "Mark received",
+    then "Mark in progress".
+36. Write a public note, e.g.
+    "Cambiaremos la luminaria esta semana."
+    Keep "Public note" selected. Click "Add note".
+37. Open /admin/cases/SV-2026-0001 (moderator view).
+38. Show the note card: the AI translated it
+    into all 7 languages. The Critic checked it.
+39. Click "Publish on the case page".
+40. Open /cases/SV-2026-0001 (public page).
+41. Show the timeline: "received", "working on it",
+    the note, each labelled "Simulated office".
+42. Back in Demo office, click "Mark resolved".
+43. In the moderator view, show the card
+    "says the problem is resolved".
+    Click "Confirm and close the case".
+44. Optional: pick "Drainage and flooding",
+    open SV-2026-0003, click "Not our department…",
+    type a reason, and send it back.
+    The Routing Agent proposes another office,
+    and a moderator approves it.
+
 After the demo:
-31. Go to Pipeline and click "Reset demo" again.
+45. Go to Pipeline and click "Reset demo" again.
+    It also resets the simulated office side.
 
 ## 3. Honest limitations
 
@@ -124,6 +161,12 @@ After the demo:
 - The weekly summary covers the whole community,
   including real cases. "Reset demo" doesn't reset it.
 - The first scheduled run is at 8:00 Panama time.
+- The real office portal is built but OFF.
+  No real office has an account or has seen anything.
+  docs/GO_LIVE_CHECKLIST.md lists what must happen first.
+- Office notes are written in Spanish; the AI translates them.
+  A moderator checks the translations before publishing.
+- The demo office is only for moderators (sign-in needed).
 
 ## 4. Questions he might ask
 
@@ -148,7 +191,7 @@ A: Offices must come from the config list.
 
 Q: How do you test AI code without calling the API?
 A: A fake Groq client returns scripted tool calls.
-   639 tests run with no network.
+   661 tests run with no network.
    I also ran it once against the real model.
 
 Q: What happens if Groq is down or rate-limited?
@@ -171,3 +214,16 @@ Q: Where is the data stored?
 A: Postgres on Neon, with Row Level Security on.
    Tests use the same code on an in-memory store
    and on PGlite (a real Postgres in the test).
+
+Q: How do you stop one office seeing another's cases?
+A: Every office query filters by that office's id,
+   and every action checks it again.
+   Offices get a separate data type with only public fields.
+   Tests try to read another office's referral by its id
+   and must fail.
+
+Q: Why is the office portal off?
+A: There's no agreement with the mayor's office yet.
+   It needs real contacts, real accounts and a privacy review.
+   A flag keeps it off, and the server checks the flag
+   on every office request, not just in the UI.

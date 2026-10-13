@@ -54,6 +54,17 @@ fit, `routing-rules.ts`), that an emergency stays urgent, which duplicates are r
 are overdue (`schedule.ts`: urgent 2, high 4, medium 7, low 14 days), and every fact in an
 outgoing message.
 
+## The office side (switched off)
+
+When a moderator approves a referral, besides the dry-run outbox it becomes an office referral
+(`src/lib/office/`, tables from migration 0008). Offices act through `OfficeReferralView` only;
+every query filters by office id, and the real portal and the simulated demo office can never
+see each other's cases (`office.test.ts`). Office status changes are public timeline steps
+(actor `office`; shown as "Simulated office" on example cases) and audit entries; the
+Follow-up Agent skips cases an office resolved or declined and flags stalled ones. The real
+portal stays off behind `OFFICE_PORTAL_ENABLED` (`flag.test.ts`); see
+[GO_LIVE_CHECKLIST.md](GO_LIVE_CHECKLIST.md).
+
 ## Configuration
 
 - Offices: `src/data/referral-offices.ts`.

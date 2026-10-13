@@ -138,6 +138,15 @@ language.
   always passed as untrusted data, never instructions (prompt-injection tests included). Every
   step lands in a private **audit log / agent timeline** on the case, and `/admin/pipeline` shows
   cases by stage, the outbox, pending suggestions and overdue cases.
+- **The office side — built, but switched off.** Approved referrals arrive in the responsible
+  office's inbox inside CommonGround. Offices mark them Received → In progress → Resolved (a
+  moderator confirms before the case closes) or "Not our department" (with a reason; the Routing
+  Agent re-routes, excluding that office), and add public notes (AI-translated into 7 languages,
+  published only after a moderator approves) or private notes for moderators. Office accounts
+  are invite-only, and each office only ever sees its own referrals. The real portal (`/office`)
+  stays off behind `OFFICE_PORTAL_ENABLED` until the steps in
+  [`docs/GO_LIVE_CHECKLIST.md`](docs/GO_LIVE_CHECKLIST.md) are done; moderators can show it at
+  `/demo/office` with a clearly labelled simulated office and example cases only.
 
 ## Stack
 
