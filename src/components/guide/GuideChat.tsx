@@ -197,6 +197,7 @@ export function GuideChat() {
           className="flex flex-wrap gap-2.5"
         >
           <input
+            data-demo="guide-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             aria-label={t.heading[language]}

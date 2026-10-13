@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { CommunityProvider } from "@/lib/community/context";
 import { DemoBanner } from "@/components/layout/DemoBanner";
+import { DemoGuide } from "@/components/demo-guide/DemoGuide";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { THEME_INIT_SCRIPT } from "@/lib/theme/theme";
 
@@ -42,6 +43,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <LanguageProvider>
             <DemoBanner />
             {children}
+            {/* Moderators only: renders nothing unless the server confirms a signed-in moderator. */}
+            <DemoGuide />
           </LanguageProvider>
         </CommunityProvider>
       </body>

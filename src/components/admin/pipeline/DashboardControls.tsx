@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { approveWeeklySummaryAction, rejectProposalAction, resetDemoAction, runFollowUpNowAction } from "@/lib/pipeline/actions";
+import { approveWeeklySummaryAction, rejectProposalAction, resetDemoAction, runDemoFollowUpNowAction, runFollowUpNowAction } from "@/lib/pipeline/actions";
 import type { FollowUpRunReport, PipelineResult } from "@/lib/pipeline/pipeline";
 import type { Proposal } from "@/lib/pipeline/types";
+import { setGuideState, useGuideState } from "@/lib/demo-guide/store";
 import { CritiqueView, FailureNote, SourceBadge } from "./bits";
 
 /** "Run follow-up now": the daily cron's run, on demand, so the demo doesn't wait a day. */
-export function RunFollowUpButton() {
+export function RunFollowUpButton({ onlyExamples = false }: { onlyExamples?: boolean }) {
   const router = useRouter();
   const [running, setRunning] = useState(false);
   const [report, setReport] = useState<FollowUpRunReport | null>(null);
@@ -22,16 +23,17 @@ export function RunFollowUpButton() {
           setRunning(true);
           setError(null);
           try {
-            setReport(await runFollowUpNowAction());
+            setReport(await (onlyExamples ? runDemoFollowUpNowAction() : runFollowUpNowAction()));
           } catch {
             setError("The run didn't finish. Please try again in a minute.");
           }
           setRunning(false);
           router.refresh();
         }}
-        className="w-max rounded-md bg-teal px-4 py-2 text-sm font-semibold text-cream disabled:opacity-50"
+        data-demo={onlyExamples ? "run-follow-up-examples" : undefined}
+        className={`w-max max-w-full rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-50 ${onlyExamples ? "border border-teal text-teal" : "bg-teal text-cream"}`}
       >
-        {running ? "Follow-up Agent is working… (up to a minute)" : "Run follow-up now"}
+        {running ? "Follow-up Agent is working… (up to a minute)" : onlyExamples ? "Run follow-up now (example cases only)" : "Run follow-up now"}
       </button>
       {error && <p className="text-sm text-coral">{error}</p>}
       {report && (
@@ -141,6 +143,47 @@ export function ResetDemoButton() {
           {result.ok ? `✓ ${result.message}` : `✗ ${result.reason}`}
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * "Start demo": runs Reset demo (example cases only), then opens step 1 of the demo guide.
+ * If a guide was left part-way, also offers to resume it.
+ */
+export function StartDemoButton() {
+  const router = useRouter();
+  const guide = useGuideState();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setError(null);
+          try {
+            const reset = await resetDemoAction();
+            if (!reset.ok) throw new Error(reset.reason);
+            setGuideState({ active: true, step: 1 });
+            router.push("/guide");
+          } catch {
+            setError("Reset demo didn't finish, so the guide didn't start. Please try again.");
+          }
+          setBusy(false);
+        }}
+        className="rounded-md bg-[#f5c542] px-4 py-2 text-sm font-bold text-[#1d1d1b] disabled:opacity-50"
+      >
+        {busy ? "Resetting the example cases…" : "Start demo (resets the example cases)"}
+      </button>
+      {!guide.active && guide.step > 1 && (
+        <button type="button" onClick={() => setGuideState({ active: true, step: guide.step })} className="rounded-md border border-ink/15 px-3 py-2 text-sm font-medium text-ink">
+          Resume guide at step {guide.step}
+        </button>
+      )}
+      {error && <p className="w-full text-sm text-coral">{error}</p>}
     </div>
   );
 }

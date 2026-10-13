@@ -116,7 +116,7 @@ export function CaseView({
           </div>
 
           <h2 className="mt-11 text-[clamp(2.2rem,3.4vw,3.2rem)] text-ink">{f.timelineTitle[language]}</h2>
-          <ol className="ml-2 mt-7 border-l-2 border-[#b9cbb9] pl-[25px]">
+          <ol data-demo="public-timeline" className="ml-2 mt-7 border-l-2 border-[#b9cbb9] pl-[25px]">
             {events.map((event, i) => {
               const note = noteOf(event, language);
               const kind = event.kind ?? "status";

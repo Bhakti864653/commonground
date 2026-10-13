@@ -315,3 +315,23 @@ input:-webkit-autofill:focus {
     top: 6.5rem;
   }
 }
+
+/* Demo guide (moderators only): the element the current step is about. */
+.demo-highlight {
+  outline: 3px solid #f5c542;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 7px rgb(245 197 66 / 0.35);
+  border-radius: 10px;
+  animation: demo-glow 1.4s ease-in-out infinite;
+  scroll-margin: 6rem;
+}
+@keyframes demo-glow {
+  50% {
+    box-shadow: 0 0 0 12px rgb(245 197 66 / 0.12);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-highlight {
+    animation: none;
+  }
+}

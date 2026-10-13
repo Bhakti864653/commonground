@@ -110,6 +110,7 @@ export function PipelinePanel({ caseNumber, stage, state, proposals, outbox, aud
       {routing && <RoutingCard proposal={routing} caseNumber={caseNumber} offices={offices} busy={busy} run={run} officeName={officeName} />}
       {referral && <ReferralCardNew proposal={referral} busy={busy} run={run} officeName={officeName} />}
       {followUp && <FollowUpCard proposal={followUp} busy={busy} run={run} />}
+      <div data-demo="office-decisions" className={resolution || officeNoteProposals.length ? "flex flex-col gap-4" : "hidden"}>
       {resolution && (
         <CardShell title={`${officeName(resolution.payload.officeId)} says the problem is resolved`} source="office">
           <p className="mt-2 text-sm text-ink">Confirm to close the case (residents see it as Closed), or send it back to the office as “In progress”.</p>
@@ -149,6 +150,7 @@ export function PipelinePanel({ caseNumber, stage, state, proposals, outbox, aud
           </div>
         </CardShell>
       ))}
+      </div>
 
       {officeReferrals.length > 0 && (
         <div>
@@ -204,7 +206,7 @@ export function PipelinePanel({ caseNumber, stage, state, proposals, outbox, aud
         )}
       </div>
 
-      <details>
+      <details data-demo="audit-log">
         <summary className="cursor-pointer text-sm font-semibold text-ink">Agent timeline / audit log ({audit.length})</summary>
         <p className="mt-1 text-xs text-slate">Every step: which agent did what, when and why, and what a moderator approved or changed. Private to moderators.</p>
         <div className="mt-3">
@@ -243,9 +245,9 @@ type CardProps<K extends Proposal["kind"]> = {
   run: (key: string, fn: () => Promise<PipelineResult>) => Promise<void>;
 };
 
-function CardShell({ title, source, children }: { title: string; source: Proposal["payload"]["source"]; children: React.ReactNode }) {
+function CardShell({ title, source, children, demo }: { title: string; source: Proposal["payload"]["source"]; children: React.ReactNode; demo?: string }) {
   return (
-    <div className="rounded-lg border border-teal/40 bg-cream p-3">
+    <div data-demo={demo} className="rounded-lg border border-teal/40 bg-cream p-3">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-semibold text-ink">{title}</h3>
         <SourceBadge source={source} />
@@ -270,7 +272,7 @@ function RoutingCard({
   const [language, setLanguage] = useState<Language>("en");
   const changed = officeId !== p.officeId || priority !== p.priority;
   return (
-    <CardShell title="Routing Agent suggests" source={p.source}>
+    <CardShell title="Routing Agent suggests" source={p.source} demo="routing-card">
       <p className="mt-2 text-sm text-ink">
         <span className="font-semibold">{officeName(p.officeId)}</span> — {p.reason}
       </p>
@@ -287,7 +289,7 @@ function RoutingCard({
         </p>
       )}
       {p.possibleDuplicates.length > 0 && (
-        <div className="mt-2 rounded-md border border-ink/10 p-2 text-xs">
+        <div data-demo="duplicates" className="mt-2 rounded-md border border-ink/10 p-2 text-xs">
           <p className="font-semibold text-ink">Possible duplicates nearby:</p>
           <ul className="mt-1 flex flex-col gap-1">
             {p.possibleDuplicates.map((d) => (
@@ -364,7 +366,7 @@ function ReferralCardNew({ proposal, busy, run, officeName }: CardProps<"referra
   const p = proposal.payload;
   const [message, setMessage] = useState(p.messageEs);
   return (
-    <CardShell title={`Referral Agent drafted a message to ${officeName(p.officeId)}`} source={p.source}>
+    <CardShell title={`Referral Agent drafted a message to ${officeName(p.officeId)}`} source={p.source} demo="referral-card">
       <p className="mt-1 text-xs text-slate">
         Facts added by code: open {p.facts.daysOpen} days · {p.facts.residentCount} resident(s) reported it · public link. Edit freely — the
         same checks run again when you approve.

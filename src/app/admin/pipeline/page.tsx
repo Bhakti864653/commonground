@@ -6,7 +6,7 @@ import { listCommunities } from "@/lib/store/community-store";
 import { PIPELINE_STAGES, STAGE_LABELS, type Proposal } from "@/lib/pipeline/types";
 import { isSendingEnabled } from "@/lib/pipeline/sending";
 import { AuditTimeline, OutboxItemView, PriorityBadge } from "@/components/admin/pipeline/bits";
-import { ResetDemoButton, RunFollowUpButton, SummaryCard } from "@/components/admin/pipeline/DashboardControls";
+import { ResetDemoButton, RunFollowUpButton, StartDemoButton, SummaryCard } from "@/components/admin/pipeline/DashboardControls";
 import { FOLLOW_UP_AFTER_DAYS } from "@/lib/pipeline/schedule";
 
 // "Run follow-up now" runs the Follow-up Agent (several Groq calls) inside this page's action.
@@ -43,13 +43,23 @@ export default async function PipelineDashboardPage() {
           Sending: <span className="font-semibold">{isSendingEnabled() ? "flag on, but there is no delivery channel — nothing is sent" : "OFF (demo mode)"}</span>. The outbox only
           shows what would be sent.
         </p>
+        <div className="rounded-lg border-2 border-[#f5c542] p-4">
+          <h2 className="text-sm font-semibold text-ink">Demo guide</h2>
+          <p className="mb-3 mt-1 text-xs text-slate">
+            A step-by-step guide through the whole loop (resident → agents → office → resident), shown only to you. It uses example cases only.
+          </p>
+          <StartDemoButton />
+        </div>
         <div className="rounded-lg border border-teal/40 bg-mint/10 p-4">
           <h2 className="text-sm font-semibold text-ink">Follow-up Agent</h2>
           <p className="mb-3 mt-1 text-xs text-slate">
             Runs every day on a schedule. It flags cases with no progress for {FOLLOW_UP_AFTER_DAYS.urgent} days (urgent), {FOLLOW_UP_AFTER_DAYS.high} (high),{" "}
             {FOLLOW_UP_AFTER_DAYS.medium} (medium) or {FOLLOW_UP_AFTER_DAYS.low} (low), drafts the weekly summary, and routes older cases that were never routed.
           </p>
-          <RunFollowUpButton />
+          <div className="flex flex-col gap-3">
+            <RunFollowUpButton />
+            <RunFollowUpButton onlyExamples />
+          </div>
         </div>
         <div className="rounded-lg border border-coral/30 p-4">
           <h2 className="text-sm font-semibold text-ink">Reset demo</h2>
@@ -61,7 +71,7 @@ export default async function PipelineDashboardPage() {
         </div>
       </section>
 
-      <section aria-labelledby="stages" className="flex flex-col gap-3">
+      <section aria-labelledby="stages" data-demo="pipeline-stages" className="flex flex-col gap-3">
         <h2 id="stages" className="text-sm font-semibold text-ink">
           Cases by stage
         </h2>

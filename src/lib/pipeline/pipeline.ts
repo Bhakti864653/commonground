@@ -308,7 +308,16 @@ function lastProgress(c: Case, state: CasePipelineState | undefined): string {
   return [c.createdAt, state?.lastProgressAt, ...statusTimes].filter((t): t is string => !!t).sort().at(-1)!;
 }
 
-export async function runFollowUp(trigger: "cron" | "manual", now = new Date()): Promise<FollowUpRunReport> {
+/**
+ * The Follow-up Agent's run. `onlyExamples` (the demo guide's "example cases only" button) limits
+ * it to the demonstration cases: no resident case is flagged or routed, and no community-wide
+ * weekly summary (which would count residents' cases) is drafted.
+ */
+export async function runFollowUp(
+  trigger: "cron" | "manual",
+  now = new Date(),
+  options: { onlyExamples?: boolean } = {},
+): Promise<FollowUpRunReport> {
   const started = Date.now();
   const outOfTime = () => Date.now() - started > TIME_BUDGET_MS;
   const report: FollowUpRunReport = { trigger, routedCatchUp: [], flagged: [], summaries: [], skippedForTime: 0, notes: [] };
@@ -316,7 +325,7 @@ export async function runFollowUp(trigger: "cron" | "manual", now = new Date()):
   if (!client) report.notes.push("The AI isn't configured: rule-based drafts only.");
   const actor = trigger === "cron" ? "scheduler (daily cron)" : "moderator (Run follow-up now)";
 
-  const cases = (await listAllCasesForAdmin()).filter((c) => !c.removal);
+  const cases = (await listAllCasesForAdmin()).filter((c) => !c.removal && (!options.onlyExamples || c.sourceType === "demonstration"));
   const states = new Map((await repo().listStates()).map((s) => [s.caseNumber, s]));
   const proposals = await repo().listProposals();
   const pendingFollowUp = new Set(proposals.filter((p) => p.kind === "follow_up" && p.status === "pending").map((p) => p.caseNumber));
@@ -360,9 +369,9 @@ export async function runFollowUp(trigger: "cron" | "manual", now = new Date()):
   }
   if (overdue.length > MAX_FOLLOW_UPS_PER_RUN) report.notes.push(`${overdue.length - MAX_FOLLOW_UPS_PER_RUN} more overdue cases wait for the next run.`);
 
-  // Weekly summary: once per community per week.
+  // Weekly summary: once per community per week (never in an example-only run).
   const weekStart = weekStartOf(now);
-  const communityIds = [...new Set(cases.map((c) => c.communityId))];
+  const communityIds = options.onlyExamples ? [] : [...new Set(cases.map((c) => c.communityId))];
   for (const communityId of communityIds) {
     if (outOfTime()) break;
     const already = proposals.some((p) => p.kind === "weekly_summary" && p.communityId === communityId && p.payload.weekStart === weekStart);

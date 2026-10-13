@@ -38,7 +38,7 @@ export function OfficeInbox({ mode, officeId, referrals }: { mode: "real" | "dem
     return <p className="rounded-lg border border-ink/10 p-4 text-sm text-slate">No referrals in this inbox.</p>;
   }
   return (
-    <ul className="flex flex-col gap-3">
+    <ul data-demo="office-inbox" className="flex flex-col gap-3">
       {referrals.map((r) => (
         <li key={r.id}>
           <ReferralCard mode={mode} officeId={officeId} referral={r} />
@@ -79,7 +79,7 @@ function ReferralCard({ mode, officeId, referral: r }: { mode: "real" | "demo"; 
 
   const next = NEXT_STATUSES[r.status];
   return (
-    <article className="rounded-lg border border-ink/15 bg-surface p-4 text-sm">
+    <article data-demo="office-card" className="rounded-lg border border-ink/15 bg-surface p-4 text-sm">
       <header className="flex flex-wrap items-center gap-2">
         <a href={r.publicUrl} target="_blank" rel="noopener noreferrer" className="text-base font-semibold text-teal underline">
           {r.caseNumber}

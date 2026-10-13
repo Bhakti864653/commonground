@@ -126,6 +126,12 @@ export async function runFollowUpNowAction(): Promise<FollowUpRunReport> {
   return runFollowUp("manual");
 }
 
+/** The same run, limited to the example cases (the demo guide uses it, so no resident case is touched). */
+export async function runDemoFollowUpNowAction(): Promise<FollowUpRunReport> {
+  await requireAdmin();
+  return runFollowUp("manual", new Date(), { onlyExamples: true });
+}
+
 /**
  * "Reset demo": puts only the eight example cases back to their starting state, so the demo can
  * be shown again. Resident cases are never touched (demo-reset.test.ts proves it).
