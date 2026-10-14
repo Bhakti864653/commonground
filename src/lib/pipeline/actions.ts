@@ -138,9 +138,15 @@ export async function runDemoFollowUpNowAction(): Promise<FollowUpRunReport> {
  */
 export async function resetDemoAction(): Promise<PipelineResult> {
   const actor = actorIdOf(await requireAdmin());
-  const { reset } = await resetDemo(actor);
+  const { reset, removed } = await resetDemo(actor);
   return reset.length
-    ? { ok: true, message: `Reset ${reset.length} example cases (${reset.join(", ")}). Resident cases were not touched.` }
+    ? {
+        ok: true,
+        message:
+          `Reset ${reset.length} example cases (${reset.join(", ")}).` +
+          (removed.length ? ` Deleted ${removed.length} demo case${removed.length === 1 ? "" : "s"} (${removed.join(", ")}).` : "") +
+          " Resident cases were not touched.",
+      }
     : { ok: false, reason: "No example cases were found." };
 }
 

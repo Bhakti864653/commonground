@@ -63,6 +63,20 @@ function seedDemoPipeline(store: State): void {
  * cases (state, proposals, outbox, audit) and writes their example history again. Records of any
  * other case are never touched.
  */
+/** Case numbers that carry the "created in demo mode" audit entry (demo-cases.ts). */
+export function demoCreatedCaseNumbersInMemory(action: string): Set<string> {
+  return new Set(getStore().audit.filter((a) => a.action === action && a.caseNumber).map((a) => a.caseNumber!));
+}
+
+/** Reset demo: drops every pipeline record of the given (already removed) demo-created cases. */
+export function removeCasesFromPipelineInMemory(caseNumbers: Set<string>): void {
+  const store = getStore();
+  for (const n of caseNumbers) store.states.delete(n);
+  store.proposals = store.proposals.filter((p) => !p.caseNumber || !caseNumbers.has(p.caseNumber));
+  store.outbox = store.outbox.filter((o) => !o.caseNumber || !caseNumbers.has(o.caseNumber));
+  store.audit = store.audit.filter((a) => !a.caseNumber || !caseNumbers.has(a.caseNumber));
+}
+
 export function resetDemoPipelineInMemory(demoCases: Case[]): void {
   const store = getStore();
   const numbers = new Set(demoCases.map((c) => c.publicCaseNumber));

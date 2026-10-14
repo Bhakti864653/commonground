@@ -4,7 +4,7 @@ import { createSqlCaseRepository } from "./sql-case-store";
 import { getSqlClient } from "@/lib/db/pool";
 import { getCommunity } from "./community-store";
 
-export type { NewCaseInput } from "./new-case";
+export type { CreateCaseOptions, NewCaseInput } from "./new-case";
 export type { CaseRepository } from "./case-repository";
 
 let sqlRepository: CaseRepository | null = null;

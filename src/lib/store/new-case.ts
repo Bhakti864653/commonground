@@ -13,6 +13,13 @@ export type NewCaseInput = {
 };
 
 /**
+ * Set only by the server (submitCase), never from the browser's input: a moderator in demo mode
+ * creates an EXAMPLE case, labelled "Ejemplo" publicly, that flows through the demo office and is
+ * deleted by Reset demo (see pipeline/demo-cases.ts).
+ */
+export type CreateCaseOptions = { demo?: boolean };
+
+/**
  * Checks a new submission and builds the case every store saves — everything except its public
  * number, which each store assigns its own way (an in-memory counter, or the database's
  * create_case function). Shared so both stores accept and reject exactly the same input.
@@ -23,6 +30,7 @@ export function prepareNewCase(
   input: NewCaseInput,
   createdAt: Date,
   community: CommunityConfig | undefined,
+  options: CreateCaseOptions = {},
 ): Omit<Case, "publicCaseNumber"> {
   if (!community) {
     throw new Error(`Unknown community: ${input.communityId}`);
@@ -47,6 +55,7 @@ export function prepareNewCase(
   }
 
   const nowIso = createdAt.toISOString();
+  const isExample = community.status === "demo" || options.demo === true;
   const candidate: Case = {
     id: crypto.randomUUID(),
     type: input.type,
@@ -58,8 +67,8 @@ export function prepareNewCase(
     createdAt: nowIso,
     status: "received",
     statusHistory: [{ id: crypto.randomUUID(), status: "received", occurredAt: nowIso, actorType: "system" }],
-    sourceType: community.status === "demo" ? "demonstration" : "community",
-    verificationState: community.status === "demo" ? "demonstration_data" : "community_report",
+    sourceType: isExample ? "demonstration" : "community",
+    verificationState: isExample ? "demonstration_data" : "community_report",
     image: input.image,
     consent: input.consent,
     adminNotes: [],

@@ -9,7 +9,7 @@ import type {
   VerificationState,
   VerifiedSource,
 } from "@/lib/schema/report";
-import type { NewCaseInput } from "./new-case";
+import type { CreateCaseOptions, NewCaseInput } from "./new-case";
 
 /** Every write takes an optional clock so tests can pin timestamps. */
 type Clock = () => Date;
@@ -25,7 +25,7 @@ type Clock = () => Date;
  * that way too), so every change has to go through one of the write methods below.
  */
 export interface CaseRepository {
-  createCase(input: NewCaseInput, now?: Clock): Promise<Case>;
+  createCase(input: NewCaseInput, now?: Clock, options?: CreateCaseOptions): Promise<Case>;
   getCaseByCaseNumber(publicCaseNumber: string): Promise<Case | undefined>;
   listCasesForCommunity(communityId: string): Promise<Case[]>;
   listAllCasesForAdmin(): Promise<Case[]>;

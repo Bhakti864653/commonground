@@ -134,6 +134,13 @@ export function backfillMemoryOfficeReferrals(onlyCases?: Set<string>): void {
 }
 
 /** Reset demo, office half: drops these example cases' office referrals and notes, then re-delivers them. */
+/** Reset demo: drops the office referrals and notes of the given (already removed) demo-created cases. */
+export function removeCasesFromOfficeInMemory(caseNumbers: Set<string>): void {
+  const store = getStore();
+  store.referrals = store.referrals.filter((r) => !caseNumbers.has(r.caseNumber));
+  store.notes = store.notes.filter((n) => !caseNumbers.has(n.caseNumber));
+}
+
 export function resetDemoOfficeInMemory(caseNumbers: Set<string>): void {
   const store = getStore();
   store.referrals = store.referrals.filter((r) => !caseNumbers.has(r.caseNumber));

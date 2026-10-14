@@ -5,6 +5,7 @@ import { publicCaseUrl } from "@/lib/site-url";
 import { DEMO_PIPELINE_RECORDS, materializeDemoPipeline } from "./demo-pipeline-records";
 import { BACKFILL_OFFICE_REFERRALS_SQL } from "@/lib/office/store/sql-office-store";
 import { movePrivateTimelineStatements } from "@/lib/schema/public-timeline";
+import { DEMO_CASE_CREATED_ACTION } from "../demo-cases";
 
 /**
  * "Reset demo" on Postgres, in ONE transaction (all or nothing). Selects only cases that are
@@ -14,8 +15,21 @@ import { movePrivateTimelineStatements } from "@/lib/schema/public-timeline";
  * notes, flags, old-style suggestions, and its pipeline state, proposals, outbox and audit log.
  * Every DELETE is limited to those case ids/numbers, so no other case can be touched.
  */
-export async function resetDemoCasesSql(db: SqlClient, now: Date = new Date()): Promise<string[]> {
+export async function resetDemoCasesSql(db: SqlClient, now: Date = new Date()): Promise<{ reset: string[]; removed: string[] }> {
   return db.transaction(async (tx) => {
+    // First, delete the cases created in demo mode: ONLY example (demonstration) cases that carry
+    // the "created in demo mode" audit entry. Every table that points at a case is
+    // "on delete cascade", so their timeline, pipeline, outbox, audit and office rows go too.
+    // A resident's case is source_type 'community', so it can never match.
+    const removedRows = await tx.query<{ case_number: string }>(
+      `delete from public.cases c
+       where c.source_type = 'demonstration'
+         and exists (select 1 from public.agent_audit a where a.case_number = c.case_number and a.action = $1)
+       returning c.case_number`,
+      [DEMO_CASE_CREATED_ACTION],
+    );
+    const removed = removedRows.rows.map((r) => r.case_number).sort();
+
     const { rows } = await tx.query<{ id: string; case_number: string; description: string; management_token: string }>(
       `select id, case_number, description, management_token from public.cases
        where source_type = 'demonstration' and community_id = $1 and deleted_at is null and description = any($2::text[])
@@ -26,7 +40,7 @@ export async function resetDemoCasesSql(db: SqlClient, now: Date = new Date()): 
     const byDescription = new Map<string, (typeof rows)[number]>();
     for (const r of rows) if (!byDescription.has(r.description)) byDescription.set(r.description, r);
     const targets = [...byDescription.values()];
-    if (targets.length === 0) return [];
+    if (targets.length === 0) return { reset: [], removed };
     const ids = targets.map((t) => t.id);
     const numbers = targets.map((t) => t.case_number);
 
@@ -118,6 +132,6 @@ export async function resetDemoCasesSql(db: SqlClient, now: Date = new Date()): 
     await tx.query(`${BACKFILL_OFFICE_REFERRALS_SQL} and o.case_number = any($1::text[])`, [numbers]);
     // Entries residents may not see go to the private audit log, as everywhere else (migration 0009).
     for (const statement of movePrivateTimelineStatements(true)) await tx.query(statement, [numbers]);
-    return numbers;
+    return { reset: numbers, removed };
   });
 }

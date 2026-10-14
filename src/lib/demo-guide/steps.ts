@@ -13,7 +13,7 @@ import "server-only";
  */
 
 /** The number of automated tests (npm test), stated on the closing screen. Update it when it changes. */
-export const TEST_COUNT = 696;
+export const TEST_COUNT = 704;
 
 export type DemoStep = {
   n: number;

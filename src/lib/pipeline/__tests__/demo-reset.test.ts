@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import { fromPglite } from "@/lib/db/sql-client";
-import { memoryCaseRepository, getCaseByCaseNumber as memoryCase, resetDemoCasesInMemory } from "@/lib/store/memory-case-store";
+import { memoryCaseRepository, getCaseByCaseNumber as memoryCase, removeExampleCasesInMemory, resetDemoCasesInMemory } from "@/lib/store/memory-case-store";
 import { createSqlCaseRepository } from "@/lib/store/sql-case-store";
 import { getCommunity as getMemoryCommunity } from "@/lib/store/memory-community-store";
 import type { CaseRepository } from "@/lib/store/case-repository";
@@ -13,12 +13,13 @@ import { buildConsentRecord } from "@/lib/privacy/consent";
 import { SANTIAGO_VERAGUAS } from "@/data/communities";
 import { DEMO_CASE_SEEDS } from "@/lib/store/demo-seed";
 import type { Case } from "@/lib/schema/report";
-import { memoryPipelineRepository, resetDemoPipelineInMemory } from "../store/memory-pipeline-store";
+import { demoCreatedCaseNumbersInMemory, memoryPipelineRepository, removeCasesFromPipelineInMemory, resetDemoPipelineInMemory } from "../store/memory-pipeline-store";
+import { DEMO_CASE_CREATED_ACTION } from "../demo-cases";
 import { createSqlPipelineRepository } from "../store/sql-pipeline-store";
 import { resetDemoCasesSql } from "../store/sql-demo-reset";
 import type { PipelineRepository } from "../store/pipeline-repository";
 import type { OfficeRepository } from "@/lib/office/store/office-repository";
-import { memoryOfficeRepository, resetDemoOfficeInMemory } from "@/lib/office/store/memory-office-store";
+import { memoryOfficeRepository, removeCasesFromOfficeInMemory, resetDemoOfficeInMemory } from "@/lib/office/store/memory-office-store";
 import { createSqlOfficeRepository } from "@/lib/office/store/sql-office-store";
 
 /**
@@ -43,7 +44,7 @@ type Harness = {
   cases: () => CaseRepository;
   pipeline: () => PipelineRepository;
   office: () => OfficeRepository;
-  reset: (now: Date) => Promise<string[]>;
+  reset: (now: Date) => Promise<{ reset: string[]; removed: string[] }>;
 };
 
 let pg: PGlite;
@@ -63,10 +64,14 @@ const harnesses: Harness[] = [
     pipeline: () => memoryPipelineRepository,
     office: () => memoryOfficeRepository,
     reset: async (now) => {
+      // The same steps resetDemo takes without a database.
+      const removed = removeExampleCasesInMemory(demoCreatedCaseNumbersInMemory(DEMO_CASE_CREATED_ACTION)).sort();
+      removeCasesFromPipelineInMemory(new Set(removed));
+      removeCasesFromOfficeInMemory(new Set(removed));
       const reset = resetDemoCasesInMemory(now);
       resetDemoPipelineInMemory(reset.map((n) => memoryCase(n)).filter((c): c is Case => !!c));
       resetDemoOfficeInMemory(new Set(reset));
-      return reset;
+      return { reset, removed };
     },
   },
   {
@@ -129,6 +134,9 @@ describe.each(harnesses)("Reset demo: $name", (h) => {
   let demoNumbers: string[];
   let realNumber: string;
   let seededDemo: unknown[];
+  let demoCreatedNumber: string;
+  let unmarkedExampleNumber: string;
+  let firstRemoved: string[];
 
   beforeAll(async () => {
     await h.setup();
@@ -168,6 +176,35 @@ describe.each(harnesses)("Reset demo: $name", (h) => {
     await h.office().setStatus(realReferral.id, "lighting", "in_progress", undefined);
     await h.office().addNote({ referralId: realReferral.id, caseNumber: realNumber, officeId: "lighting", kind: "private", text: "real office note", author: "staff" });
 
+    // A report a moderator submitted in demo mode: an example case with the "created in demo mode"
+    // audit entry, which went all the way through the pipeline and the simulated office.
+    const demoInput = {
+      type: "report" as const,
+      communityId: SANTIAGO_VERAGUAS.id,
+      categoryId: DEMO_CASE_SEEDS[0].categoryId,
+      description: "Reporte de prueba en modo demo: basura en la calle central.",
+      approximateArea: buildApproximateArea(SANTIAGO_VERAGUAS.areas[0]),
+      consent: buildConsentRecord(SANTIAGO_VERAGUAS.privacy.consentVersion, "es"),
+    };
+    const demoCreated = await h.cases().createCase(demoInput, undefined, { demo: true });
+    demoCreatedNumber = demoCreated.publicCaseNumber;
+    expect(demoCreated.sourceType).toBe("demonstration");
+    expect(demoCreated.verificationState).toBe("demonstration_data");
+    await h.pipeline().addAudit({ caseNumber: demoCreatedNumber, communityId: SANTIAGO_VERAGUAS.id, actorType: "moderator", actor: "mod", action: DEMO_CASE_CREATED_ACTION, summary: "demo" });
+    await h.cases().changeCaseStatus(demoCreatedNumber, "closed", "mod");
+    await h.pipeline().upsertState(demoCreatedNumber, SANTIAGO_VERAGUAS.id, { officeId: "sanitation", priority: "medium" });
+    await h.pipeline().addProposal({
+      kind: "routing",
+      caseNumber: demoCreatedNumber,
+      communityId: SANTIAGO_VERAGUAS.id,
+      payload: { officeId: "sanitation", reason: "r", priority: "medium", priorityReason: "p", confidence: 0.9, alternativeOfficeIds: [], needsModeratorDecision: false, possibleDuplicates: [], injectionSuspected: false, source: "ai" },
+    });
+    const demoOutbox = await h.pipeline().addOutboxItem({ caseNumber: demoCreatedNumber, communityId: SANTIAGO_VERAGUAS.id, officeId: "sanitation", kind: "referral", toLabel: "x", toAddress: "x@example.invalid", subject: "s", bodyEs: "b", approvedBy: "mod" });
+    const demoReferral = await h.office().createReferral({ caseNumber: demoCreatedNumber, communityId: SANTIAGO_VERAGUAS.id, officeId: "sanitation", isDemo: true, outboxId: demoOutbox.id });
+    await h.office().addNote({ referralId: demoReferral.id, caseNumber: demoCreatedNumber, officeId: "sanitation", kind: "public", text: "demo office note", author: "demo" });
+    // An example case WITHOUT that audit entry: Reset must never delete it.
+    unmarkedExampleNumber = (await h.cases().createCase({ ...demoInput, description: "Otro caso de ejemplo, sin la marca de modo demo." }, undefined, { demo: true })).publicCaseNumber;
+
     // A moderator "uses up" the demo: approvals, status changes, merges, notes, flags.
     await h.cases().changeCaseStatus(demoNumbers[0], "closed", "mod");
     await h.cases().markDuplicate(demoNumbers[1], demoNumbers[0], "mod");
@@ -196,10 +233,28 @@ describe.each(harnesses)("Reset demo: $name", (h) => {
     expect(before.office).toHaveLength(1);
     expect(before.officeNotes).toHaveLength(1);
 
-    const reset = await h.reset(new Date(NOW.getTime() + 60_000));
+    const { reset, removed } = await h.reset(new Date(NOW.getTime() + 60_000));
+    firstRemoved = removed;
 
     expect(reset).not.toContain(realNumber);
+    expect(removed).not.toContain(realNumber);
     expect(await snapshot(h, realNumber, false)).toEqual(before);
+  });
+
+  it("deletes the case created in demo mode, with everything attached to it", async () => {
+    expect(firstRemoved).toEqual([demoCreatedNumber]);
+    expect(await h.cases().getCaseByCaseNumber(demoCreatedNumber)).toBeUndefined();
+    expect(await h.pipeline().getState(demoCreatedNumber)).toBeUndefined();
+    expect(await h.pipeline().listProposals({ caseNumber: demoCreatedNumber })).toEqual([]);
+    expect(await h.pipeline().listOutbox({ caseNumber: demoCreatedNumber })).toEqual([]);
+    expect(await h.pipeline().listAudit({ caseNumber: demoCreatedNumber })).toEqual([]);
+    expect(await h.office().listForCase(demoCreatedNumber)).toEqual([]);
+    expect(await h.office().listNotesForCase(demoCreatedNumber)).toEqual([]);
+    expect((await h.office().listForOffice("sanitation", true)).map((r) => r.caseNumber)).not.toContain(demoCreatedNumber);
+  });
+
+  it("never deletes an example case that wasn't created in demo mode", async () => {
+    expect((await h.cases().getCaseByCaseNumber(unmarkedExampleNumber))?.sourceType).toBe("demonstration");
   });
 
   it("puts every example case back to its starting state", async () => {
@@ -208,7 +263,8 @@ describe.each(harnesses)("Reset demo: $name", (h) => {
   });
 
   it("resets exactly the eight example cases, and can run again", async () => {
-    const again = await h.reset(new Date(NOW.getTime() + 120_000));
+    const { reset: again, removed } = await h.reset(new Date(NOW.getTime() + 120_000));
+    expect(removed).toEqual([]);
     expect([...again].sort()).toEqual([...demoNumbers].sort());
     expect(await Promise.all(demoNumbers.map((n) => snapshot(h, n, true)))).toEqual(seededDemo);
   });

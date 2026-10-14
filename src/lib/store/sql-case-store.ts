@@ -170,9 +170,9 @@ export function createSqlCaseRepository(
     loadCases(db, "community_id = $1 and deleted_at is null and removal is null", [communityId]);
 
   return {
-    async createCase(input, now = defaultClock) {
+    async createCase(input, now = defaultClock, options = {}) {
       const createdAt = now();
-      const prepared = prepareNewCase(input, createdAt, await getCommunity(input.communityId));
+      const prepared = prepareNewCase(input, createdAt, await getCommunity(input.communityId), options);
       const { rows } = await db.query<{ case_number: string }>(
         `select case_number from public.create_case(
            $1, $2, $3, $4, $5, $6::jsonb, $7::timestamptz, $8, $9, $10::jsonb, $11::jsonb, $12)`,

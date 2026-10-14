@@ -15,7 +15,7 @@ import {
   type VerificationState,
   type VerifiedSource,
 } from "@/lib/schema/report";
-import { prepareNewCase, type NewCaseInput } from "./new-case";
+import { prepareNewCase, type CreateCaseOptions, type NewCaseInput } from "./new-case";
 import { getCommunity as getMemoryCommunity } from "./memory-community-store";
 
 export type { NewCaseInput } from "./new-case";
@@ -83,6 +83,17 @@ export function resetDemoCasesInMemory(now: Date = new Date()): string[] {
   return reset;
 }
 
+/**
+ * Reset demo: deletes the given cases, but only ones that are example (demonstration) data — a
+ * resident's case is never removed here, whatever number is passed. Returns what was removed.
+ */
+export function removeExampleCasesInMemory(caseNumbers: Set<string>): string[] {
+  const store = getStore();
+  const removed = store.cases.filter((c) => caseNumbers.has(c.publicCaseNumber) && c.sourceType === "demonstration").map((c) => c.publicCaseNumber);
+  store.cases = store.cases.filter((c) => !(caseNumbers.has(c.publicCaseNumber) && c.sourceType === "demonstration"));
+  return removed;
+}
+
 function nextSequence(store: CaseStoreState, communityId: string, year: number): number {
   const key = `${communityId}:${year}`;
   const next = (store.sequencesByCommunityYear[key] ?? 0) + 1;
@@ -90,9 +101,9 @@ function nextSequence(store: CaseStoreState, communityId: string, year: number):
   return next;
 }
 
-export function createCase(input: NewCaseInput, now: () => Date = () => new Date()): Case {
+export function createCase(input: NewCaseInput, now: () => Date = () => new Date(), options: CreateCaseOptions = {}): Case {
   const createdAt = now();
-  const prepared = prepareNewCase(input, createdAt, getMemoryCommunity(input.communityId));
+  const prepared = prepareNewCase(input, createdAt, getMemoryCommunity(input.communityId), options);
   const store = getStore();
   const year = createdAt.getUTCFullYear();
   const created: Case = {
@@ -516,7 +527,7 @@ const copy = <T>(value: T): T => structuredClone(value);
  * async, with every returned case copied.
  */
 export const memoryCaseRepository: CaseRepository = {
-  createCase: async (input, now) => copy(createCase(input, now)),
+  createCase: async (input, now, options) => copy(createCase(input, now, options)),
   getCaseByCaseNumber: async (n) => copy(getCaseByCaseNumber(n)),
   listCasesForCommunity: async (id) => copy(listCasesForCommunity(id)),
   listAllCasesForAdmin: async () => copy(listAllCasesForAdmin()),

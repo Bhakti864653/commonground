@@ -1,7 +1,7 @@
 # CommonGround – technical cheat sheet
 
 Everything here comes from the code
-(checked 2026-10-13, 696 tests).
+(checked 2026-10-13, 704 tests).
 
 ---
 
@@ -131,7 +131,7 @@ Why:
 - **Google sign-in**: for moderators only.
   Residents never need an account.
 - **Vitest + Testing Library + jsdom**:
-  696 automated tests.
+  704 automated tests.
 - **PGlite**: real Postgres in the tests,
   to test the SQL code.
 - **ESLint**: code style checks.
@@ -236,6 +236,19 @@ Why:
 - Every step goes in an audit log: who,
   what, when, why.
 
+### Demo mode
+- A moderator who is signed in AND has
+  the demo guide on creates EXAMPLE
+  cases, labelled "Ejemplo", so a live
+  demo can use the simulated office.
+- The server checks both. The demo
+  cookie alone is not enough, so a
+  resident's report can never become an
+  example.
+- Reset demo deletes only example cases
+  marked "created in demo mode" in the
+  audit log.
+
 ### Nothing is sent outside
 - There is no email, SMS, WhatsApp or
   HTTP sending code anywhere.
@@ -293,7 +306,7 @@ without "my name is". That's why a
 moderator reads every case.
 
 **6. How did you test the AI parts?**
-696 tests, with a fake Groq client, so
+704 tests, with a fake Groq client, so
 tests never call the real AI. Network
 calls are blocked. Postgres runs in the
 tests (PGlite), and there's a separate

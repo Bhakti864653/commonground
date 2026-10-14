@@ -3,8 +3,10 @@
 For someone who knows nothing about
 CommonGround. Start on the public
 homepage and only click, never type a
-link. The public side is in Spanish;
-the moderator side is in English.
+link. You submit ONE new report and
+follow it through the whole loop, live.
+The public side is in Spanish; the
+moderator side is in English.
 
 ## Prep (before your cousin watches)
 - Open /admin. Sign in with Google.
@@ -12,10 +14,14 @@ the moderator side is in English.
 - In "Demo tools", click "Start demo
   (resets the example cases)".
 - When the demo guide opens, click
-  "Hide". Leave it on: while it's on,
-  real residents' reports are hidden on
-  the moderator side.
-- In a new tab, open
+  "Hide". Leave it on: this is
+  DEMO MODE. While it's on:
+  - a report YOU submit becomes an
+    example case ("Ejemplo"), so it can
+    go to the Demo office;
+  - real residents' reports are hidden
+    on the moderator side.
+- In a new tab (same browser), open
   https://commonground-psi.vercel.app
 - Top right: change "English" to
   "Español". From now on, only click
@@ -36,166 +42,146 @@ the moderator side is in English.
 
 2. How it works
    Click: "Ver cómo funciona" (bottom).
-   What: the process in 4 steps.
    Say: "You choose your community,
    describe the problem, get a case
    number, and follow it."
 
 3. The map
    Click: "Inicio" (left menu).
-   What: the community map.
-   Point: the numbered markers sit in
-   whole areas, never on a house.
+   Point: numbered markers sit in whole
+   areas, never on a house.
    Say: "Locations are always
    approximate, to protect people."
 
 4. The cases
    Click: "Explorar casos" (left menu).
-   What: every public case, with filters.
-   Click the case "Hay un poste de luz
-   dañado frente a la escuela primaria"
-   (SV-2026-0001). Never open
+   Click any example case, e.g. "Hay un
+   poste de luz dañado frente a la
+   escuela primaria". Never open
    SV-2026-0011 or SV-2026-0012.
-   Point: its number, status, timeline.
    Say: "Every report gets a number and a
-   public history. Remember this one:
-   we'll come back to it."
+   public history."
 
-5. The Guide
+5. An emergency (optional, first)
    Click: "La Guía" (left menu).
-   What: an AI helper for residents.
-   Type: Hay basura en la calle,
-         mi teléfono es 6123-4567.
-   Click "Enviar". Answer its questions.
-   Ask it to prepare the report.
-   Show: the draft has a title and
-   urgency, and no phone number.
-   Click "Descartar borrador".
-   Say: "A resident just talks. The AI
-   asks only what it needs and removes
-   personal details."
-
-6. An emergency
    Type: Hay un cable caído y una
          persona herida.
    Show: the instant 911 message.
    Say: "Emergencies are caught by rules
    before any AI runs."
 
-## Part 2 – To the moderator side
+6. Report a problem with the Guide
+   Same page.
+   Type: Hay basura acumulada en la calle
+         del área central, mi teléfono
+         es 6123-4567.
+   Click "Enviar". Answer its questions
+   (area, since when). Ask it to prepare
+   the report.
+   Show: the draft has a title and
+   urgency, and NO phone number.
+   Tick the consent box, click
+   "Confirmar y enviar".
+   Write down the case number it shows
+   (e.g. SV-2026-0013).
+   Say: "A resident just talks. The AI
+   asks only what it needs, removes
+   personal details, and nothing is sent
+   until they confirm."
+
+## Part 2 – The moderator side
 
 7. Moderation
-   Click: "Moderación" (last item in the
-   left menu; on a phone, in the bottom
-   bar).
-   What: the private side for moderators.
-   You're already signed in, so you see
-   "All cases" (the yellow note says
-   residents' reports are hidden).
+   Click: "Moderación" (left menu).
+   You're signed in, so you see
+   "All cases". Click "Home".
    Say: "Moderators sign in with Google.
    Residents never need an account."
-   Click: "Home" (top menu).
 
-8. Home
-   What: what needs a moderator today.
-   Point: "What needs your attention",
-   "Cases by step", "Sending: OFF".
-   Say: "Agents only suggest. A person
-   approves every step. Nothing is sent."
+8. Your report arrived
+   In "What needs your attention", find
+   YOUR case number: "Routing Agent
+   suggests …". (Not there yet? Wait
+   ~15 s, then click "Home" again.)
+   Say: "As soon as it was submitted, the
+   Routing Agent looked at it."
+   Click: "Review" next to it.
 
 9. Routing
-   Click: "Review" next to
-   SV-2026-0007 ("not sure, needs you").
    Point: step bar at "Drafted", the
-   Next action, Suggests / Why, "The
-   agent isn't sure", Second check.
-   Pick an office, click "Approve with
-   my changes". Wait ~10 s.
-   Say: "When two offices fit, it asks a
-   human instead of guessing."
+   Next action, Suggests / Why, Second
+   check.
+   Click "Approve" (or "Change" to pick
+   another office, then "Approve with my
+   changes"). Wait ~10 s.
+   Remember which office you approved.
+   Say: "The agent only suggests. I
+   decide."
 
-10. The message → outbox
+10. The letter → outbox
     Same page. Next action: "Review the
     message to the office".
-    Click "Change", change one word,
-    click "Approve with my changes".
+    Show the formal letter (Suggests) and
+    the facts code added (Why).
+    Click "Approve".
     Open the item under "Outbox for this
     case": "Ready to send – demo mode
     (not sent)".
     Say: "The outbox is a dry run. There
     is no sending code."
 
-11. A duplicate
-    Click: "← Back to Pipeline".
-    Click "Review" next to SV-2026-0002.
-    Show "Possible duplicate" and
-    "Merge into SV-2026-0001". Don't
-    click it.
-    Say: "Two neighbors reported the same
-    streetlight."
-
-12. Follow-up
-    Click: "← Back to Pipeline".
-    In "Demo tools", click "Run follow-up
-    now (example cases only)". Wait.
-    Show "Flagged 1 overdue case".
-    Say: "This runs every morning by
-    itself."
-
-13. History
-    Scroll up. Click "Review" next to
-    SV-2026-0001 ("Follow-up Agent").
-    Show the card (don't approve).
-    Open "History: everything agents and
-    people did".
-    Say: "Every step is logged."
-
 ## Part 3 – The office
 
-14. The office's inbox
+11. The office's inbox
     Click: "Demo office" (top menu).
-    What: a pretend city office.
+    Click the tab of the office you
+    approved (e.g. "Sanitation and
+    garbage collection").
     Point: the red "Simulated office"
-    banner, SV-2026-0001 ("New").
+    banner and YOUR case ("New").
     Say: "This is what a city office would
     see. The real portal is switched off."
 
-15. The office acts
-    On SV-2026-0001: "Mark received",
+12. The office acts
+    On your case: "Mark received", then
     "Mark in progress". Keep "Public
     note", type:
-    Cambiaremos la luminaria esta semana.
+    Recogeremos la basura esta semana.
     Click "Add note". Wait ~10 s.
     Click "Mark resolved".
     Say: "An office only sees its own
     cases."
 
-16. A person confirms
+13. A person confirms
     Click: "← Back to Pipeline".
-    Click "Review" next to SV-2026-0001
+    Click "Review" next to your case
     ("The office says it's fixed").
     Check the 7 translations, click
     "Approve and publish", then
     "Approve and close the case".
+    Step bar: "Closed".
     Say: "An office can say it's fixed,
     but a person closes the case."
 
 ## Part 4 – Back to the resident
 
-17. The resident sees it
+14. The resident sees it
     Same page, top: click "Open the
     public case page →".
-    Scroll the timeline: received, in
+    Show: "Ejemplo – no es un reporte
+    real", and the timeline: received, in
     progress, the note, resolved, Closed.
     Say: "Report → agents → office → back
     to the resident."
 
-18. Closing lines
+15. Closing lines
     (see step 13 of the guide below)
 
 ## After the tour
 - Click "Moderación" → "Home" →
-  "Reset demo" (two clicks).
+  "Reset demo" (two clicks). It resets
+  the examples AND deletes the report
+  you made.
 - Click "Show" on the demo guide, then
   "Exit guide".
 
@@ -371,7 +357,7 @@ Never open SV-2026-0011 or SV-2026-0012.
       approves every step. No sending code.
       Personal details are removed.
       Real cases show only statuses.
-    - 696 automated tests, including ones
+    - 704 automated tests, including ones
       that block the network.
     - After my flyers, two real residents
       sent reports.

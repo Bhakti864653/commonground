@@ -20,6 +20,23 @@ import { after } from "next/server";
 import { runIntake } from "@/lib/pipeline/pipeline";
 import { redactPersonalInfo, type PiiKind } from "@/lib/pipeline/redact";
 import { getPublishedSummary } from "@/lib/pipeline/pipeline";
+import { getCurrentModerator } from "@/lib/admin/auth";
+import { isDemoGuideOn } from "@/lib/demo-guide/demo-mode";
+import { getPipelineRepository } from "@/lib/pipeline/store";
+import { DEMO_CASE_CREATED_ACTION, DEMO_CASE_CREATED_SUMMARY } from "@/lib/pipeline/demo-cases";
+
+/**
+ * The signed-in moderator, when demo mode is on (the demo guide's cookie); otherwise null. Fails
+ * safe: if either check can't run, the report is simply a normal resident report.
+ */
+async function demoModeModerator() {
+  try {
+    const moderator = await getCurrentModerator();
+    return moderator && (await isDemoGuideOn()) ? moderator : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Only `publicCaseNumber` + `managementToken` (+ what the privacy filter removed) — the wizard
@@ -37,7 +54,21 @@ export async function submitCase(
   const language = isLanguage(input?.consent?.language) ? input.consent.language : "es";
   const redaction =
     typeof input?.description === "string" ? redactPersonalInfo(input.description, language) : { text: input?.description, found: [] };
-  const created = await createCase({ ...input, description: redaction.text });
+  // Demo mode: a signed-in moderator with the demo guide on creates an EXAMPLE case (labelled
+  // "Ejemplo", deleted by Reset demo). Both checks run on the server; the cookie alone (which
+  // anyone could set) is not enough, so a resident's report always stays a resident's report.
+  const moderator = await demoModeModerator();
+  const created = await createCase({ ...input, description: redaction.text }, undefined, { demo: moderator !== null });
+  if (moderator) {
+    await getPipelineRepository().addAudit({
+      caseNumber: created.publicCaseNumber,
+      communityId: created.communityId,
+      actorType: "moderator",
+      actor: moderator.email ?? moderator.name,
+      action: DEMO_CASE_CREATED_ACTION,
+      summary: DEMO_CASE_CREATED_SUMMARY,
+    });
+  }
   const title = typeof intake?.title === "string" && intake.title.trim() ? redactPersonalInfo(intake.title.trim().slice(0, 120), language).text : undefined;
   // The agentic pipeline (Routing Agent + Critic, several Groq calls) runs after the response,
   // so the resident gets their case number immediately. It never throws by design; the catch
