@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import Link from "next/link";
+import { publicCaseHref } from "./AdminNav";
 import { useRouter } from "next/navigation";
 import {
   adminAddNote,
@@ -108,9 +108,9 @@ export function ModerationPanel({
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h1 className="text-xl font-semibold text-ink">{caseData.publicCaseNumber}</h1>
           {/* What residents see for this case: the way back to the public side, by clicking. */}
-          <Link href={`/cases/${caseData.publicCaseNumber}`} data-demo="public-case-link" className="text-sm font-semibold text-teal underline">
+          <a href={publicCaseHref(caseData.publicCaseNumber)} data-demo="public-case-link" className="text-sm font-semibold text-teal underline">
             Open the public case page →
-          </Link>
+          </a>
         </div>
         <p className="mt-1 text-sm text-ink/80">{categoryLabel}</p>
         <p className="mt-2 whitespace-pre-wrap text-sm text-ink/80">{caseData.description}</p>

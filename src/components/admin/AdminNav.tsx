@@ -3,6 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+/** The public homepage, in Spanish (the pilot's language). */
+export const PUBLIC_SITE_HREF = "/?lang=es";
+
+/** A case's public page, as its resident sees it, in Spanish. */
+export const publicCaseHref = (caseNumber: string) => `/cases/${caseNumber}?lang=es`;
+
 /** The four places a moderator goes. Everything else lives under Settings. */
 export const ADMIN_NAV = [
   { href: "/admin/pipeline", label: "Home", matches: (p: string) => p === "/admin/pipeline" },
@@ -32,6 +38,10 @@ export function AdminNav() {
           </Link>
         );
       })}
+      {/* A full page load (not a client navigation), so the public site starts in Spanish. */}
+      <a href={PUBLIC_SITE_HREF} className="rounded-full border border-teal px-3 py-1.5 text-teal hover:bg-mint">
+        View public site →
+      </a>
     </nav>
   );
 }

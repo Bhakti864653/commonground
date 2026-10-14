@@ -3,6 +3,7 @@ import { isAdminAuthenticated } from "@/lib/admin/auth";
 import { REFERRAL_OFFICES, getReferralOffice } from "@/data/referral-offices";
 import { demoOfficeInboxAction } from "@/lib/office/actions";
 import { OfficeInbox } from "@/components/office/OfficeInbox";
+import { PUBLIC_SITE_HREF } from "@/components/admin/AdminNav";
 
 // Moderator-only, per request: always rendered on demand, never prerendered.
 export const dynamic = "force-dynamic";
@@ -43,9 +44,14 @@ export default async function DemoOfficePage({ searchParams }: { searchParams: P
           <p className="text-xs text-slate">Demo office: a pretend city office, so you can show the other side. Not a real office.</p>
           <h1 className="text-xl font-semibold">{getReferralOffice(officeId)?.name}</h1>
         </div>
-        <Link href="/admin/pipeline" className="text-sm font-semibold text-teal underline">
-          ← Back to Pipeline
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link href="/admin/pipeline" className="text-sm font-semibold text-teal underline">
+            ← Back to Pipeline
+          </Link>
+          <a href={PUBLIC_SITE_HREF} className="rounded-full border border-teal px-3 py-1 text-sm font-semibold text-teal">
+            View public site →
+          </a>
+        </div>
       </div>
       <nav aria-label="Act as office" className="flex flex-wrap gap-2 text-sm">
         {REFERRAL_OFFICES.map((o) => {

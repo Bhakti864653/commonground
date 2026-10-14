@@ -23,6 +23,7 @@ import type { PipelineStage, AuditEntry, OutboxItem, Critique, OutputSource } fr
 import type { PipelineResult } from "@/lib/pipeline/pipeline";
 import { CARD_IDS, displayStepOf, nextActionFor } from "@/lib/pipeline/display";
 import { PipelineBar } from "./PipelineBar";
+import { publicCaseHref } from "../AdminNav";
 import { AuditTimeline, CritiqueView, FailureNote, OutboxItemView, PriorityBadge, SourceBadge } from "./bits";
 
 export type OfficeOption = { id: string; name: string };
@@ -162,6 +163,16 @@ export function PipelinePanel({ caseNumber, stage, state, proposals, outbox, aud
       </div>
 
       <ResultNote result={result} />
+
+      {closed && (
+        <a
+          href={publicCaseHref(caseNumber)}
+          data-demo="resident-view"
+          className="w-max max-w-full rounded-lg bg-ink px-5 py-3 text-base font-bold text-cream hover:bg-ink/85"
+        >
+          See what the resident sees →
+        </a>
+      )}
 
       <div data-demo="office-decisions" className={resolution || officeNoteProposals.length ? "flex flex-col gap-4" : "hidden"}>
         {resolution && (

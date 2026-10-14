@@ -112,6 +112,15 @@ describe("the case page: step bar and one next action", () => {
     expect(screen.getByRole("link", { name: /Review the follow-up/ })).toHaveAttribute("href", "#card-follow-up");
   });
 
+  it("once a case is closed, a big button shows what the resident sees (in Spanish)", async () => {
+    const p = await getCasePipeline("SV-2026-0001");
+    const open = render(<PipelinePanel caseNumber="SV-2026-0001" stage={p.stage} state={p.state} proposals={p.proposals} outbox={p.outbox} audit={p.audit} offices={offices} />);
+    expect(screen.queryByRole("link", { name: "See what the resident sees →" })).toBeNull();
+    open.unmount();
+    render(<PipelinePanel caseNumber="SV-2026-0001" stage={p.stage} state={p.state} proposals={p.proposals} outbox={p.outbox} audit={p.audit} offices={offices} closed />);
+    expect(screen.getByRole("link", { name: "See what the resident sees →" })).toHaveAttribute("href", "/cases/SV-2026-0001?lang=es");
+  });
+
   it("a closed case shows every step done and Closed", () => {
     render(<PipelineBar step="follow_up" closed />);
     const items = within(screen.getByRole("list", { name: "Case progress" })).getAllByRole("listitem");
@@ -173,7 +182,7 @@ describe("the way back to the public side", () => {
   it("the moderator case page links to what residents see for that case", async () => {
     const c = (await getCaseByCaseNumber("SV-2026-0001"))!;
     render(<ModerationPanel caseData={c} communityDisplayName="Santiago de Veraguas" categoryLabel="Road" />);
-    expect(screen.getByRole("link", { name: "Open the public case page →" })).toHaveAttribute("href", "/cases/SV-2026-0001");
+    expect(screen.getByRole("link", { name: "Open the public case page →" })).toHaveAttribute("href", "/cases/SV-2026-0001?lang=es");
   });
 });
 
@@ -226,7 +235,9 @@ describe("navigation", () => {
     pathname = "/admin/cases/SV-2026-0001";
     render(<AdminNav />);
     const nav = screen.getByRole("navigation", { name: "Admin" });
-    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Home", "All cases", "Demo office", "Settings"]);
+    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Home", "All cases", "Demo office", "Settings", "View public site →"]);
+    // The public homepage, in Spanish.
+    expect(within(nav).getByRole("link", { name: "View public site →" })).toHaveAttribute("href", "/?lang=es");
     expect(within(nav).getByRole("link", { name: "All cases" })).toHaveAttribute("aria-current", "page");
     expect(within(nav).getByRole("link", { name: "Home" })).toHaveAttribute("href", "/admin/pipeline");
   });

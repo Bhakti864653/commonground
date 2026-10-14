@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState, useSyncExterna
 import { COMMUNITIES } from "@/data/communities";
 import { pickBrowserLanguage, resolveInitialLanguage } from "./resolve-initial-language";
 import type { Language } from "./dictionary";
-import { htmlLang } from "./languages";
+import { htmlLang, isLanguage } from "./languages";
 
 const DEFAULT_LANGUAGE: Language = resolveInitialLanguage(COMMUNITIES[0]);
 
@@ -19,8 +19,17 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 // subscribe to; useSyncExternalStore is used only so the server render (null) and the first
 // client render agree, with the browser's language applied right after hydration.
 const subscribeNever = () => () => {};
+/**
+ * A link can choose the language: "/?lang=es" opens in Spanish (the moderator's "View public site"
+ * link uses it). Read once, when the page loads, so it then stays while the visitor clicks around.
+ */
+export function languageFromUrl(search: string): Language | null {
+  const value = new URLSearchParams(search).get("lang");
+  return value && isLanguage(value) ? value : null;
+}
+const LANGUAGE_FROM_LINK = typeof window === "undefined" ? null : languageFromUrl(window.location.search);
 const readBrowserLanguage = () =>
-  pickBrowserLanguage(typeof navigator === "undefined" ? [] : (navigator.languages ?? [navigator.language]));
+  LANGUAGE_FROM_LINK ?? pickBrowserLanguage(typeof navigator === "undefined" ? [] : (navigator.languages ?? [navigator.language]));
 const serverBrowserLanguage = () => null;
 
 /**

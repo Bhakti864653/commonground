@@ -1,7 +1,7 @@
 # CommonGround – technical cheat sheet
 
 Everything here comes from the code
-(checked 2026-10-13, 705 tests).
+(checked 2026-10-13, 708 tests).
 
 ---
 
@@ -131,7 +131,7 @@ Why:
 - **Google sign-in**: for moderators only.
   Residents never need an account.
 - **Vitest + Testing Library + jsdom**:
-  705 automated tests.
+  708 automated tests.
 - **PGlite**: real Postgres in the tests,
   to test the SQL code.
 - **ESLint**: code style checks.
@@ -305,7 +305,7 @@ without "my name is". That's why a
 moderator reads every case.
 
 **6. How did you test the AI parts?**
-705 tests, with a fake Groq client, so
+708 tests, with a fake Groq client, so
 tests never call the real AI. Network
 calls are blocked. Postgres runs in the
 tests (PGlite), and there's a separate
