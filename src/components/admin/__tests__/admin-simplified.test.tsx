@@ -178,6 +178,41 @@ describe("the way back to the public side", () => {
 });
 
 describe("Home's counts use the same five steps", () => {
+  it("shows nothing about a deleted case (its records stay, so it can be restored)", async () => {
+    const { createCase, deleteCase } = await import("@/lib/store/case-store");
+    const { getPipelineRepository } = await import("@/lib/pipeline/store");
+    const { buildApproximateArea } = await import("@/lib/privacy/approximate-area");
+    const { buildConsentRecord } = await import("@/lib/privacy/consent");
+    const { SANTIAGO_VERAGUAS } = await import("@/data/communities");
+    const c = await createCase({
+      type: "report",
+      communityId: SANTIAGO_VERAGUAS.id,
+      categoryId: "road-infrastructure",
+      description: "Grieta enorme en la calle.",
+      approximateArea: buildApproximateArea(SANTIAGO_VERAGUAS.areas[0]),
+      consent: buildConsentRecord(SANTIAGO_VERAGUAS.privacy.consentVersion, "es"),
+    });
+    const n = c.publicCaseNumber;
+    await getPipelineRepository().addProposal({
+      kind: "routing",
+      caseNumber: n,
+      communityId: SANTIAGO_VERAGUAS.id,
+      payload: { officeId: "public-works", reason: "r", priority: "medium", priorityReason: "p", confidence: 0.9, alternativeOfficeIds: [], needsModeratorDecision: false, possibleDuplicates: [], injectionSuspected: false, source: "ai" },
+    });
+    await getPipelineRepository().addOutboxItem({ caseNumber: n, communityId: SANTIAGO_VERAGUAS.id, officeId: "public-works", kind: "referral", toLabel: "x", toAddress: "x@example.invalid", subject: "s", bodyEs: "b", approvedBy: "mod" });
+    const before = await getPipelineDashboard();
+    expect(before.pending.map((p) => p.caseNumber)).toContain(n);
+    expect(before.outbox.map((o) => o.caseNumber)).toContain(n);
+
+    expect(await deleteCase(n, c.managementToken)).toBe(true);
+    const after = await getPipelineDashboard();
+    expect(after.rows.map((r) => r.caseNumber)).not.toContain(n);
+    expect(after.pending.map((p) => p.caseNumber)).not.toContain(n);
+    expect(after.outbox.map((o) => o.caseNumber)).not.toContain(n);
+    expect(after.recentAudit.map((a) => a.caseNumber)).not.toContain(n);
+    expect(await getPipelineRepository().listProposals({ caseNumber: n })).toHaveLength(1);
+  });
+
   it("puts each example case on its step", async () => {
     const { rows } = await getPipelineDashboard();
     const step = (n: string) => rows.find((r) => r.caseNumber === n)?.displayStep;

@@ -382,7 +382,7 @@ Never open SV-2026-0011 or SV-2026-0012.
       approves every step. No sending code.
       Personal details are removed.
       Real cases show only statuses.
-    - 704 automated tests, including ones
+    - 705 automated tests, including ones
       that block the network.
     - After my flyers, two real residents
       sent reports.

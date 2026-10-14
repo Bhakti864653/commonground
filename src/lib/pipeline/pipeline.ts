@@ -515,13 +515,17 @@ export async function getPipelineDashboard(now = new Date()) {
     ),
     now,
   );
+  // A deleted case (the resident deleted it, or it was deleted for them) leaves its pipeline
+  // records in place, so it can be restored — but nothing about it shows on the dashboard.
+  const listed = new Set(cases.map((c) => c.publicCaseNumber));
+  const isListed = (caseNumber?: string) => caseNumber === undefined || listed.has(caseNumber);
   return {
     rows,
-    pending: proposals.filter((p) => p.status === "pending"),
+    pending: proposals.filter((p) => p.status === "pending" && isListed(p.caseNumber)),
     publishedSummaries: proposals.filter((p) => p.kind === "weekly_summary" && p.status === "approved"),
-    outbox,
+    outbox: outbox.filter((o) => isListed(o.caseNumber)),
     overdue,
-    recentAudit,
+    recentAudit: recentAudit.filter((a) => isListed(a.caseNumber)),
   };
 }
 
