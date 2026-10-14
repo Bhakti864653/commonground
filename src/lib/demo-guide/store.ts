@@ -8,7 +8,8 @@ import { useSyncExternalStore } from "react";
  */
 export type GuideState = { active: boolean; step: number };
 
-const KEY = "cg-demo-guide";
+// v2: a guide left on by an earlier version stays closed until it's opened again.
+const KEY = "cg-demo-guide-v2";
 const OFF: GuideState = { active: false, step: 1 };
 const listeners = new Set<() => void>();
 let cache: GuideState | null = null;
@@ -47,7 +48,7 @@ function subscribe(listener: () => void): () => void {
  * moderator screens (demo-mode.ts), so a recording only ever shows example cases. It only hides
  * things from this browser's own view; it can never reveal anything.
  */
-export const DEMO_GUIDE_COOKIE = "cg_demo_guide";
+export const DEMO_GUIDE_COOKIE = "cg_demo_guide_v2";
 
 function setGuideCookie(on: boolean): void {
   try {

@@ -2,7 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 
 /** Same name as DEMO_GUIDE_COOKIE in store.ts (a client module, so not imported here). */
-const COOKIE = "cg_demo_guide";
+const COOKIE = "cg_demo_guide_v2";
 
 /**
  * True while this moderator has the demo guide on (store.ts sets the cookie). The moderator

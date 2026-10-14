@@ -83,6 +83,16 @@ describe("the demo guide is for moderators only", () => {
     expect(screen.queryByRole("complementary", { name: "Demo guide" })).toBeNull();
   });
 
+  it("stays closed for a moderator unless they open it (a guide left on by the old version is ignored)", async () => {
+    isAdminAuthenticated.mockResolvedValue(true);
+    setGuideState({ active: false, step: 1 });
+    window.localStorage.setItem("cg-demo-guide", JSON.stringify({ active: true, step: 4 }));
+    window.dispatchEvent(new StorageEvent("storage", { key: "cg-demo-guide" }));
+    const { container } = render(<DemoGuide />);
+    await act(async () => {});
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it("shows a moderator one step at a time", async () => {
     isAdminAuthenticated.mockResolvedValue(true);
     setGuideState({ active: true, step: 3 });

@@ -8,7 +8,7 @@ let client: Groq | null = null;
 vi.mock("@/lib/guide/groq-client", () => ({ GUIDE_MODEL: "test-model", getGroqClient: () => client }));
 vi.mock("@/lib/admin/auth", () => ({ isAdminAuthenticated: async () => true }));
 let cookieValue: string | undefined;
-vi.mock("next/headers", () => ({ cookies: async () => ({ get: (name: string) => (name === "cg_demo_guide" && cookieValue ? { value: cookieValue } : undefined) }) }));
+vi.mock("next/headers", () => ({ cookies: async () => ({ get: (name: string) => (name === "cg_demo_guide_v2" && cookieValue ? { value: cookieValue } : undefined) }) }));
 vi.mock("@/lib/pipeline/actions", async () => {
   const { getPipelineDashboard } = await import("@/lib/pipeline/pipeline");
   const stub = async () => ({ ok: true });
@@ -72,9 +72,9 @@ beforeEach(async () => {
 describe("while the demo guide is on, moderator screens show example cases only", () => {
   it("starting the guide sets the cookie, and exiting clears it", () => {
     setGuideState({ active: true, step: 1 });
-    expect(document.cookie).toContain("cg_demo_guide=1");
+    expect(document.cookie).toContain("cg_demo_guide_v2=1");
     setGuideState({ active: false, step: 4 });
-    expect(document.cookie).not.toContain("cg_demo_guide=1");
+    expect(document.cookie).not.toContain("cg_demo_guide_v2=1");
   });
 
   it("Home shows a resident's report normally, and hides it (saying so) during the demo", async () => {

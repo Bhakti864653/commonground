@@ -7,7 +7,7 @@ vi.mock("next/server", async (importOriginal) => ({ ...(await importOriginal<obj
 let moderator: { email: string; name: string; role: "moderator"; via: "google" } | null = null;
 vi.mock("@/lib/admin/auth", () => ({ getCurrentModerator: async () => moderator, isAdminAuthenticated: async () => !!moderator }));
 let demoCookie = false;
-vi.mock("next/headers", () => ({ cookies: async () => ({ get: (name: string) => (name === "cg_demo_guide" && demoCookie ? { value: "1" } : undefined) }) }));
+vi.mock("next/headers", () => ({ cookies: async () => ({ get: (name: string) => (name === "cg_demo_guide_v2" && demoCookie ? { value: "1" } : undefined) }) }));
 let client: Groq | null = null;
 vi.mock("@/lib/guide/groq-client", () => ({ GUIDE_MODEL: "test-model", getGroqClient: () => client }));
 
@@ -51,7 +51,7 @@ beforeEach(() => {
   client = fakeGroq({ ...DEFAULT_HANDLERS, recordTranslation: () => ALL_LANGS("x") }).client;
 });
 
-describe("who creates an example case", () => {
+describe("who creates a test (example) report", () => {
   it("a resident never does, even with the demo cookie set", async () => {
     demoCookie = true;
     const { publicCaseNumber } = await submitCase(report("Hay basura en la calle central."));
@@ -61,16 +61,8 @@ describe("who creates an example case", () => {
     expect(await marked(publicCaseNumber)).toBe(false);
   });
 
-  it("a signed-in moderator without the demo guide on creates a normal case", async () => {
+  it("a signed-in moderator creates a test report: an example case, labelled “Ejemplo” — no guide or cookie needed", async () => {
     moderator = { email: "mod@example.com", name: "Mod", role: "moderator", via: "google" };
-    const { publicCaseNumber } = await submitCase(report("Hay basura en la calle central."));
-    expect((await getCaseByCaseNumber(publicCaseNumber))!.sourceType).toBe("community");
-    expect(await marked(publicCaseNumber)).toBe(false);
-  });
-
-  it("a signed-in moderator with the demo guide on creates an example case, labelled “Ejemplo”", async () => {
-    moderator = { email: "mod@example.com", name: "Mod", role: "moderator", via: "google" };
-    demoCookie = true;
     const { publicCaseNumber } = await submitCase(report("Hay basura en la calle central."));
     const c = (await getCaseByCaseNumber(publicCaseNumber))!;
     expect(c.sourceType).toBe("demonstration");
@@ -89,9 +81,8 @@ describe("one demo report goes through the whole loop, and Reset demo deletes it
     await runAfterTasks();
     const realBefore = JSON.stringify(await getCaseByCaseNumber(real));
 
-    // 1. The moderator, in demo mode, submits a report from the public page.
+    // 1. The signed-in moderator submits a report from the public page.
     moderator = { email: "mod@example.com", name: "Mod", role: "moderator", via: "google" };
-    demoCookie = true;
     const demo = (await submitCase(report("Hay basura en la calle central desde hace una semana."))).publicCaseNumber;
     await runAfterTasks();
 

@@ -126,7 +126,7 @@ export function ResetDemoButton() {
               }}
               className="rounded-md bg-coral px-3 py-1.5 text-sm font-semibold text-cream disabled:opacity-50"
             >
-              {busy ? "Resetting…" : "Yes, reset the 8 example cases"}
+              {busy ? "Resetting…" : "Yes: delete my test reports and reset the examples"}
             </button>
             <button type="button" disabled={busy} onClick={() => setConfirming(false)} className="rounded-md border border-ink/15 px-3 py-1.5 text-sm font-medium text-ink">
               Cancel
@@ -148,7 +148,8 @@ export function ResetDemoButton() {
 }
 
 /**
- * "Start demo": runs Reset demo (example cases only), then opens step 1 of the demo guide.
+ * "Open the demo guide": runs Reset demo (example cases only), then opens step 1 of the guide.
+ * The guide never appears unless a moderator opens it here.
  * If a guide was left part-way, also offers to resume it.
  */
 export function StartDemoButton() {
@@ -176,7 +177,7 @@ export function StartDemoButton() {
         }}
         className="rounded-md bg-[#f5c542] px-4 py-2 text-sm font-bold text-[#1d1d1b] disabled:opacity-50"
       >
-        {busy ? "Resetting the example cases…" : "Start demo (resets the example cases)"}
+        {busy ? "Resetting the example cases…" : "Open the demo guide (resets the example cases)"}
       </button>
       {!guide.active && guide.step > 1 && (
         <button type="button" onClick={() => setGuideState({ active: true, step: guide.step })} className="rounded-md border border-ink/15 px-3 py-2 text-sm font-medium text-ink">

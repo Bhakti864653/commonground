@@ -1,3 +1,28 @@
+# Simple demo (use this)
+
+Stay signed in at /admin in the same
+browser. Any report you submit is then a
+TEST report: labelled "Ejemplo", it goes
+all the way to the Demo office. No guide
+box, nothing to switch on.
+
+1. Public site → "La Guía": describe a
+   problem → "Confirmar y enviar". Note
+   the case number.
+2. "Moderación" → "Home" → "Review" on
+   your case → "Approve", then "Approve"
+   the letter.
+3. "Demo office" → your office's tab →
+   "Mark received" → "Mark in progress"
+   → "Mark resolved".
+4. "← Back to Pipeline" → "Review" →
+   "Approve and close the case" → "Open
+   the public case page →".
+5. Afterwards: "Home" → "Reset demo"
+   deletes your test reports.
+
+---
+
 # Tour from zero (click-by-click)
 
 For someone who knows nothing about

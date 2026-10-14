@@ -21,18 +21,16 @@ import { runIntake } from "@/lib/pipeline/pipeline";
 import { redactPersonalInfo, type PiiKind } from "@/lib/pipeline/redact";
 import { getPublishedSummary } from "@/lib/pipeline/pipeline";
 import { getCurrentModerator } from "@/lib/admin/auth";
-import { isDemoGuideOn } from "@/lib/demo-guide/demo-mode";
 import { getPipelineRepository } from "@/lib/pipeline/store";
 import { DEMO_CASE_CREATED_ACTION, DEMO_CASE_CREATED_SUMMARY } from "@/lib/pipeline/demo-cases";
 
 /**
- * The signed-in moderator, when demo mode is on (the demo guide's cookie); otherwise null. Fails
- * safe: if either check can't run, the report is simply a normal resident report.
+ * The signed-in moderator submitting this report, or null for everyone else. Fails safe: if the
+ * check can't run, the report is simply a normal resident report.
  */
-async function demoModeModerator() {
+async function submittingModerator() {
   try {
-    const moderator = await getCurrentModerator();
-    return moderator && (await isDemoGuideOn()) ? moderator : null;
+    return await getCurrentModerator();
   } catch {
     return null;
   }
@@ -54,10 +52,10 @@ export async function submitCase(
   const language = isLanguage(input?.consent?.language) ? input.consent.language : "es";
   const redaction =
     typeof input?.description === "string" ? redactPersonalInfo(input.description, language) : { text: input?.description, found: [] };
-  // Demo mode: a signed-in moderator with the demo guide on creates an EXAMPLE case (labelled
-  // "Ejemplo", deleted by Reset demo). Both checks run on the server; the cookie alone (which
-  // anyone could set) is not enough, so a resident's report always stays a resident's report.
-  const moderator = await demoModeModerator();
+  // A report from a signed-in moderator is a TEST report: an example case (labelled "Ejemplo",
+  // reaches the demo office, deleted by Reset demo). The check is the moderator's server-side
+  // session, so a resident's report always stays a resident's report.
+  const moderator = await submittingModerator();
   const created = await createCase({ ...input, description: redaction.text }, undefined, { demo: moderator !== null });
   if (moderator) {
     await getPipelineRepository().addAudit({

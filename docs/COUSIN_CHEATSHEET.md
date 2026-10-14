@@ -236,18 +236,17 @@ Why:
 - Every step goes in an audit log: who,
   what, when, why.
 
-### Demo mode
-- A moderator who is signed in AND has
-  the demo guide on creates EXAMPLE
-  cases, labelled "Ejemplo", so a live
-  demo can use the simulated office.
-- The server checks both. The demo
-  cookie alone is not enough, so a
-  resident's report can never become an
-  example.
+### Test reports
+- A report from a signed-in moderator is
+  a TEST report: an example case,
+  labelled "Ejemplo", so a live demo can
+  use the simulated office.
+- The server checks the moderator's
+  session, so a resident's report can
+  never become an example.
 - Reset demo deletes only example cases
-  marked "created in demo mode" in the
-  audit log.
+  marked as test reports in the audit
+  log.
 
 ### Nothing is sent outside
 - There is no email, SMS, WhatsApp or

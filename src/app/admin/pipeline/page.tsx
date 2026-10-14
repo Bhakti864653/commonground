@@ -179,19 +179,22 @@ export default async function PipelineDashboardPage() {
           <h2 id="demo-tools" className="text-sm font-semibold text-ink">
             Demo tools
           </h2>
-          <p className="mt-1 text-xs text-slate">These only ever touch the 8 example cases (SV-2026-0001 to 0008). Resident reports are never changed.</p>
-        </div>
-        <div className="flex flex-col gap-1">
-          <p className="text-xs text-slate">Start demo: resets the example cases and opens the step-by-step guide (only you see it).</p>
-          <StartDemoButton />
+          <p className="mt-1 text-xs text-slate">
+            Reports you submit while signed in here are test reports: labelled “Ejemplo”, they go all the way to the Demo office. These tools only
+            ever touch example cases and your test reports. Residents’ reports are never changed.
+          </p>
         </div>
         <div className="flex flex-col gap-1">
           <p className="text-xs text-slate">Run follow-up now: the Follow-up Agent normally runs every morning by itself. This runs it now, on example cases only.</p>
           <RunFollowUpButton onlyExamples />
         </div>
         <div className="flex flex-col gap-1">
-          <p className="text-xs text-slate">Reset demo: puts the example cases back to the start, for another run or recording.</p>
+          <p className="text-xs text-slate">Reset demo: deletes your test reports and puts the example cases back to the start.</p>
           <ResetDemoButton />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-slate">Optional: a step-by-step guide box that only you see.</p>
+          <StartDemoButton />
         </div>
       </section>
 
