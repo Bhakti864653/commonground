@@ -6,7 +6,7 @@ import { approveWeeklySummaryAction, rejectProposalAction, resetDemoAction, runD
 import type { FollowUpRunReport, PipelineResult } from "@/lib/pipeline/pipeline";
 import type { Proposal } from "@/lib/pipeline/types";
 import { setGuideState, useGuideState } from "@/lib/demo-guide/store";
-import { CritiqueView, FailureNote, SourceBadge } from "./bits";
+import { CritiqueView, FailureNote, MadeBy, SourceBadge, WaitingForHuman } from "./bits";
 
 /** "Run follow-up now": the daily cron's run, on demand, so the demo doesn't wait a day. */
 export function RunFollowUpButton({ onlyExamples = false }: { onlyExamples?: boolean }) {
@@ -69,10 +69,17 @@ export function SummaryCard({ proposal, areaName }: { proposal: Extract<Proposal
   };
   return (
     <div className="rounded-lg border border-teal/40 bg-cream p-3 text-sm">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <MadeBy text="Drafted by the Summary Agent" />
+        <WaitingForHuman />
+      </div>
+      <div className="mt-1.5 flex flex-wrap items-center gap-2">
         <h3 className="font-semibold text-ink">Weekly summary · week of {p.weekStart}</h3>
         <SourceBadge source={p.source} />
       </div>
+      <p className="mt-1 text-xs text-ink/85">
+        <span className="font-semibold text-slate">Why:</span> drafted every week from the case counts. Nothing is published until you approve.
+      </p>
       <ul className="mt-2 grid grid-cols-1 gap-1 text-ink sm:grid-cols-3">
         <li>New cases: {p.newCases}</li>
         <li>Resolved: {p.resolvedCases}</li>

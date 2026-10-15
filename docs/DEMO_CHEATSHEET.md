@@ -125,8 +125,9 @@ moderator side is in English.
 
 8. Your report arrived
    In "What needs your attention", find
-   YOUR case number: "Routing Agent
-   suggests …". (Not there yet? Wait
+   YOUR case number: "Suggested by the
+   Routing Agent", "Waiting for human
+   approval". (Not there yet? Wait
    ~15 s, then click "Home" again.)
    Say: "As soon as it was submitted, the
    Routing Agent looked at it."
@@ -134,19 +135,25 @@ moderator side is in English.
 
 9. Routing
    Point: step bar at "Drafted", the
-   Next action, Suggests / Why, Second
-   check.
+   Next action, "Suggested by the
+   Routing Agent", "Waiting for human
+   approval", Suggests / Why /
+   Confidence, "Checked by the Critic
+   Agent".
    Click "Approve" (or "Change" to pick
    another office, then "Approve with my
    changes"). Wait ~10 s.
+   Show "Decisions on this case":
+   "✓ Approved by moderator · (today)".
    Remember which office you approved.
-   Say: "The agent only suggests. I
-   decide."
+   Say: "The AI agent only suggests. A
+   human decides."
 
 10. The letter → outbox
     Same page. Next action: "Review the
     message to the office".
-    Show the formal letter (Suggests) and
+    In "Drafted by the Referral Agent",
+    show the formal letter (Suggests) and
     the facts code added (Why).
     Click "Approve".
     Open the item under "Outbox for this
@@ -240,9 +247,16 @@ Never open SV-2026-0011 or SV-2026-0012.
   Referral ready → Office → Follow-up.
 - One big "Next action" button: it jumps
   to what needs you.
-- Each agent card: Suggests, Why,
-  Second check, then
+- Each agent card: who made it
+  ("Suggested by the Routing Agent"),
+  "Waiting for human approval",
+  Suggests, Why, Confidence (Routing),
+  "Checked by the Critic Agent", then
   Approve · Change · Dismiss.
+- "Decisions on this case":
+  "✓ Approved by moderator · date".
+- History: every step is marked
+  "AI agent" or "Human moderator".
 - Everything else is folded in
   "More tools".
 
@@ -274,31 +288,42 @@ Never open SV-2026-0011 or SV-2026-0012.
 
 3. Home
    URL: /admin/pipeline
-   Point at "What needs your attention"
-   (each line has a Review button),
-   then "Cases by step", then
-   "Sending: OFF (demo mode)".
-   Say: "Agents only suggest; I approve
-   every step; nothing is ever sent."
+   Point at the top line: "Human in the
+   loop: AI agents suggest, a human
+   approves every step. Nothing is sent
+   outside."
+   Then "What needs your attention":
+   each line says which agent made it,
+   "Waiting for human approval", and has
+   a Review button. Then "Cases by step",
+   then "Sending: OFF (demo mode)".
+   Say: "AI agents suggest; a human
+   approves every step; nothing is sent
+   outside."
 
 4. Routing
    URL: /admin/cases/SV-2026-0007
    Step bar is at "Drafted". Next action:
    "Review the routing suggestion".
-   In the "Routing Agent" card: Suggests
-   (office, priority, 52%), Why,
-   "The agent isn't sure", Second check.
+   In the card "Suggested by the Routing
+   Agent": "Waiting for human approval",
+   Suggests (office, priority), Why,
+   Confidence 52%, "The agent isn't
+   sure", "Checked by the Critic Agent".
    The choices are already open: pick an
    office. Click "Approve with my changes".
    Wait about 10 seconds.
+   Show "Decisions on this case":
+   "✓ Approved by moderator · (today)".
    Say: "When two offices fit, it asks a
    human instead of guessing."
 
 5. Referral → outbox
    URL: /admin/cases/SV-2026-0007
    Next action: "Review the message to
-   the office". In the "Referral Agent"
-   card, click "Change", change one word,
+   the office". In the card "Drafted by
+   the Referral Agent", click "Change",
+   change one word,
    click "Approve with my changes".
    Open the item under "Outbox for this
    case": "Ready to send – demo mode
@@ -308,8 +333,8 @@ Never open SV-2026-0011 or SV-2026-0012.
 
 6. Duplicate
    URL: /admin/cases/SV-2026-0002
-   In the Routing Agent card, show
-   "Possible duplicate" and
+   In the card "Suggested by the Routing
+   Agent", show "Possible duplicate" and
    "Merge into SV-2026-0001". Don't click.
    Say: "Two neighbors reported the same
    streetlight."
@@ -327,11 +352,15 @@ Never open SV-2026-0011 or SV-2026-0012.
 8. History
    URL: /admin/cases/SV-2026-0001
    Step bar is at "Follow-up". Show the
-   "Follow-up Agent" card (don't approve).
-   Open "History: everything agents and
-   people did".
-   Say: "Every step is logged: who, what,
-   when, why, and what a person approved."
+   card "Suggested by the Follow-up
+   Agent" (don't approve).
+   Scroll to "History: everything agents
+   and people did" (already open): each
+   step says "AI agent" or "Human
+   moderator".
+   Say: "Every step is logged: which AI
+   agent suggested it, and which human
+   approved it."
 
 ## Side 3 – The office
 
@@ -382,7 +411,7 @@ Never open SV-2026-0011 or SV-2026-0012.
       approves every step. No sending code.
       Personal details are removed.
       Real cases show only statuses.
-    - 708 automated tests, including ones
+    - 714 automated tests, including ones
       that block the network.
     - After my flyers, two real residents
       sent reports.

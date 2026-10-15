@@ -43,6 +43,21 @@ never claims a government institution received or acted on a submission.
   re-checks, are listed in a change history on that page. Changes are saved in the database (or only in memory when no `DATABASE_URL` is configured,
   as the page itself says); the built-in entries always stay in the code.
 
+## Human in the loop, on screen
+
+The moderator screens show by themselves that agents only suggest and a person decides:
+
+- Home starts with: "Human in the loop: AI agents suggest, a human approves every step. Nothing
+  is sent outside."
+- Every suggestion says who made it ("Suggested by the Routing Agent", "Drafted by the Referral
+  Agent", "Suggested by the Follow-up Agent", "Drafted by the Summary Agent", the Duplicate,
+  Status and Verification Agents, or "From the office"), why in one sentence, the confidence
+  when the agent gives one (routing), and "Checked by the Critic Agent".
+- Until someone decides, it shows "Waiting for human approval". Afterwards, "Decisions on this
+  case" lists "✓ Approved by moderator · date" (or Dismissed), never the moderator's email.
+- The case history marks every step "AI agent" or "Human moderator" (or Office, or System for
+  the daily scheduler), with an icon and the words.
+
 ## Rules
 
 - Private notes are a distinct type from the public case object (`AdminNote` vs. `Report` /

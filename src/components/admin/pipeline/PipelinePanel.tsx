@@ -24,7 +24,7 @@ import type { PipelineResult } from "@/lib/pipeline/pipeline";
 import { CARD_IDS, displayStepOf, nextActionFor } from "@/lib/pipeline/display";
 import { PipelineBar } from "./PipelineBar";
 import { publicCaseHref } from "../AdminNav";
-import { AuditTimeline, CritiqueView, FailureNote, OutboxItemView, PriorityBadge, SourceBadge } from "./bits";
+import { AuditTimeline, CritiqueView, FailureNote, HumanDecision, MadeBy, OutboxItemView, PriorityBadge, SourceBadge, WaitingForHuman } from "./bits";
 
 export type OfficeOption = { id: string; name: string };
 
@@ -178,6 +178,7 @@ export function PipelinePanel({ caseNumber, stage, state, proposals, outbox, aud
         {resolution && (
           <SuggestionCard
             id={CARD_IDS.office_resolution}
+            madeBy={{ text: "From the office", by: "office" }}
             title={`${officeName(resolution.payload.officeId)} says the problem is resolved`}
             source="office"
             suggests="Close the case. Residents will see it as Closed."
@@ -194,6 +195,7 @@ export function PipelinePanel({ caseNumber, stage, state, proposals, outbox, aud
           <SuggestionCard
             key={p.id}
             id={i === 0 ? CARD_IDS.office_note : undefined}
+            madeBy={{ text: "From the office · translated by AI", by: "office" }}
             title={`${officeName(p.payload.officeId)} wrote a public note`}
             source={p.payload.source}
             suggests={
@@ -228,6 +230,8 @@ export function PipelinePanel({ caseNumber, stage, state, proposals, outbox, aud
       {routing && <RoutingCard proposal={routing} caseNumber={caseNumber} offices={offices} busy={busy} run={run} officeName={officeName} />}
       {referral && <ReferralCard proposal={referral} busy={busy} run={run} officeName={officeName} />}
       {followUp && <FollowUpCard proposal={followUp} busy={busy} run={run} />}
+
+      <Decisions proposals={proposals} officeName={officeName} />
 
       {officeReferrals.length > 0 && (
         <div>
@@ -271,9 +275,9 @@ export function PipelinePanel({ caseNumber, stage, state, proposals, outbox, aud
         )}
       </div>
 
-      <details data-demo="audit-log">
+      <details data-demo="audit-log" open>
         <summary className="cursor-pointer text-sm font-semibold text-ink">History: everything agents and people did ({audit.length})</summary>
-        <p className="mt-1 text-xs text-slate">Which agent did what, when and why, and what a moderator approved or changed. Private to moderators.</p>
+        <p className="mt-1 text-xs text-slate">Each step is marked AI agent or Human moderator: what the agents suggested, and what a person approved or changed. Private to moderators.</p>
         <div className="mt-3">
           <AuditTimeline entries={audit} />
         </div>
@@ -284,14 +288,13 @@ export function PipelinePanel({ caseNumber, stage, state, proposals, outbox, aud
 
 /**
  * The less common pipeline tools, shown under "More tools" on the case page: ask the Routing
- * Agent again, draft the referral by hand, set the office yourself, and past suggestions.
+ * Agent again, draft the referral by hand, and set the office yourself. (Past decisions are in the
+ * main panel's "Decisions on this case".)
  */
 export function PipelineTools({ caseNumber, state, proposals, outbox, offices }: Pick<Props, "caseNumber" | "state" | "proposals" | "outbox" | "offices">) {
   const { busy, result, run } = usePipelineRun();
-  const officeName = officeNameIn(offices);
   const pendingReferral = proposals.some((p) => p.status === "pending" && p.kind === "referral");
   const canDraft = !!state?.officeId && !pendingReferral && !outbox.some((o) => o.kind === "referral");
-  const past = proposals.filter((p) => p.status !== "pending");
   return (
     <section className="flex flex-col gap-3 rounded-lg border border-ink/10 p-4">
       <h2 className="text-sm font-semibold text-ink">Agents and routing</h2>
@@ -307,36 +310,25 @@ export function PipelineTools({ caseNumber, state, proposals, outbox, offices }:
         )}
       </div>
       <ManualRouting caseNumber={caseNumber} state={state} offices={offices} busy={busy} run={run} />
-      {past.length > 0 && (
-        <details>
-          <summary className="cursor-pointer text-sm font-semibold text-ink">Past suggestions ({past.length})</summary>
-          <ul className="mt-2 flex flex-col gap-1 text-xs text-ink/80">
-            {past.map((p) => (
-              <li key={p.id}>
-                {p.kind.replace("_", " ")} — <span className="font-medium">{p.status}</span>
-                {p.reviewedBy && ` by ${p.reviewedBy}`} · {new Date(p.reviewedAt ?? p.createdAt).toLocaleString()}
-                {p.kind === "routing" && ` · ${officeName(p.payload.officeId)}, ${p.payload.priority}`}
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
     </section>
   );
 }
 
 /**
- * Every agent suggestion has the same shape: what it suggests, why (one sentence), the second
- * check, then Approve · Change · Dismiss. "Change" opens the editors; nothing is saved until
- * Approve.
+ * Every suggestion has the same shape: who made it ("Suggested by the Routing Agent") and that
+ * it is waiting for a person, what it suggests, why (one sentence) and the confidence when the
+ * agent gives one, the Critic Agent's check, then Approve · Change · Dismiss. "Change" opens the
+ * editors; nothing is saved until Approve.
  */
 export function SuggestionCard({
   id,
   demo,
+  madeBy,
   title,
   source,
   suggests,
   why,
+  confidence,
   critique,
   failureNote,
   children,
@@ -352,10 +344,14 @@ export function SuggestionCard({
 }: {
   id?: string;
   demo?: string;
+  /** Who made it, e.g. "Suggested by the Routing Agent" (an agent) or "From the office". */
+  madeBy: { text: string; by: "agent" | "office" };
   title: string;
   source: OutputSource;
   suggests: ReactNode;
   why: ReactNode;
+  /** 0–1, when the agent gives one. */
+  confidence?: number;
   critique?: Critique;
   failureNote?: string;
   children?: ReactNode;
@@ -372,16 +368,25 @@ export function SuggestionCard({
   const [changeOpen, setChangeOpen] = useState(changeOpenInitially);
   return (
     <div id={id} tabIndex={id ? -1 : undefined} data-demo={demo} className="scroll-mt-4 rounded-lg border border-teal/40 bg-cream p-3 outline-none">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <MadeBy text={madeBy.text} by={madeBy.by} />
+        <WaitingForHuman />
+      </div>
+      <div className="mt-1.5 flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-semibold text-ink">{title}</h3>
         <SourceBadge source={source} />
-        <span className="rounded-full bg-coral/10 px-2 py-0.5 text-xs font-medium text-coral">Waiting for you</span>
       </div>
-      <dl className="mt-2 grid grid-cols-1 gap-1 text-sm sm:grid-cols-[5rem_1fr]">
+      <dl className="mt-2 grid grid-cols-1 gap-1 text-sm sm:grid-cols-[6rem_1fr]">
         <dt className="font-semibold text-slate">Suggests</dt>
         <dd className="text-ink">{suggests}</dd>
         <dt className="font-semibold text-slate">Why</dt>
         <dd className="text-ink/85">{why}</dd>
+        {confidence !== undefined && (
+          <>
+            <dt className="font-semibold text-slate">Confidence</dt>
+            <dd className="text-ink/85">{Math.round(confidence * 100)}%</dd>
+          </>
+        )}
       </dl>
       {children}
       <CritiqueView critique={critique} />
@@ -401,6 +406,45 @@ export function SuggestionCard({
         </button>
       </div>
       {(approveHint || dismissHint) && <p className="mt-1 text-xs text-slate">{[approveHint, dismissHint].filter(Boolean).join(" ")}</p>}
+    </div>
+  );
+}
+
+/** What each suggestion was, in a few words, for the list of decisions. */
+function decisionLabel(p: Proposal, officeName: (id?: string) => string): string {
+  switch (p.kind) {
+    case "routing":
+      return `Routing Agent: ${officeName(p.payload.officeId)}, priority ${p.payload.priority}`;
+    case "referral":
+      return "Referral Agent: message to the office";
+    case "follow_up":
+      return "Follow-up Agent: reminder and public update";
+    case "office_note":
+      return "The office’s public note";
+    case "office_resolution":
+      return "The office says it’s fixed";
+    case "weekly_summary":
+      return "Summary Agent: weekly summary";
+  }
+}
+
+/** Every suggestion a person has already decided on: "✓ Approved by moderator · date". */
+function Decisions({ proposals, officeName }: { proposals: Proposal[]; officeName: (id?: string) => string }) {
+  const decided = proposals
+    .filter((p): p is Proposal & { status: "approved" | "rejected" } => p.status !== "pending")
+    .sort((a, b) => (b.reviewedAt ?? b.createdAt).localeCompare(a.reviewedAt ?? a.createdAt));
+  if (decided.length === 0) return null;
+  return (
+    <div data-demo="decisions">
+      <h3 className="text-sm font-semibold text-ink">Decisions on this case ({decided.length})</h3>
+      <ul className="mt-1 flex flex-col gap-1.5 text-sm">
+        {decided.map((p) => (
+          <li key={p.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 rounded-md border border-ink/10 bg-cream px-3 py-2">
+            <span className="min-w-0 text-ink">{decisionLabel(p, officeName)}</span>
+            <HumanDecision status={p.status} at={p.reviewedAt} />
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -428,17 +472,19 @@ function RoutingCard({
     <SuggestionCard
       id={CARD_IDS.routing}
       demo="routing-card"
-      title="Routing Agent"
+      madeBy={{ text: "Suggested by the Routing Agent", by: "agent" }}
+      title="Which office, and how urgent"
       source={p.source}
       suggests={
         <>
           <span className="font-semibold">{officeName(p.officeId)}</span> · <PriorityBadge priority={p.priority} />
-          <span className="mt-0.5 block text-xs text-slate">
-            Confidence {Math.round(p.confidence * 100)}%{p.alternativeOfficeIds.length > 0 && <> · Could also fit: {p.alternativeOfficeIds.map(officeName).join(", ")}</>}
-          </span>
+          {p.alternativeOfficeIds.length > 0 && (
+            <span className="mt-0.5 block text-xs text-slate">Could also fit: {p.alternativeOfficeIds.map(officeName).join(", ")}</span>
+          )}
         </>
       }
       why={p.reason}
+      confidence={p.confidence}
       critique={proposal.critique}
       failureNote={proposal.failureNote}
       changeOpen={p.needsModeratorDecision}
@@ -522,7 +568,8 @@ function ReferralCard({ proposal, busy, run, officeName }: CardProps<"referral">
     <SuggestionCard
       id={CARD_IDS.referral}
       demo="referral-card"
-      title="Referral Agent"
+      madeBy={{ text: "Drafted by the Referral Agent", by: "agent" }}
+      title="Message to the office"
       source={p.source}
       suggests={
         <>
@@ -571,7 +618,8 @@ function FollowUpCard({ proposal, busy, run }: CardProps<"follow_up">) {
     <SuggestionCard
       id={CARD_IDS.follow_up}
       demo="follow-up-card"
-      title="Follow-up Agent"
+      madeBy={{ text: "Suggested by the Follow-up Agent", by: "agent" }}
+      title="Follow-up on a case with no progress"
       source={p.source}
       suggests={
         chosen.length === 0 ? (

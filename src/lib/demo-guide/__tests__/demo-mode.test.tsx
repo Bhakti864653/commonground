@@ -106,3 +106,15 @@ describe("while the demo guide is on, moderator screens show example cases only"
     expect(screen.getByRole("note")).toHaveTextContent("1 resident report is hidden");
   });
 });
+
+describe("Home says it is a human-in-the-loop system", () => {
+  it("shows the one-line rule at the top, and who made each waiting suggestion", async () => {
+    render(await PipelineDashboardPage());
+    expect(document.body.textContent).toContain(
+      "Human in the loop: AI agents suggest, a human approves every step. Nothing is sent outside.",
+    );
+    expect(screen.getAllByText("Suggested by the Routing Agent").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Waiting for human approval").length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toContain("Waiting for you");
+  });
+});

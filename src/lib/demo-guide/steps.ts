@@ -13,7 +13,7 @@ import "server-only";
  */
 
 /** The number of automated tests (npm test), stated on the closing screen. Update it when it changes. */
-export const TEST_COUNT = 708;
+export const TEST_COUNT = 714;
 
 export type DemoStep = {
   n: number;
@@ -63,11 +63,12 @@ export const DEMO_STEPS: DemoStep[] = [
     href: "/admin/pipeline",
     target: "attention",
     click: [
-      "Point at “What needs your attention”: the suggestions waiting for approval (each with a Review button), and the outbox.",
+      "Point at the line at the top: “Human in the loop: AI agents suggest, a human approves every step. Nothing is sent outside.”",
+      "Point at “What needs your attention”: each suggestion says which agent made it (“Suggested by the Routing Agent”) and “Waiting for human approval”, with a Review button. Then the outbox.",
       "Scroll to “Cases by step”: Drafted → Routed → Referral ready → Office → Follow-up.",
       "Point at “Sending: OFF (demo mode)” at the top.",
     ],
-    say: "Every case moves through the same steps. Agents only suggest; I approve every step, and nothing is ever sent.",
+    say: "Every case moves through the same steps. AI agents suggest; a human approves every step, and nothing is sent outside.",
   },
   {
     n: 4,
@@ -78,8 +79,9 @@ export const DEMO_STEPS: DemoStep[] = [
     target: "routing-card",
     click: [
       "Point at the step bar (at “Drafted”) and the Next action button: “Review the routing suggestion”.",
-      "In the “Routing Agent” card, show Suggests (office, priority, confidence 52%), Why, “The agent isn’t sure”, and the Second check’s concern.",
+      "In the card “Suggested by the Routing Agent” (“Which office, and how urgent”), show “Waiting for human approval”, Suggests (office, priority), Why, Confidence 52%, “The agent isn’t sure”, and “Checked by the Critic Agent” with its concern.",
       "The office choices are already open: pick Street lighting or Parks, then click “Approve with my changes” (or “Approve”). Wait ~10 s.",
+      "Under “Decisions on this case”, show “✓ Approved by moderator” with today’s date.",
     ],
     say: "The agent looked up similar cases with real tool calls. When two offices fit, it asks a human instead of guessing.",
   },
@@ -91,7 +93,7 @@ export const DEMO_STEPS: DemoStep[] = [
     href: "/admin/cases/SV-2026-0007",
     target: "referral-card",
     click: [
-      "The Next action is now “Review the message to the office”. In the “Referral Agent” card, show the formal Spanish message (Suggests) and the facts code added (Why).",
+      "The Next action is now “Review the message to the office”. In the card “Drafted by the Referral Agent” (“Message to the office”), show the formal Spanish message (Suggests) and the facts code added (Why).",
       "Click “Change”, change one word, then click “Approve with my changes”.",
       "Under “Outbox for this case”, open the item: “Ready to send – demo mode (not sent)” and the .invalid address. The step bar is now at “Office”.",
     ],
@@ -104,7 +106,7 @@ export const DEMO_STEPS: DemoStep[] = [
     where: "Case SV-2026-0002 (/admin/cases/SV-2026-0002)",
     href: "/admin/cases/SV-2026-0002",
     target: "duplicates",
-    click: ["In the Routing Agent card, show “Possible duplicate”: SV-2026-0001 · similarity 67%, and the “Merge into SV-2026-0001” button. Don’t click it."],
+    click: ["In the card “Suggested by the Routing Agent”, show “Possible duplicate”: SV-2026-0001 · similarity 67%, and the “Merge into SV-2026-0001” button. Don’t click it."],
     say: "Two neighbors reported the same streetlight. Merging would count them as two residents on one case.",
   },
   {
@@ -116,7 +118,7 @@ export const DEMO_STEPS: DemoStep[] = [
     target: "run-follow-up-examples",
     click: [
       "In “Demo tools”, click “Run follow-up now (example cases only)”. Wait up to a minute.",
-      "Show “Flagged 1 overdue case (SV-2026-0001)”, then scroll up: “What needs your attention” now lists “Follow-up Agent: no progress for … days”.",
+      "Show “Flagged 1 overdue case (SV-2026-0001)”, then scroll up: “What needs your attention” now lists “Suggested by the Follow-up Agent: No progress for … days”, waiting for human approval.",
     ],
     say: "This runs every morning by itself. It finds cases that stalled and drafts a reminder, a public update in 7 languages, and whether to raise the priority.",
   },
@@ -128,10 +130,10 @@ export const DEMO_STEPS: DemoStep[] = [
     href: "/admin/cases/SV-2026-0001",
     target: "audit-log",
     click: [
-      "Show the step bar (at “Follow-up”) and the “Follow-up Agent” card: Suggests (reminder, public update, raise priority) and Why. Don’t approve it.",
-      "Open “History: everything agents and people did”.",
+      "Show the step bar (at “Follow-up”) and the card “Suggested by the Follow-up Agent”: Suggests (reminder, public update, raise priority) and Why. Don’t approve it.",
+      "Scroll to “History: everything agents and people did” (already open): every step is marked “AI agent” or “Human moderator”.",
     ],
-    say: "Every step is logged: which agent did what, when and why, and what a moderator approved or changed.",
+    say: "Every step is logged and marked: which AI agent suggested what, and which human approved or changed it.",
   },
   {
     n: 9,

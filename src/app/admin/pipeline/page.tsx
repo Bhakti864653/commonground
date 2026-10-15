@@ -6,7 +6,7 @@ import { listCommunities } from "@/lib/store/community-store";
 import type { Proposal } from "@/lib/pipeline/types";
 import { CARD_IDS, DISPLAY_STEPS, DISPLAY_STEP_HINTS, DISPLAY_STEP_LABELS } from "@/lib/pipeline/display";
 import { isSendingEnabled } from "@/lib/pipeline/sending";
-import { AuditTimeline, OutboxItemView, PriorityBadge } from "@/components/admin/pipeline/bits";
+import { AuditTimeline, MadeBy, OutboxItemView, PriorityBadge, WaitingForHuman } from "@/components/admin/pipeline/bits";
 import { ResetDemoButton, RunFollowUpButton, StartDemoButton, SummaryCard } from "@/components/admin/pipeline/DashboardControls";
 import { FOLLOW_UP_AFTER_DAYS } from "@/lib/pipeline/schedule";
 import { isDemoGuideOn, onlyExamples } from "@/lib/demo-guide/demo-mode";
@@ -17,16 +17,32 @@ export const maxDuration = 120;
 type CaseProposal = Exclude<Proposal, { kind: "weekly_summary" }>;
 
 /** One line in "What needs your attention": what the agent wants, in plain words. */
+/** Who made a suggestion, as shown on its card. */
+function madeByOf(p: CaseProposal): string {
+  switch (p.kind) {
+    case "routing":
+      return "Suggested by the Routing Agent";
+    case "referral":
+      return "Drafted by the Referral Agent";
+    case "follow_up":
+      return "Suggested by the Follow-up Agent";
+    case "office_note":
+      return "From the office · translated by AI";
+    case "office_resolution":
+      return "From the office";
+  }
+}
+
 function describe(p: CaseProposal): string {
   switch (p.kind) {
     case "routing":
-      return `Routing Agent suggests ${getReferralOffice(p.payload.officeId)?.name ?? "an office"}${p.payload.needsModeratorDecision ? " (not sure, needs you)" : ""}${
+      return `Suggests ${getReferralOffice(p.payload.officeId)?.name ?? "an office"}${p.payload.needsModeratorDecision ? " (not sure, needs you)" : ""}${
         p.payload.possibleDuplicates.length > 0 ? " · possible duplicate" : ""
       }`;
     case "referral":
-      return "Referral Agent drafted a message to the office";
+      return "A message to the office";
     case "follow_up":
-      return `Follow-up Agent: no progress for ${p.payload.daysWithoutProgress} days`;
+      return `No progress for ${p.payload.daysWithoutProgress} days`;
     case "office_note":
       return "The office wrote a public note for you to check";
     case "office_resolution":
@@ -60,8 +76,13 @@ export default async function PipelineDashboardPage() {
       <section className="flex flex-col gap-3">
         <div>
           <h1 className="text-xl font-semibold text-ink">Home</h1>
-          <p className="mt-1 text-sm text-slate">What needs you today. Agents only suggest; you decide every step. Nothing is ever sent.</p>
+          <p className="mt-1 text-sm text-slate">What needs you today.</p>
         </div>
+        <p data-demo="human-in-the-loop" className="flex max-w-full items-start gap-2 rounded-md border-l-4 border-teal bg-mint/20 px-3 py-2 text-sm text-ink">
+          <span>
+            <span className="font-semibold">Human in the loop:</span> AI agents suggest, a human approves every step. Nothing is sent outside.
+          </span>
+        </p>
         <p className="w-max max-w-full rounded-md border border-ink/15 bg-cream px-3 py-2 text-sm text-ink">
           Sending: <span className="font-semibold">{isSendingEnabled() ? "flag on, but there is no delivery channel — nothing is sent" : "OFF (demo mode)"}</span>
         </p>
@@ -86,9 +107,15 @@ export default async function PipelineDashboardPage() {
             <ul className="flex flex-col gap-2">
               {casePending.map((p) => (
                 <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-ink/10 bg-cream p-3 text-sm">
-                  <span className="min-w-0">
-                    <span className="font-semibold text-ink">{p.caseNumber}</span> <span className="text-xs text-slate">({tag(p.caseNumber)})</span>
-                    <span className="block text-ink/85">{describe(p)}</span>
+                  <span className="flex min-w-0 flex-col gap-1">
+                    <span>
+                      <span className="font-semibold text-ink">{p.caseNumber}</span> <span className="text-xs text-slate">({tag(p.caseNumber)})</span>
+                    </span>
+                    <MadeBy text={madeByOf(p)} by={p.kind.startsWith("office_") ? "office" : "agent"} />
+                    <span className="text-ink/85">{describe(p)}</span>
+                    <span>
+                      <WaitingForHuman />
+                    </span>
                   </span>
                   <Link href={`/admin/cases/${p.caseNumber}#${CARD_IDS[p.kind]}`} className={btn}>
                     Review
@@ -97,7 +124,13 @@ export default async function PipelineDashboardPage() {
               ))}
               {summaries.map((s) => (
                 <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-ink/10 bg-cream p-3 text-sm">
-                  <span className="text-ink/85">Weekly summary for the week of {s.payload.weekStart} is ready to publish</span>
+                  <span className="flex min-w-0 flex-col gap-1">
+                    <MadeBy text="Drafted by the Summary Agent" />
+                    <span className="text-ink/85">Weekly summary for the week of {s.payload.weekStart} is ready to publish</span>
+                    <span>
+                      <WaitingForHuman />
+                    </span>
+                  </span>
                   <a href="#weekly-summaries" className={btn}>
                     Review
                   </a>

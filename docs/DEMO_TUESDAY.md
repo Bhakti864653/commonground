@@ -82,16 +82,25 @@ Part B – the public case page (about 1 minute)
 14. Point out: no office name is shown publicly.
 
 Part C – the moderator side (about 5 minutes)
-15. Go to Home (/admin/pipeline).
-16. Show "What needs your attention" (suggestions, overdue,
-    outbox, each with one button) and "Cases by step".
+15. Go to Home (/admin/pipeline). Point at the top line:
+    "Human in the loop: AI agents suggest, a human approves
+    every step. Nothing is sent outside."
+16. Show "What needs your attention" (suggestions, each
+    saying which agent made it and "Waiting for human
+    approval"; overdue; outbox; each with one button) and
+    "Cases by step".
 17. Open SV-2026-0007 (the solar lamps proposal).
 18. Show the step bar and the "Next action" button. In the
-    Routing Agent card: Suggests (52%), Why, "the agent
-    isn't sure", lighting or parks, and the Second check.
+    card "Suggested by the Routing Agent": "Waiting for
+    human approval", Suggests, Why, Confidence 52%, "the
+    agent isn't sure", lighting or parks, and "Checked by
+    the Critic Agent".
 19. Pick an office, then click "Approve with my changes".
+    Under "Decisions on this case": "✓ Approved by
+    moderator" and today's date.
 20. Wait about 10 seconds: the Referral Agent drafts live.
-21. In the Referral Agent card, click "Change" and edit
+21. In the card "Drafted by the Referral Agent", click
+    "Change" and edit
     one word in the message.
 22. Click "Approve with my changes" (it goes to the
     outbox; nothing is sent).
@@ -105,10 +114,11 @@ Part C – the moderator side (about 5 minutes)
     "Run follow-up now (example cases only)".
 27. Wait up to a minute. It flags SV-2026-0001.
 28. Open SV-2026-0001, click "Approve" on the
-    Follow-up Agent card.
+    card "Suggested by the Follow-up Agent".
 29. Open /cases/SV-2026-0001 to show the new public update.
-30. On any case, open "History: everything agents and
-    people did".
+30. On any case, scroll to "History: everything agents
+    and people did" (open already): each step is marked
+    "AI agent" or "Human moderator".
 
 Part D – the office side (about 4 minutes)
 31. Click "Demo office" at the top of /admin.

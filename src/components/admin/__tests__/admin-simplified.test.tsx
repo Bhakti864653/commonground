@@ -292,11 +292,84 @@ describe("the demo guide points at things that exist", () => {
 
   it("names the new buttons and screens", () => {
     const text = JSON.stringify(DEMO_STEPS);
-    for (const label of ["What needs your attention", "Cases by step", "Review the routing suggestion", "Approve with my changes", "Approve and publish", "Approve and close the case", "History: everything agents and people did"]) {
+    for (const label of ["What needs your attention", "Cases by step", "Review the routing suggestion", "Approve with my changes", "Approve and publish", "Approve and close the case", "History: everything agents and people did", "Human in the loop", "Suggested by the Routing Agent", "Drafted by the Referral Agent", "Waiting for human approval", "Checked by the Critic Agent", "Approved by moderator", "AI agent", "Human moderator"]) {
       expect(text).toContain(label);
     }
-    for (const old of ["Waiting for a moderator", "Agent timeline / audit log", "Confirm and close the case", "Approve → outbox"]) {
+    for (const old of ["Waiting for a moderator", "Agent timeline / audit log", "Confirm and close the case", "Approve → outbox", "Waiting for you", "Second check", "Agents only suggest", "“Routing Agent” card"]) {
       expect(text).not.toContain(old);
     }
+  });
+});
+
+describe("human in the loop, visible on screen", () => {
+  it("each suggestion says which agent made it, why, its confidence, and that it waits for a person", async () => {
+    await panelFor("SV-2026-0007");
+    const card = within(document.getElementById("card-routing")!);
+    expect(card.getByText("Suggested by the Routing Agent")).toBeInTheDocument();
+    expect(card.getByText("Waiting for human approval")).toBeInTheDocument();
+    expect(card.getByText("Why")).toBeInTheDocument();
+    expect(card.getByText("Confidence")).toBeInTheDocument();
+    expect(card.getByText("52%")).toBeInTheDocument();
+    expect(card.getByText(/Checked by the Critic Agent/)).toBeInTheDocument();
+    expect(card.queryByText("Waiting for you")).toBeNull();
+  });
+
+  it("the referral and follow-up cards name their agents", async () => {
+    await runFollowUp("manual", new Date(), { onlyExamples: true });
+    await panelFor("SV-2026-0001");
+    expect(within(document.getElementById("card-follow-up")!).getByText("Suggested by the Follow-up Agent")).toBeInTheDocument();
+    document.body.innerHTML = "";
+    const { approveRouting } = await import("@/lib/pipeline/pipeline");
+    const routing = (await getCasePipeline("SV-2026-0007")).proposals.find((p) => p.kind === "routing" && p.status === "pending")!;
+    await approveRouting(routing.id, "mod@example.org", { officeId: "parks" });
+    await panelFor("SV-2026-0007");
+    expect(within(document.getElementById("card-referral")!).getByText("Drafted by the Referral Agent")).toBeInTheDocument();
+  });
+
+  it("after approval: Approved by moderator · date (never the moderator's email)", async () => {
+    const { approveRouting } = await import("@/lib/pipeline/pipeline");
+    const routing = (await getCasePipeline("SV-2026-0007")).proposals.find((p) => p.kind === "routing" && p.status === "pending")!;
+    await approveRouting(routing.id, "mod@example.org", { officeId: "parks" });
+    await panelFor("SV-2026-0007");
+    const decisions = within(screen.getByRole("heading", { name: /Decisions on this case/ }).parentElement!);
+    const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    expect(decisions.getByText(/Routing Agent: /)).toBeInTheDocument();
+    expect(decisions.getByText(`✓ Approved by moderator · ${today}`, { exact: false })).toBeInTheDocument();
+    expect(decisions.queryByText(/mod@example.org/)).toBeNull();
+  });
+
+  it("the history marks every step AI agent or Human moderator, with an icon and words", async () => {
+    const { approveRouting } = await import("@/lib/pipeline/pipeline");
+    const routing = (await getCasePipeline("SV-2026-0007")).proposals.find((p) => p.kind === "routing" && p.status === "pending")!;
+    await approveRouting(routing.id, "mod", { officeId: "parks" });
+    await panelFor("SV-2026-0007");
+    const history = document.querySelector('[data-demo="audit-log"]') as HTMLDetailsElement;
+    expect(history.open).toBe(true);
+    const log = within(history);
+    expect(log.getAllByText("AI agent").length).toBeGreaterThan(0);
+    expect(log.getAllByText("Human moderator").length).toBeGreaterThan(0);
+    for (const tag of [...log.getAllByText("AI agent"), ...log.getAllByText("Human moderator")]) {
+      // The icon is decorative; the words carry the meaning.
+      expect(tag.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    }
+  });
+});
+
+describe("extra checks show their agent and the human decision", () => {
+  it("pending: which agent and Waiting for human approval; decided: Approved by moderator · date", () => {
+    return getCaseByCaseNumber("SV-2026-0001").then((found) => {
+      const c = {
+        ...found!,
+        agentSuggestions: [
+          { id: "s1", kind: "status" as const, suggestedValue: "in_progress", reasoning: "Office replied.", createdAt: "2026-10-10T12:00:00Z", status: "pending" as const },
+          { id: "s2", kind: "duplicate" as const, suggestedValue: "SV-2026-0002", reasoning: "Same street.", createdAt: "2026-10-10T12:00:00Z", status: "approved" as const, reviewedAt: "2026-10-12T12:00:00Z" },
+        ],
+      };
+      render(<ModerationPanel caseData={c} communityDisplayName="Santiago de Veraguas" categoryLabel="Road" />);
+      expect(screen.getByText("Suggested by the Status Agent")).toBeInTheDocument();
+      expect(screen.getByText("Suggested by the Duplicate Agent")).toBeInTheDocument();
+      expect(screen.getByText("Waiting for human approval")).toBeInTheDocument();
+      expect(screen.getByText("✓ Approved by moderator · Oct 12, 2026", { exact: false })).toBeInTheDocument();
+    });
   });
 });

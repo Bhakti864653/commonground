@@ -16,6 +16,14 @@ import { runCaseAnalysis, reviewAgentSuggestion } from "@/lib/guide/admin-action
 import type { AgentTraceStep, SuggestionDecision } from "@/lib/guide/case-analysis";
 import { draftStatusChangeExplanation } from "@/lib/insights/status-explanation";
 import { AnalysisTraceView } from "./AnalysisTraceView";
+import { ActorTag, HumanDecision, MadeBy, WaitingForHuman } from "./pipeline/bits";
+
+/** Which specialist agent made each extra-check suggestion. */
+const EXTRA_CHECK_AGENT: Record<string, string> = {
+  duplicate: "Suggested by the Duplicate Agent",
+  status: "Suggested by the Status Agent",
+  verification: "Suggested by the Verification Agent",
+};
 import { ReferralCard } from "./ReferralCard";
 import type { OfficialContact } from "@/lib/schema/community";
 import {
@@ -197,14 +205,21 @@ export function ModerationPanel({
                       : "border-ink/10 bg-cream text-slate"
                   }`}
                 >
-                  <p>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <MadeBy text={EXTRA_CHECK_AGENT[s.kind] ?? "Suggested by an AI agent"} />
+                    {s.status === "pending" ? (
+                      <WaitingForHuman />
+                    ) : (
+                      <HumanDecision status={s.status} at={s.reviewedAt} />
+                    )}
+                  </div>
+                  <p className="mt-1">
                     <span className="font-medium text-ink">{s.kind}</span>:{" "}
                     {describeSuggestedValue(s.kind, s.suggestedValue)}
-                    {s.status !== "pending" && (
-                      <span className="ml-2 text-xs">({s.status})</span>
-                    )}
                   </p>
-                  <p className="mt-0.5 text-xs text-ink/70">{s.reasoning}</p>
+                  <p className="mt-0.5 text-xs text-ink/70">
+                    <span className="font-semibold text-slate">Why:</span> {s.reasoning}
+                  </p>
                   {s.status === "pending" && (
                     <div className="mt-2 flex gap-2">
                       <button
@@ -608,10 +623,13 @@ export function ModerationPanel({
               .slice()
               .reverse()
               .map((a) => (
-                <li key={a.id} className="text-ink/80">
-                  <span className="font-medium text-ink">{a.action}</span> by {a.actorId} —{" "}
-                  {new Date(a.occurredAt).toLocaleString()}
-                  {a.detail && <span className="text-slate"> ({a.detail})</span>}
+                <li key={a.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-ink/80">
+                  <ActorTag type="moderator" />
+                  <span className="min-w-0">
+                    <span className="font-medium text-ink">{a.action}</span> by {a.actorId} —{" "}
+                    {new Date(a.occurredAt).toLocaleString()}
+                    {a.detail && <span className="text-slate"> ({a.detail})</span>}
+                  </span>
                 </li>
               ))}
           </ul>
